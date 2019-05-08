@@ -46,8 +46,25 @@ LED Panel Layout in RAM
 #include "pins_arduino.h"
 #include <avr/pgmspace.h>
 
-#include <SPI.h>
+#ifndef pgm_read_byte
+#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+#endif
+#ifndef pgm_read_word
+#define pgm_read_word(addr) (*(const unsigned short *)(addr))
+#endif
+#ifndef pgm_read_dword
+#define pgm_read_dword(addr) (*(const unsigned long *)(addr))
+#endif
 
+#if !defined(__INT_MAX__) || (__INT_MAX__ > 0xFFFF)
+#define pgm_read_pointer(addr) ((void *)pgm_read_dword(addr))
+#else
+#define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
+#endif 
+
+#include <SPI.h>
+#include "gfxfont.h"
+#include "DMD_Font.h"
 
 
 #define DMD_SPI_CLOCK SPI_CLOCK_DIV8
@@ -120,7 +137,7 @@ void OE_DMD_ROWS_ON() ;
   void drawString( int bX, int bY, const char* bChars, byte length, byte bGraphicsMode);
 
   //Select a text font
-  void selectFont(const uint8_t* font);
+  void selectFont(DMD_Font * font);
 
   //Draw a single character
   int drawChar(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode);
@@ -202,9 +219,13 @@ void OE_DMD_ROWS_ON() ;
     int marqueeOffsetY;
 
     //Pointer to current font
-    const uint8_t* Font;
-
-    //Display information
+    //const uint8_t* Font;
+    //bool is_gfx_font = false;
+	//GFXfont * gfxFont;
+    DMD_Font* Font;
+	
+	
+	//Display information
     byte DisplaysWide;
     byte DisplaysHigh;
     byte DisplaysTotal;
