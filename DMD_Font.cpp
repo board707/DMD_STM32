@@ -16,10 +16,7 @@ uint8_t DMD_Font::get_first() { return firstChar; }
 uint8_t DMD_Font::get_last() { return lastChar; }
 uint8_t DMD_Font::get_height() { return fontHeight; }
 
-bool DMD_Font::is_char_in(unsigned char c) {
-	if (c < get_first() || c > get_last()) return false;
-	else return true;
-}
+
 
 
 
@@ -31,6 +28,10 @@ DMD_Standard_Font::DMD_Standard_Font(const uint8_t* ptr) :DMD_Font(ptr) {
 	fontHeight = pgm_read_byte(font_ptr + FONT_HEIGHT);
 }
 
+bool DMD_Standard_Font::is_char_in(unsigned char c) {
+	if (c < get_first() || c > get_last()) return false;
+	else return true;
+}
 bool DMD_Standard_Font::is_mono_font() {
 	// zero length is flag indicating fixed width font (array does not contain width data entries)
 	return (pgm_read_byte(this->font_ptr + FONT_LENGTH) == 0
@@ -72,6 +73,9 @@ uint16_t DMD_Standard_Font::get_bitmap_index(unsigned char c) {
 	}
 	return index;
 }
+
+
+
 DMD_GFX_Font::DMD_GFX_Font(const uint8_t* ptr, uint8_t font_h) :DMD_Font(ptr) {
 
 	gfx_flag = true;
@@ -82,12 +86,43 @@ DMD_GFX_Font::DMD_GFX_Font(const uint8_t* ptr, uint8_t font_h) :DMD_Font(ptr) {
 	fontHeight = font_h;
 	
 }
+bool DMD_GFX_Font::is_char_in(unsigned char c) {
+	if (c >= get_first() && c <= get_last()) return true;
+	if (font2_flag && (c >= firstChar2 && c <= lastChar2)) return true;
+	else return false;
+}
 
 uint8_t DMD_GFX_Font::get_char_width(unsigned char c) {
 	if (this->is_char_in(c)) {
-		c -= this->firstChar;
-		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont->glyph))[c]);
+		GFXfont* gfxFont_ptr;
+		if (font2_flag && (c > get_last() )) {
+			c -= firstChar2;
+			gfxFont_ptr = gfxFont2;
+		}
+		else {
+			c -= firstChar;
+			gfxFont_ptr = gfxFont;
+		}
+		
+		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_ptr->glyph))[c]);
 		return (uint8_t)pgm_read_byte(&glyph->xAdvance);
 	}
 	else return 0;
+}
+
+void DMD_GFX_Font::add_second_font(GFXfont* second, uint8_t start_code) {
+	gfxFont2 = second;
+	font2_flag = true;
+	firstChar2 = start_code;
+	lastChar2 = start_code + pgm_read_word(&gfxFont2->last) - pgm_read_word(&gfxFont2->first);
+}
+
+uint8_t DMD_GFX_Font::get_first_by_char(unsigned char c) {
+	if (font2_flag && (c > get_last() )) return firstChar2;
+	else return firstChar;
+}
+
+GFXfont* DMD_GFX_Font::get_font_by_char(unsigned char c) {
+	if (font2_flag && (c > get_last() )) {return this->gfxFont2;}
+	else return this->gfxFont;
 }

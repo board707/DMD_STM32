@@ -162,10 +162,10 @@ void DMD::drawString(int bX, int bY, const char *bChars, byte length,
     for (int i = 0; i < length; i++) {
         int charWide = this->drawChar(bX+strWidth, bY, bChars[i], bGraphicsMode);
 		//DEBUG
-/* 		Serial.println(bChars[i]);
+	    //Serial.println(bChars[i]);
 		Serial.println(bChars[i], HEX);
-		Serial.println(charWide);
-		 */
+		//Serial.println(charWide);
+		 
 		//DEBUG
 	    if (charWide > 0) {
 	        strWidth += charWide ;
@@ -185,6 +185,7 @@ void DMD::drawMarquee(const char *bChars, byte length, int left, int top)
 	    marqueeText[i] = bChars[i];
 	    marqueeWidth += charWidth(bChars[i]) + 1;
     }
+	
     marqueeHeight= Font->get_height(); 
     marqueeText[length] = '\0';
     marqueeOffsetY = top;
@@ -527,13 +528,17 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte b
 
 		
 
-		c -= Font->get_first();
+		
 		DMD_GFX_Font* ff = (DMD_GFX_Font *)Font;
-		GFXfont * gfxFont = ff->gfxFont;
-		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont->glyph))[c]);
-		uint8_t  *bitmap = (uint8_t *)pgm_read_pointer(&gfxFont->bitmap);
+		GFXfont * gfxFont_p = ff->get_font_by_char(c);
+		c -= ff->get_first_by_char(c);
+		Serial.print("Char index ");Serial.println(c, HEX);
+		
+		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_p->glyph))[c]);
+		uint8_t  *bitmap = (uint8_t *)pgm_read_pointer(&gfxFont_p->bitmap);
 
 		uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
+		Serial.print("Bitmap offset ");Serial.println(bo);
 		uint8_t  w = pgm_read_byte(&glyph->width),
 			h = pgm_read_byte(&glyph->height);
 		int8_t   xo = pgm_read_byte(&glyph->xOffset),
