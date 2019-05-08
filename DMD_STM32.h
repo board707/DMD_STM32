@@ -42,25 +42,6 @@ LED Panel Layout in RAM
 	#include "WProgram.h"
 // #endif
 
-//SPI library must be included for the SPI scanning/connection method to the DMD
-#include "pins_arduino.h"
-#include <avr/pgmspace.h>
-
-#ifndef pgm_read_byte
-#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
-#endif
-#ifndef pgm_read_word
-#define pgm_read_word(addr) (*(const unsigned short *)(addr))
-#endif
-#ifndef pgm_read_dword
-#define pgm_read_dword(addr) (*(const unsigned long *)(addr))
-#endif
-
-#if !defined(__INT_MAX__) || (__INT_MAX__ > 0xFFFF)
-#define pgm_read_pointer(addr) ((void *)pgm_read_dword(addr))
-#else
-#define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
-#endif 
 
 #include <SPI.h>
 #include "gfxfont.h"
@@ -100,13 +81,6 @@ static byte bPixelLookupTable[8] =
    0x01    //7, bit 0
 };
 
-// Font Indices
-#define FONT_LENGTH             0
-#define FONT_FIXED_WIDTH        2
-#define FONT_HEIGHT             3
-#define FONT_FIRST_CHAR         4
-#define FONT_CHAR_COUNT         5
-#define FONT_WIDTH_TABLE        6
 
 typedef uint8_t (*FontCallback)(const uint8_t*);
 

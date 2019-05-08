@@ -147,7 +147,9 @@ void
     }
 
 }
-
+/*--------------------------------------------------------------------------------------
+ 
+--------------------------------------------------------------------------------------*/
 void DMD::drawString(int bX, int bY, const char *bChars, byte length,
 		     byte bGraphicsMode)
 {
@@ -163,7 +165,7 @@ void DMD::drawString(int bX, int bY, const char *bChars, byte length,
         int charWide = this->drawChar(bX+strWidth, bY, bChars[i], bGraphicsMode);
 		//DEBUG
 	    //Serial.println(bChars[i]);
-		Serial.println(bChars[i], HEX);
+		//Serial.println(bChars[i], HEX);
 		//Serial.println(charWide);
 		 
 		//DEBUG
@@ -177,7 +179,9 @@ void DMD::drawString(int bX, int bY, const char *bChars, byte length,
         if ((bX + strWidth) >= DMD_PIXELS_ACROSS * DisplaysWide || bY >= DMD_PIXELS_DOWN * DisplaysHigh) return;
     }
 }
-
+/*--------------------------------------------------------------------------------------
+ 
+--------------------------------------------------------------------------------------*/
 void DMD::drawMarquee(const char *bChars, byte length, int left, int top) 
 {
     marqueeWidth = 0;
@@ -194,7 +198,9 @@ void DMD::drawMarquee(const char *bChars, byte length, int left, int top)
     drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
 	   GRAPHICS_NORMAL);
 }
-
+ /*--------------------------------------------------------------------------------------
+ 
+--------------------------------------------------------------------------------------*/
 boolean DMD::stepMarquee(int amountX, int amountY)
 {
     boolean ret=false;
@@ -497,13 +503,17 @@ void DMD::scanDisplayBySPI()
 		
     //}
 }
-
+/*--------------------------------------------------------------------------------------
+       Select current font
+--------------------------------------------------------------------------------------*/
 void DMD::selectFont(DMD_Font * font)
 {
     this->Font = font;
 	
 }
-
+/*--------------------------------------------------------------------------------------
+  draw char with selected font at coordinates bX bY
+--------------------------------------------------------------------------------------*/
 int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode)
 {
 	
@@ -605,159 +615,15 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte b
 	}
 }
  
+/*--------------------------------------------------------------------------------------
+  char width in pixels with selected font
+     routine moved to DMD_Font classes
+--------------------------------------------------------------------------------------*/
 
-/*int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode)
-{
-	
-	
-    if (bX > (DMD_PIXELS_ACROSS*DisplaysWide) || bY > (DMD_PIXELS_DOWN*DisplaysHigh) ) return -1;
-    unsigned char c = letter;
-   
-   if (is_gfx_font) {
-	   
-	   uint8_t first = pgm_read_byte(&gfxFont->first);
-	   uint8_t last = pgm_read_byte(&gfxFont->last);
-	    if (c < first || c > last ) 
-	{
-	
-		return 0; 	
-	
-	}
-		c -= first;
-        GFXglyph *glyph  = &(((GFXglyph *)pgm_read_pointer(&gfxFont->glyph))[c]);
-        uint8_t  *bitmap = (uint8_t *)pgm_read_pointer(&gfxFont->bitmap);
-
-        uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
-        uint8_t  w  = pgm_read_byte(&glyph->width),
-                 h  = pgm_read_byte(&glyph->height);
-        int8_t   xo = pgm_read_byte(&glyph->xOffset),
-                 yo = pgm_read_byte(&glyph->yOffset);
-	    uint8_t  ww = pgm_read_byte(&gfxFont->yAdvance);
-        uint8_t  xx, yy, bits = 0, bit = 0;
-        int16_t  xo16 = 0, yo16 = 0;
-
-        this->drawFilledBox(bX, bY, bX + ww, bY + 16, GRAPHICS_INVERSE);
-
-        
-        for(yy=0; yy<h; yy++) {
-            for(xx=0; xx<w; xx++) {
-                if(!(bit++ & 7)) {
-                    bits = pgm_read_byte(&bitmap[bo++]);
-                }
-                if(bits & 0x80) {
-                    writePixel(bX +xo+xx, bY +yo+yy, bGraphicsMode, true);
-                        //writePixel(x+xo+xx, y+yo+yy, color);
-                 } else {
-                    writePixel(bX +xo+xx, bY +yo+yy, bGraphicsMode, false);
-						//writeFillRect(x+(xo16+xx)*size, y+(yo16+yy)*size,size, size, color);
-                 }
-                bits <<= 1;
-            }
-        }
-	return ww;
-   }
-	else {
-	uint8_t height = pgm_read_byte(this->Font + FONT_HEIGHT);
-    if (c == ' ') { //CHANGED FROM ' '
-	    int charWide = charWidth(' ');	//CHANGED FROM ' '
-	    this->drawFilledBox(bX, bY, bX + charWide, bY + height, GRAPHICS_INVERSE);
-		
-		//DEBUG
-		//Serial.println("c == ' '");	
-		//DEBUG
-	
-	    return charWide;
-    }
-    uint8_t width = 0;
-    uint8_t bytes = (height + 7) / 8;
-	
-	//DEBUG
-	//Serial.println("uint8_t bytes");	
-	//DEBUG
-
-    uint8_t firstChar = pgm_read_byte(this->Font + FONT_FIRST_CHAR);
-    uint8_t charCount = pgm_read_byte(this->Font + FONT_CHAR_COUNT);
-
-    uint16_t index = 0;
-
-    if (c < firstChar || c >= (firstChar + charCount)) 
-	{
-		
-		return 0; 	
-	
-	}
-    c -= firstChar;
-	
-	
-
-    if (pgm_read_byte(this->Font + FONT_LENGTH) == 0
-	    && pgm_read_byte(this->Font + FONT_LENGTH + 1) == 0) {
-	    // zero length is flag indicating fixed width font (array does not contain width data entries)
-	    width = pgm_read_byte(this->Font + FONT_FIXED_WIDTH);
-	    index = c * bytes * width + FONT_WIDTH_TABLE;
-    } else {
-	    // variable width font, read width data, to get the index
-	    for (uint8_t i = 0; i < c; i++) {
-	        index += pgm_read_byte(this->Font + FONT_WIDTH_TABLE + i);
-	    }
-	    index = index * bytes + charCount + FONT_WIDTH_TABLE;
-	    width = pgm_read_byte(this->Font + FONT_WIDTH_TABLE + c);
-    }
-    if (bX < -width || bY < -height) return width;
-	
-	
-	
-    // last but not least, draw the character
-    for (uint8_t j = 0; j < width; j++) { // Width
-	    for (uint8_t i = bytes - 1; i < 254; i--) { // Vertical Bytes
-	        uint8_t data = pgm_read_byte(this->Font + index + j + (i * width));
-		    int offset = (i * 8);
-		    if ((i == bytes - 1) && bytes > 1) {
-		        offset = height - 8;
-            }
-	        for (uint8_t k = 0; k < 8; k++) { // Vertical bits
-		        if ((offset+k >= i*8) && (offset+k <= height)) {
-		            if (data & (1 << k)) {
-			            writePixel(bX + j, bY + offset + k, bGraphicsMode, true);
-		            } else {
-			            writePixel(bX + j, bY + offset + k, bGraphicsMode, false);
-		            }
-		        }
-	        }
-	    }
-    }
-    return width;
-}
-}
-*/
 int DMD::charWidth(const unsigned char letter)
 {
   return (uint8_t)Font->get_char_width(letter);
-  /*  unsigned char c = letter;
-    // Space is often not included in font so use width of 'n'
-    if (c == ' ') c = 'n';	//CHANGED FROM ' ' 
-    uint8_t width = 0;
-
-    uint8_t firstChar = pgm_read_byte(this->Font + FONT_FIRST_CHAR);
-    uint8_t charCount = pgm_read_byte(this->Font + FONT_CHAR_COUNT);
-
-    uint16_t index = 0;
-
-    if (c < firstChar || c >= (firstChar + charCount)) {
-	    return 0;
-    }
-    c -= firstChar;
-
-    if (pgm_read_byte(this->Font + FONT_LENGTH) == 0
-	&& pgm_read_byte(this->Font + FONT_LENGTH + 1) == 0) {
-	    // zero length is flag indicating fixed width font (array does not contain width data entries)
-	    width = pgm_read_byte(this->Font + FONT_FIXED_WIDTH);
-    } else {
-	    // variable width font, read width data
-	    width = pgm_read_byte(this->Font + FONT_WIDTH_TABLE + c);
-    }
-    return width;
-	*/
+ 
 }
 
 /// Next part is customly added by mozokevgen
@@ -927,8 +793,10 @@ void
 	}
 	
 }
+/*--------------------------------------------------------------------------------------
+   string width in pixels
+--------------------------------------------------------------------------------------*/
 
-// string width in pixels
 uint16_t DMD::stringWidth(const char *bChars, uint8_t length)
 {
 	// this->Font

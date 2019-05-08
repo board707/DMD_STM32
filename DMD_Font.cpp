@@ -1,7 +1,7 @@
 #include "DMD_Font.h"
 
 
-
+/* ------------------------- DMD_Font -------------------------*/
 DMD_Font::DMD_Font(const uint8_t* ptr):font_ptr(ptr)
 {
 }
@@ -18,7 +18,7 @@ uint8_t DMD_Font::get_height() { return fontHeight; }
 
 
 
-
+/* -------------------- DMD_Standard_Font -------------------------*/
 
 DMD_Standard_Font::DMD_Standard_Font(const uint8_t* ptr) :DMD_Font(ptr) {
 
@@ -75,17 +75,33 @@ uint16_t DMD_Standard_Font::get_bitmap_index(unsigned char c) {
 }
 
 
+/* ------------------ DMD_GFX_Font -------------------------*/
 
-DMD_GFX_Font::DMD_GFX_Font(const uint8_t* ptr, uint8_t font_h) :DMD_Font(ptr) {
-
+DMD_GFX_Font::DMD_GFX_Font(const uint8_t* ptr, const uint8_t* ptr2, uint8_t start_code, uint8_t font_h)
+: DMD_Font(ptr) , font_ptr2(ptr2) 
+{
 	gfx_flag = true;
 	gfxFont = (GFXfont*)font_ptr;
 
 	firstChar = (uint8_t)pgm_read_word(&gfxFont->first);
 	lastChar = (uint8_t) pgm_read_word(&gfxFont->last);
 	fontHeight = font_h;
-	
+	if (font_ptr2 != NULL) {
+		gfxFont2 = (GFXfont*)font_ptr2;
+		font2_flag = true;
+		firstChar2 = start_code;
+		lastChar2 = start_code + pgm_read_word(&gfxFont2->last) - pgm_read_word(&gfxFont2->first);
+	}
+}	
+
+
+DMD_GFX_Font::DMD_GFX_Font(const uint8_t* ptr, uint8_t font_h) :DMD_GFX_Font(ptr, NULL, 0, font_h) {
+
+	font2_flag = false;
 }
+
+
+
 bool DMD_GFX_Font::is_char_in(unsigned char c) {
 	if (c >= get_first() && c <= get_last()) return true;
 	if (font2_flag && (c >= firstChar2 && c <= lastChar2)) return true;
