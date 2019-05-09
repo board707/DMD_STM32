@@ -36,25 +36,31 @@ LED Panel Layout in RAM
 #define DMD_H_
 
 //Arduino toolchain header, version dependent
-// #if defined(ARDUINO) && ARDUINO >= 100
-	// #include "Arduino.h"
-// #else
+ #if defined(ARDUINO) && ARDUINO >= 100
+	 #include "Arduino.h"
+ #else
 	#include "WProgram.h"
-// #endif
+ #endif
 
 
 #include <SPI.h>
 #include "gfxfont.h"
 #include "DMD_Font.h"
 
-
 #define DMD_SPI_CLOCK SPI_CLOCK_DIV8
+
+
+
+
 //Pixel/graphics writing modes (bGraphicsMode)
 #define GRAPHICS_NORMAL    0
 #define GRAPHICS_INVERSE   1
 #define GRAPHICS_TOGGLE    2
 #define GRAPHICS_OR        3
 #define GRAPHICS_NOR       4
+
+//Panel inverse mode (for some panels)
+#define PANEL_INVERSE 0
 
 //drawTestPattern Patterns
 #define PATTERN_ALT_0     0
@@ -93,18 +99,7 @@ class DMD
     
 	DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh, SPIClass _spi );
 
-
-	//DMD I/O pin macros
-void LIGHT_DMD_ROW_01_05_09_13();
-void LIGHT_DMD_ROW_02_06_10_14();
-void LIGHT_DMD_ROW_03_07_11_15();
-void LIGHT_DMD_ROW_04_08_12_16() ;
-void LATCH_DMD_SHIFT_REG_TO_OUTPUT();
-void OE_DMD_ROWS_OFF() ;
-void OE_DMD_ROWS_ON() ;
-	
-	
-  //Set or clear a pixel at the x and y location (0,0 is the top left corner)
+ //Set or clear a pixel at the x and y location (0,0 is the top left corner)
   void writePixel( unsigned int bX, unsigned int bY, byte bGraphicsMode, byte bPixel );
 
   //Draw a string
@@ -184,7 +179,17 @@ void OE_DMD_ROWS_ON() ;
     //Mirror of DMD pixels in RAM, ready to be clocked out by the main loop or high speed timer calls
     byte *bDMDScreenRAM;
 
-    //Marquee values
+	//DMD I/O pin macros
+  void LIGHT_DMD_ROW_01_05_09_13();
+  void LIGHT_DMD_ROW_02_06_10_14();
+  void LIGHT_DMD_ROW_03_07_11_15();
+  void LIGHT_DMD_ROW_04_08_12_16() ;
+  void LATCH_DMD_SHIFT_REG_TO_OUTPUT();
+  void OE_DMD_ROWS_OFF() ;
+  void OE_DMD_ROWS_ON() ;
+
+
+  //Marquee values
     char marqueeText[256];
     byte marqueeLength;
     int marqueeWidth;
@@ -209,8 +214,6 @@ void OE_DMD_ROWS_ON() ;
     volatile byte bDMDByte;
 	
 	///Next part is customly added by mozokevgen
-	
-	
 	
 	bool spriteFlag = true;
 	//uint8_t marqueeImg[64];

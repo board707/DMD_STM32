@@ -104,6 +104,7 @@ void
     if (bX >= (DMD_PIXELS_ACROSS*DisplaysWide) || bY >= (DMD_PIXELS_DOWN * DisplaysHigh)) {
 	    return;
     }
+	bPixel = bPixel^PANEL_INVERSE;
     byte panel=(bX/DMD_PIXELS_ACROSS) + (DisplaysWide*(bY/DMD_PIXELS_DOWN));
     bX=(bX % DMD_PIXELS_ACROSS) + (panel<<5);
     bY=bY % DMD_PIXELS_DOWN;
@@ -282,7 +283,7 @@ boolean DMD::stepMarquee(int amountX, int amountY)
 --------------------------------------------------------------------------------------*/
 void DMD::clearScreen(byte bNormal)
 {
-    if (bNormal) // clear all pixels
+    if (bNormal^PANEL_INVERSE) // clear all pixels
         memset(bDMDScreenRAM,0xFF,DMD_RAM_SIZE_BYTES*DisplaysTotal);
     else // set all pixels
         memset(bDMDScreenRAM,0x00,DMD_RAM_SIZE_BYTES*DisplaysTotal);
@@ -528,7 +529,7 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte b
 
 	if (c == ' ') { //CHANGED FROM ' '
 		int charWide = Font->get_char_width(' ');
-		this->drawFilledBox(bX, bY, bX + charWide, bY + height, GRAPHICS_INVERSE);
+		this->drawFilledBox(bX, bY, bX + charWide , bY + height, GRAPHICS_INVERSE);
         return charWide;
 	}
     
