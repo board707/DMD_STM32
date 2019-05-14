@@ -1,3 +1,12 @@
+// ***  Comic *** 
+// This file contains two GFX fonts - first with Latin and second with Cyrillic chars
+
+// For use this font with DMD_STM32 library add two lines below to your code: 
+
+// #include "comic9pt7b.h"
+// DMD_GFX_Font Comic((uint8_t*)&comic9pt8b,(uint8_t*)&comic9pt8brus,0x80,13);
+
+
 const uint8_t comic9pt8bBitmaps[] PROGMEM = {
   0xFF, 0xFF, 0xFF, 0x3C, 0xCE, 0xF7, 0xBD, 0xEC, 0x02, 0x08, 0x0C, 0x30,
   0x18, 0x63, 0xFF, 0xF7, 0xFF, 0xE1, 0x86, 0x02, 0x08, 0x0C, 0x30, 0xFF,

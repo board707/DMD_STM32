@@ -1,3 +1,11 @@
+// ***  GlametrixLight *** 
+// This file contains two GFX fonts - first with Latin and second with Cyrillic chars
+
+// For use this font with DMD_STM32 library add two lines below to your code: 
+
+// #include "GlametrixLight12pt7b.h"
+// DMD_GFX_Font GlametrixL((uint8_t*)&GlametrixLight12pt7b,(uint8_t*)&GlametrixLight12pt8b_rus,0x80,13);
+
 const uint8_t GlametrixLight12pt7bBitmaps[] PROGMEM = {
   0xFF, 0x10, 0xB6, 0x80, 0x40, 0x91, 0x27, 0xF4, 0x89, 0x3F, 0xA4, 0x48,
   0x80, 0x10, 0x46, 0xE0, 0x40, 0xC0, 0xC1, 0x85, 0xE1, 0x04, 0x78, 0x11,
