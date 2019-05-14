@@ -145,6 +145,9 @@ class DMD
   //ADD from DMD2 library, set brightness of panel
   inline void setBrightness(uint16_t level) { this->brightness = level; };
   
+  // Inverse all data on display - for p10 matrix inversed by design
+  inline void inverseAll(uint8_t flag) { this->inverse_ALL_flag = flag; };
+  
   //Draw the image (0,0 is the top left corner)
   void drawImg( const int bX, const int bY, const uint8_t *img, byte length);
   
@@ -158,6 +161,7 @@ class DMD
   uint16_t stringWidth(const char *bChars, uint8_t length);
   
   uint16_t brightness=20000;
+  
   
   private:
     // pins
@@ -213,7 +217,7 @@ class DMD
 	
 	bool spriteFlag = true;
 	//uint8_t marqueeImg[64];
-
+    uint8_t inverse_ALL_flag = PANEL_INVERSE;
 };
 
 #endif /* DMD_H_ */

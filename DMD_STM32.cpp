@@ -124,7 +124,7 @@ void
 	    return;
     }
 	// inverse data bits for some panels
-	bPixel = bPixel^PANEL_INVERSE;
+	bPixel = bPixel^inverse_ALL_flag;
 	
     byte panel=(bX/DMD_PIXELS_ACROSS) + (DisplaysWide*(bY/DMD_PIXELS_DOWN));
     bX=(bX % DMD_PIXELS_ACROSS) + (panel<<5);
@@ -304,7 +304,7 @@ boolean DMD::stepMarquee(int amountX, int amountY)
 --------------------------------------------------------------------------------------*/
 void DMD::clearScreen(byte bNormal)
 {
-    if (bNormal^PANEL_INVERSE) // clear all pixels
+    if (bNormal^inverse_ALL_flag) // clear all pixels
         memset(bDMDScreenRAM,0xFF,DMD_RAM_SIZE_BYTES*DisplaysTotal);
     else // set all pixels
         memset(bDMDScreenRAM,0x00,DMD_RAM_SIZE_BYTES*DisplaysTotal);
