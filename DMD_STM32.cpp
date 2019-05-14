@@ -1,14 +1,13 @@
 /*--------------------------------------------------------------------------------------
 
+ DMD_STM32.cpp  - STM32 port of DMD.h library (see below)
+ 
+ adapted by Dmitry Dmitriev (c) 2019
+ 
  DMD.cpp - Function and support library for the Freetronics DMD, a 512 LED matrix display
            panel arranged in a 32 x 16 layout.
 
  Copyright (C) 2011 Marc Alexander (info <at> freetronics <dot> com)
-
- Note that the DMD library uses the SPI port for the fastest, low overhead writing to the
- display. Keep an eye on conflicts if there are any other devices running from the same
- SPI port, and that the chip select on those devices is correctly set to be inactive
- when the DMD is being written to.
 
  ---
 
@@ -25,24 +24,38 @@
 --------------------------------------------------------------------------------------*/
 #include "DMD_STM32.h"
 
-//#define LOW 1
-//#define HIGH 0
+
 
 /*--------------------------------------------------------------------------------------
  Setup and instantiation of DMD library
  Note this currently uses the SPI port for the fastest performance to the DMD, be
  careful of possible conflicts with other SPI port devices
 --------------------------------------------------------------------------------------*/
-//  SPIClass SPI_2(2); //Create an instance of the SPI Class called SPI_2 that uses the 2nd SPI Port
+
 
 DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh, SPIClass _spi )
 :pin_DMD_A(_pin_A), pin_DMD_B(_pin_B), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK), 
  DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), SPI_DMD(_spi)
 {
-  
+ #if defined(__STM32F1__)
     pin_DMD_CLK = SPI_DMD.sckPin();   
     pin_DMD_R_DATA = SPI_DMD.mosiPin() ; 
+	pinMode(pin_DMD_nOE, PWM);  // setup the pin as PWM
+	/*SPI_DMD.begin(); //Initialize the SPI_2 port.
+	SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
+	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI_2 data mode 0
+	SPI_DMD.setClockDivider(SPI_CLOCK_DIV16);  // Use a different speed to SPI 1 */
 	
+  #elif defined(__AVR_ATmega328P__)
+    pin_DMD_CLK = 13;
+    pin_DMD_R_DATA = 11;
+	pinMode(pin_DMD_nOE, OUTPUT); 
+	 // initialize the SPI port
+    SPI.begin();		// probably don't need this since it inits the port pins only, which we do just below with the appropriate DMD interface setup
+    SPI.setBitOrder(MSBFIRST);	//
+    SPI.setDataMode(SPI_MODE0);	// CPOL=0, CPHA=0
+    SPI.setClockDivider(DMD_SPI_CLOCK);
+ #endif
     uint16_t ui;
     
     DisplaysTotal=DisplaysWide*DisplaysHigh;
@@ -62,7 +75,7 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
     pinMode(pin_DMD_CLK, OUTPUT);	//
     pinMode(pin_DMD_SCLK, OUTPUT);	//
     pinMode(pin_DMD_R_DATA, OUTPUT);	//
-    pinMode(pin_DMD_nOE, PWM);  // setup the pin as PWM
+    
 
     clearScreen(true);
     brightness =20000;
@@ -88,10 +101,16 @@ void
  DMD::LIGHT_DMD_ROW_04_08_12_16()       { digitalWrite( pin_DMD_B, HIGH ); digitalWrite( pin_DMD_A, HIGH ); }
 void
  DMD::LATCH_DMD_SHIFT_REG_TO_OUTPUT()   { digitalWrite( pin_DMD_SCLK, HIGH ); digitalWrite( pin_DMD_SCLK,  LOW ); }
-//void DMD::OE_DMD_ROWS_OFF()                 { digitalWrite( pin_DMD_nOE, LOW  ); }
-void DMD::OE_DMD_ROWS_OFF()                 { pinMode( pin_DMD_nOE, INPUT  ); }
-//void DMD::OE_DMD_ROWS_ON()                  { digitalWrite( pin_DMD_nOE, HIGH ); }
-void DMD::OE_DMD_ROWS_ON()                 { pinMode( pin_DMD_nOE, OUTPUT  ); }
+ #if defined(__STM32F1__)
+    void DMD::OE_DMD_ROWS_OFF()                 { pinMode( pin_DMD_nOE, INPUT  ); }
+	void DMD::OE_DMD_ROWS_ON()                 { pinMode( pin_DMD_nOE, OUTPUT  ); }
+  #elif defined(__AVR_ATmega328P__)
+    void DMD::OE_DMD_ROWS_OFF()                 { digitalWrite( pin_DMD_nOE, LOW  ); }
+    void DMD::OE_DMD_ROWS_ON()                  { digitalWrite( pin_DMD_nOE, HIGH ); }
+ #endif
+ 
+
+
 
 /*--------------------------------------------------------------------------------------
  Set or clear a pixel at the x and y location (0,0 is the top left corner)
@@ -104,7 +123,9 @@ void
     if (bX >= (DMD_PIXELS_ACROSS*DisplaysWide) || bY >= (DMD_PIXELS_DOWN * DisplaysHigh)) {
 	    return;
     }
+	// inverse data bits for some panels
 	bPixel = bPixel^PANEL_INVERSE;
+	
     byte panel=(bX/DMD_PIXELS_ACROSS) + (DisplaysWide*(bY/DMD_PIXELS_DOWN));
     bX=(bX % DMD_PIXELS_ACROSS) + (panel<<5);
     bY=bY % DMD_PIXELS_DOWN;
@@ -461,8 +482,11 @@ void DMD::scanDisplayBySPI()
         //SPI transfer pixels to the display hardware shift registers
         int rowsize=DisplaysTotal<<2;
         int offset=rowsize * bDMDByte;
-        SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
 		//digitalWrite(SPI2_NSS_PIN, LOW); // manually take CSN low for SPI_1 transmission
+        
+#if defined(__STM32F1__)
+        SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
+		
         for (int i=0;i<rowsize;i++) {
             SPI_DMD.transfer(bDMDScreenRAM[offset+i+row3]);
             SPI_DMD.transfer(bDMDScreenRAM[offset+i+row2]);
@@ -470,10 +494,19 @@ void DMD::scanDisplayBySPI()
             SPI_DMD.transfer(bDMDScreenRAM[offset+i]);
         }
         SPI_DMD.endTransaction(); 
-		//digitalWrite(SPI2_NSS_PIN, HIGH); // manually take CSN high between spi transmissions
-
-        //OE_DMD_ROWS_OFF();
-		pwmWrite(pin_DMD_nOE, 0);	//for stm32
+       pwmWrite(pin_DMD_nOE, 0);	//for stm32
+#elif defined(__AVR_ATmega328P__)
+       for (int i=0;i<rowsize;i++) {
+            SPI.transfer(bDMDScreenRAM[offset+i+row3]);
+            SPI.transfer(bDMDScreenRAM[offset+i+row2]);
+            SPI.transfer(bDMDScreenRAM[offset+i+row1]);
+            SPI.transfer(bDMDScreenRAM[offset+i]);
+        }
+		OE_DMD_ROWS_OFF();
+#endif
+       //digitalWrite(SPI2_NSS_PIN, HIGH); // manually take CSN high between spi transmissions
+        //
+		
         LATCH_DMD_SHIFT_REG_TO_OUTPUT();
         switch (bDMDByte) {
         case 0:			// row 1, 5, 9, 13 were clocked out
@@ -500,7 +533,12 @@ void DMD::scanDisplayBySPI()
 			// {OE_DMD_ROWS_ON();}
 		// else
 			//analogWrite(PIN_DMD_nOE, brightness);	//for atmega
-			pwmWrite(pin_DMD_nOE, brightness);	//for stm32
+#if defined(__STM32F1__)
+   pwmWrite(pin_DMD_nOE, brightness);	//for stm32
+#elif defined(__AVR_ATmega328P__)
+   OE_DMD_ROWS_ON();
+#endif	
+
 		
     //}
 }
@@ -543,13 +581,13 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte b
 		DMD_GFX_Font* ff = (DMD_GFX_Font *)Font;
 		GFXfont * gfxFont_p = ff->get_font_by_char(c);
 		c -= ff->get_first_by_char(c);
-		Serial.print("Char index ");Serial.println(c, HEX);
+		//Serial.print("Char index ");Serial.println(c, HEX);
 		
 		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_p->glyph))[c]);
 		uint8_t  *bitmap = (uint8_t *)pgm_read_pointer(&gfxFont_p->bitmap);
 
 		uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
-		Serial.print("Bitmap offset ");Serial.println(bo);
+		//Serial.print("Bitmap offset ");Serial.println(bo);
 		uint8_t  w = pgm_read_byte(&glyph->width),
 			h = pgm_read_byte(&glyph->height);
 		int8_t   xo = pgm_read_byte(&glyph->xOffset),

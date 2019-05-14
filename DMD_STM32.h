@@ -1,25 +1,16 @@
 /*--------------------------------------------------------------------------------------
 
+ DMD_STM32.h  - STM32 port of DMD.h library (see below)
+ 
+ adapted by Dmitry Dmitriev (c) 2019
+ 
+ 
  DMD.h   - Function and support library for the Freetronics DMD, a 512 LED matrix display
            panel arranged in a 32 x 16 layout.
 
  Copyright (C) 2011 Marc Alexander (info <at> freetronics <dot> com)
 
- Note that the DMD library uses the SPI port for the fastest, low overhead writing to the
- display. Keep an eye on conflicts if there are any other devices running from the same
- SPI port, and that the chip select on those devices is correctly set to be inactive
- when the DMD is being written to.
-
-
-LED Panel Layout in RAM
-                            32 pixels (4 bytes)
-        top left  ----------------------------------------
-                  |                                      |
-         Screen 1 |        512 pixels (64 bytes)         | 16 pixels
-                  |                                      |
-                  ---------------------------------------- bottom right
-
- ---
+ 
  
  This program is free software: you can redistribute it and/or modify it under the terms
  of the version 3 GNU General Public License as published by the Free Software Foundation.
@@ -32,8 +23,8 @@ LED Panel Layout in RAM
  If not, see <http://www.gnu.org/licenses/>.
 
 --------------------------------------------------------------------------------------*/
-#ifndef DMD_H_
-#define DMD_H_
+#ifndef DMD_STM32_H_
+#define DMD_STM32_H_
 
 //Arduino toolchain header, version dependent
  #if defined(ARDUINO) && ARDUINO >= 100
@@ -47,7 +38,12 @@ LED Panel Layout in RAM
 #include "gfxfont.h"
 #include "DMD_Font.h"
 
-#define DMD_SPI_CLOCK SPI_CLOCK_DIV8
+#if defined(__STM32F1__)
+       #define DMD_SPI_CLOCK SPI_CLOCK_DIV8
+#elif defined(__AVR_ATmega328P__)
+       #define DMD_SPI_CLOCK SPI_CLOCK_DIV4
+#endif
+
 
 
 
