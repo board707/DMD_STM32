@@ -40,15 +40,12 @@
   Includes
 --------------------------------------------------------------------------------------*/
 #include <DMD_STM32.h> 
-#include "SystemFont5x7.h"
-#include "Arial_black_16.h"
+#include "fonts/SystemFont5x7.h"
+#include "fonts/Arial_black_16.h"
+#include "fonts/Arial_Black_16_ISO_8859_1.h"
 
-// We'll use SPI 1   
-SPIClass dmd_spi(1);
-
-// We'll use timer 2 for ScanDMD()
-HardwareTimer timer(2);
-
+// We'll use SPI 2   
+SPIClass dmd_spi(2);
 
 //Fire up the DMD library as dmd
 #define DISPLAYS_ACROSS 1
@@ -61,32 +58,19 @@ HardwareTimer timer(2);
 //   for SPI(1) CLK = PA5  R_DATA = PA7
 //   for SPI(2) CLK = PB13  R_DATA = PB15
 // --------------------------------------------------------
-#define DMD_PIN_A PB11
-#define DMD_PIN_B PB10
-#define DMD_PIN_nOE PB1
-#define DMD_PIN_SCLK PB0
+
+#define DMD_PIN_A PA10
+#define DMD_PIN_B PA9
+#define DMD_PIN_nOE PB0
+#define DMD_PIN_SCLK PA8
 
 DMD dmd(DMD_PIN_A, DMD_PIN_B, DMD_PIN_nOE, DMD_PIN_SCLK, DISPLAYS_ACROSS, DISPLAYS_DOWN, dmd_spi );
 
-void Timer_2_Init() {
-  
-   // Pause the timer while we're configuring it
-    timer.pause();
+// --- Define fonts ----
+// DMD.h old style font
+DMD_Standard_Font Arial_F(Arial_Black_16);
+DMD_Standard_Font System5x7_F(System5x7);
 
-   // Set up period
-    timer.setPeriod(3000); // in microseconds
-
-    // Set up an interrupt on channel 1
-    timer.setChannel1Mode(TIMER_OUTPUT_COMPARE);
-    timer.setCompare(TIMER_CH1, 1);  // Interrupt 1 count after each update
-    timer.attachCompare1Interrupt( ScanDMD );
-
-    // Refresh the timer's count, prescale, and overflow
-    timer.refresh();
-
-    // Start the timer counting
-    timer.resume();
-}
 /*--------------------------------------------------------------------------------------
   Interrupt handler for Timer1 (TimerOne) driven DMD refresh scanning, this gets
   called at the period set in Timer1.initialize();
@@ -102,15 +86,17 @@ void ScanDMD()
 --------------------------------------------------------------------------------------*/
 void setup(void)
 {
-   // initialize Timer2
-   Timer_2_Init();
+   // initialize Timer3
+    Timer3.setMode(TIMER_CH1, TIMER_OUTPUTCOMPARE);
+    Timer3.setPeriod(3000);          // in microseconds
+    Timer3.setCompare(TIMER_CH1, 1); // overflow might be small
+    Timer3.attachInterrupt(TIMER_CH1, ScanDMD);
    
    //clear/init the DMD pixels held in RAM
    dmd.clearScreen( true );   //true is normal (all pixels off), false is negative (all pixels on)
-  
+   // uncomment for matrix inverted by design 
+   //dmd.inverseAll(true);
 }
-
-
 
 /*--------------------------------------------------------------------------------------
   loop
@@ -122,9 +108,9 @@ void loop(void)
    
    // 10 x 14 font clock, including demo of OR and NOR modes for pixels so that the flashing colon can be overlayed
    dmd.clearScreen( true );
-   dmd.selectFont(Arial_Black_16);
+   dmd.selectFont(&Arial_F);
     // set brightness ( 0-65536, default is 30000)
-   dmd.brightness =20000;
+   dmd.setBrightness(3000);
    dmd.drawChar(  0,  3, '2', GRAPHICS_NORMAL );
    dmd.drawChar(  7,  3, '3', GRAPHICS_NORMAL );
    dmd.drawChar( 17,  3, '4', GRAPHICS_NORMAL );
@@ -160,7 +146,7 @@ void loop(void)
    
    // display some text
    dmd.clearScreen( true );
-   dmd.selectFont(System5x7);
+   dmd.selectFont(&System5x7_F);
    for (byte x=0;x<DISPLAYS_ACROSS;x++) {
      for (byte y=0;y<DISPLAYS_DOWN;y++) {
        dmd.drawString(  2+(32*x),  1+(16*y), "freet", 5, GRAPHICS_NORMAL );

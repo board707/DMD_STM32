@@ -1,25 +1,16 @@
 /*--------------------------------------------------------------------------------------
 
+ DMD_STM32.h  - STM32 port of DMD.h library (see below)
+ 
+ adapted by Dmitry Dmitriev (c) 2019
+ 
+ 
  DMD.h   - Function and support library for the Freetronics DMD, a 512 LED matrix display
            panel arranged in a 32 x 16 layout.
 
  Copyright (C) 2011 Marc Alexander (info <at> freetronics <dot> com)
 
- Note that the DMD library uses the SPI port for the fastest, low overhead writing to the
- display. Keep an eye on conflicts if there are any other devices running from the same
- SPI port, and that the chip select on those devices is correctly set to be inactive
- when the DMD is being written to.
-
-
-LED Panel Layout in RAM
-                            32 pixels (4 bytes)
-        top left  ----------------------------------------
-                  |                                      |
-         Screen 1 |        512 pixels (64 bytes)         | 16 pixels
-                  |                                      |
-                  ---------------------------------------- bottom right
-
- ---
+ 
  
  This program is free software: you can redistribute it and/or modify it under the terms
  of the version 3 GNU General Public License as published by the Free Software Foundation.
@@ -32,31 +23,40 @@ LED Panel Layout in RAM
  If not, see <http://www.gnu.org/licenses/>.
 
 --------------------------------------------------------------------------------------*/
-#ifndef DMD_H_
-#define DMD_H_
+#ifndef DMD_STM32_H_
+#define DMD_STM32_H_
 
 //Arduino toolchain header, version dependent
-// #if defined(ARDUINO) && ARDUINO >= 100
-	// #include "Arduino.h"
-// #else
+ #if defined(ARDUINO) && ARDUINO >= 100
+	 #include "Arduino.h"
+ #else
 	#include "WProgram.h"
-// #endif
+ #endif
 
-//SPI library must be included for the SPI scanning/connection method to the DMD
-#include "pins_arduino.h"
-#include <avr/pgmspace.h>
 
 #include <SPI.h>
+#include "gfxfont.h"
+#include "DMD_Font.h"
+
+#if defined(__STM32F1__)
+       #define DMD_SPI_CLOCK SPI_CLOCK_DIV8
+#elif defined(__AVR_ATmega328P__)
+       #define DMD_SPI_CLOCK SPI_CLOCK_DIV4
+#endif
 
 
 
-#define DMD_SPI_CLOCK SPI_CLOCK_DIV8
+
+
 //Pixel/graphics writing modes (bGraphicsMode)
 #define GRAPHICS_NORMAL    0
 #define GRAPHICS_INVERSE   1
 #define GRAPHICS_TOGGLE    2
 #define GRAPHICS_OR        3
 #define GRAPHICS_NOR       4
+
+//Panel inverse mode (for some panels)
+#define PANEL_INVERSE 0
 
 //drawTestPattern Patterns
 #define PATTERN_ALT_0     0
@@ -83,13 +83,6 @@ static byte bPixelLookupTable[8] =
    0x01    //7, bit 0
 };
 
-// Font Indices
-#define FONT_LENGTH             0
-#define FONT_FIXED_WIDTH        2
-#define FONT_HEIGHT             3
-#define FONT_FIRST_CHAR         4
-#define FONT_CHAR_COUNT         5
-#define FONT_WIDTH_TABLE        6
 
 typedef uint8_t (*FontCallback)(const uint8_t*);
 
@@ -102,25 +95,14 @@ class DMD
     
 	DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh, SPIClass _spi );
 
-
-	//DMD I/O pin macros
-void LIGHT_DMD_ROW_01_05_09_13();
-void LIGHT_DMD_ROW_02_06_10_14();
-void LIGHT_DMD_ROW_03_07_11_15();
-void LIGHT_DMD_ROW_04_08_12_16() ;
-void LATCH_DMD_SHIFT_REG_TO_OUTPUT();
-void OE_DMD_ROWS_OFF() ;
-void OE_DMD_ROWS_ON() ;
-	
-	
-  //Set or clear a pixel at the x and y location (0,0 is the top left corner)
+ //Set or clear a pixel at the x and y location (0,0 is the top left corner)
   void writePixel( unsigned int bX, unsigned int bY, byte bGraphicsMode, byte bPixel );
 
   //Draw a string
   void drawString( int bX, int bY, const char* bChars, byte length, byte bGraphicsMode);
 
   //Select a text font
-  void selectFont(const uint8_t* font);
+  void selectFont(DMD_Font * font);
 
   //Draw a single character
   int drawChar(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode);
@@ -163,6 +145,9 @@ void OE_DMD_ROWS_ON() ;
   //ADD from DMD2 library, set brightness of panel
   inline void setBrightness(uint16_t level) { this->brightness = level; };
   
+  // Inverse all data on display - for p10 matrix inversed by design
+  inline void inverseAll(uint8_t flag) { this->inverse_ALL_flag = flag; };
+  
   //Draw the image (0,0 is the top left corner)
   void drawImg( const int bX, const int bY, const uint8_t *img, byte length);
   
@@ -176,6 +161,7 @@ void OE_DMD_ROWS_ON() ;
   uint16_t stringWidth(const char *bChars, uint8_t length);
   
   uint16_t brightness=20000;
+  
   
   private:
     // pins
@@ -193,7 +179,17 @@ void OE_DMD_ROWS_ON() ;
     //Mirror of DMD pixels in RAM, ready to be clocked out by the main loop or high speed timer calls
     byte *bDMDScreenRAM;
 
-    //Marquee values
+	//DMD I/O pin macros
+  void LIGHT_DMD_ROW_01_05_09_13();
+  void LIGHT_DMD_ROW_02_06_10_14();
+  void LIGHT_DMD_ROW_03_07_11_15();
+  void LIGHT_DMD_ROW_04_08_12_16() ;
+  void LATCH_DMD_SHIFT_REG_TO_OUTPUT();
+  void OE_DMD_ROWS_OFF() ;
+  void OE_DMD_ROWS_ON() ;
+
+
+  //Marquee values
     char marqueeText[256];
     byte marqueeLength;
     int marqueeWidth;
@@ -202,9 +198,13 @@ void OE_DMD_ROWS_ON() ;
     int marqueeOffsetY;
 
     //Pointer to current font
-    const uint8_t* Font;
-
-    //Display information
+    //const uint8_t* Font;
+    //bool is_gfx_font = false;
+	//GFXfont * gfxFont;
+    DMD_Font* Font;
+	
+	
+	//Display information
     byte DisplaysWide;
     byte DisplaysHigh;
     byte DisplaysTotal;
@@ -215,11 +215,9 @@ void OE_DMD_ROWS_ON() ;
 	
 	///Next part is customly added by mozokevgen
 	
-	
-	
 	bool spriteFlag = true;
 	//uint8_t marqueeImg[64];
-
+    uint8_t inverse_ALL_flag = PANEL_INVERSE;
 };
 
 #endif /* DMD_H_ */

@@ -1,14 +1,13 @@
 /*--------------------------------------------------------------------------------------
 
+ DMD_STM32.cpp  - STM32 port of DMD.h library (see below)
+ 
+ adapted by Dmitry Dmitriev (c) 2019
+ 
  DMD.cpp - Function and support library for the Freetronics DMD, a 512 LED matrix display
            panel arranged in a 32 x 16 layout.
 
  Copyright (C) 2011 Marc Alexander (info <at> freetronics <dot> com)
-
- Note that the DMD library uses the SPI port for the fastest, low overhead writing to the
- display. Keep an eye on conflicts if there are any other devices running from the same
- SPI port, and that the chip select on those devices is correctly set to be inactive
- when the DMD is being written to.
 
  ---
 
@@ -25,24 +24,38 @@
 --------------------------------------------------------------------------------------*/
 #include "DMD_STM32.h"
 
-//#define LOW 1
-//#define HIGH 0
+
 
 /*--------------------------------------------------------------------------------------
  Setup and instantiation of DMD library
  Note this currently uses the SPI port for the fastest performance to the DMD, be
  careful of possible conflicts with other SPI port devices
 --------------------------------------------------------------------------------------*/
-//  SPIClass SPI_2(2); //Create an instance of the SPI Class called SPI_2 that uses the 2nd SPI Port
+
 
 DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh, SPIClass _spi )
 :pin_DMD_A(_pin_A), pin_DMD_B(_pin_B), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK), 
  DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), SPI_DMD(_spi)
 {
-  
+ #if defined(__STM32F1__)
     pin_DMD_CLK = SPI_DMD.sckPin();   
     pin_DMD_R_DATA = SPI_DMD.mosiPin() ; 
+	pinMode(pin_DMD_nOE, PWM);  // setup the pin as PWM
+	/*SPI_DMD.begin(); //Initialize the SPI_2 port.
+	SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
+	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI_2 data mode 0
+	SPI_DMD.setClockDivider(SPI_CLOCK_DIV16);  // Use a different speed to SPI 1 */
 	
+  #elif defined(__AVR_ATmega328P__)
+    pin_DMD_CLK = 13;
+    pin_DMD_R_DATA = 11;
+	pinMode(pin_DMD_nOE, OUTPUT); 
+	 // initialize the SPI port
+    SPI.begin();		// probably don't need this since it inits the port pins only, which we do just below with the appropriate DMD interface setup
+    SPI.setBitOrder(MSBFIRST);	//
+    SPI.setDataMode(SPI_MODE0);	// CPOL=0, CPHA=0
+    SPI.setClockDivider(DMD_SPI_CLOCK);
+ #endif
     uint16_t ui;
     
     DisplaysTotal=DisplaysWide*DisplaysHigh;
@@ -62,7 +75,7 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
     pinMode(pin_DMD_CLK, OUTPUT);	//
     pinMode(pin_DMD_SCLK, OUTPUT);	//
     pinMode(pin_DMD_R_DATA, OUTPUT);	//
-    pinMode(pin_DMD_nOE, PWM);  // setup the pin as PWM
+    
 
     clearScreen(true);
     brightness =20000;
@@ -88,10 +101,16 @@ void
  DMD::LIGHT_DMD_ROW_04_08_12_16()       { digitalWrite( pin_DMD_B, HIGH ); digitalWrite( pin_DMD_A, HIGH ); }
 void
  DMD::LATCH_DMD_SHIFT_REG_TO_OUTPUT()   { digitalWrite( pin_DMD_SCLK, HIGH ); digitalWrite( pin_DMD_SCLK,  LOW ); }
-//void DMD::OE_DMD_ROWS_OFF()                 { digitalWrite( pin_DMD_nOE, LOW  ); }
-void DMD::OE_DMD_ROWS_OFF()                 { pinMode( pin_DMD_nOE, INPUT  ); }
-//void DMD::OE_DMD_ROWS_ON()                  { digitalWrite( pin_DMD_nOE, HIGH ); }
-void DMD::OE_DMD_ROWS_ON()                 { pinMode( pin_DMD_nOE, OUTPUT  ); }
+ #if defined(__STM32F1__)
+    void DMD::OE_DMD_ROWS_OFF()                 { pinMode( pin_DMD_nOE, INPUT  ); }
+	void DMD::OE_DMD_ROWS_ON()                 { pinMode( pin_DMD_nOE, OUTPUT  ); }
+  #elif defined(__AVR_ATmega328P__)
+    void DMD::OE_DMD_ROWS_OFF()                 { digitalWrite( pin_DMD_nOE, LOW  ); }
+    void DMD::OE_DMD_ROWS_ON()                  { digitalWrite( pin_DMD_nOE, HIGH ); }
+ #endif
+ 
+
+
 
 /*--------------------------------------------------------------------------------------
  Set or clear a pixel at the x and y location (0,0 is the top left corner)
@@ -104,6 +123,9 @@ void
     if (bX >= (DMD_PIXELS_ACROSS*DisplaysWide) || bY >= (DMD_PIXELS_DOWN * DisplaysHigh)) {
 	    return;
     }
+	// inverse data bits for some panels
+	bPixel = bPixel^inverse_ALL_flag;
+	
     byte panel=(bX/DMD_PIXELS_ACROSS) + (DisplaysWide*(bY/DMD_PIXELS_DOWN));
     bX=(bX % DMD_PIXELS_ACROSS) + (panel<<5);
     bY=bY % DMD_PIXELS_DOWN;
@@ -147,13 +169,15 @@ void
     }
 
 }
-
+/*--------------------------------------------------------------------------------------
+ 
+--------------------------------------------------------------------------------------*/
 void DMD::drawString(int bX, int bY, const char *bChars, byte length,
 		     byte bGraphicsMode)
 {
     if (bX >= (DMD_PIXELS_ACROSS*DisplaysWide) || bY >= DMD_PIXELS_DOWN * DisplaysHigh)
 	return;
-    uint8_t height = pgm_read_byte(this->Font + FONT_HEIGHT);
+    uint8_t height = Font->get_height(); 
     if (bY+height<0) return;
 
     int strWidth = 0;
@@ -162,10 +186,10 @@ void DMD::drawString(int bX, int bY, const char *bChars, byte length,
     for (int i = 0; i < length; i++) {
         int charWide = this->drawChar(bX+strWidth, bY, bChars[i], bGraphicsMode);
 		//DEBUG
-/* 		Serial.println(bChars[i]);
-		Serial.println(bChars[i], HEX);
-		Serial.println(charWide);
-		 */
+	    //Serial.println(bChars[i]);
+		//Serial.println(bChars[i], HEX);
+		//Serial.println(charWide);
+		 
 		//DEBUG
 	    if (charWide > 0) {
 	        strWidth += charWide ;
@@ -177,7 +201,9 @@ void DMD::drawString(int bX, int bY, const char *bChars, byte length,
         if ((bX + strWidth) >= DMD_PIXELS_ACROSS * DisplaysWide || bY >= DMD_PIXELS_DOWN * DisplaysHigh) return;
     }
 }
-
+/*--------------------------------------------------------------------------------------
+ 
+--------------------------------------------------------------------------------------*/
 void DMD::drawMarquee(const char *bChars, byte length, int left, int top) 
 {
     marqueeWidth = 0;
@@ -185,7 +211,8 @@ void DMD::drawMarquee(const char *bChars, byte length, int left, int top)
 	    marqueeText[i] = bChars[i];
 	    marqueeWidth += charWidth(bChars[i]) + 1;
     }
-    marqueeHeight=pgm_read_byte(this->Font + FONT_HEIGHT);
+	
+    marqueeHeight= Font->get_height(); 
     marqueeText[length] = '\0';
     marqueeOffsetY = top;
     marqueeOffsetX = left;
@@ -193,7 +220,9 @@ void DMD::drawMarquee(const char *bChars, byte length, int left, int top)
     drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
 	   GRAPHICS_NORMAL);
 }
-
+ /*--------------------------------------------------------------------------------------
+ 
+--------------------------------------------------------------------------------------*/
 boolean DMD::stepMarquee(int amountX, int amountY)
 {
     boolean ret=false;
@@ -275,7 +304,7 @@ boolean DMD::stepMarquee(int amountX, int amountY)
 --------------------------------------------------------------------------------------*/
 void DMD::clearScreen(byte bNormal)
 {
-    if (bNormal) // clear all pixels
+    if (bNormal^inverse_ALL_flag) // clear all pixels
         memset(bDMDScreenRAM,0xFF,DMD_RAM_SIZE_BYTES*DisplaysTotal);
     else // set all pixels
         memset(bDMDScreenRAM,0x00,DMD_RAM_SIZE_BYTES*DisplaysTotal);
@@ -453,8 +482,11 @@ void DMD::scanDisplayBySPI()
         //SPI transfer pixels to the display hardware shift registers
         int rowsize=DisplaysTotal<<2;
         int offset=rowsize * bDMDByte;
-        SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
 		//digitalWrite(SPI2_NSS_PIN, LOW); // manually take CSN low for SPI_1 transmission
+        
+#if defined(__STM32F1__)
+        SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
+		
         for (int i=0;i<rowsize;i++) {
             SPI_DMD.transfer(bDMDScreenRAM[offset+i+row3]);
             SPI_DMD.transfer(bDMDScreenRAM[offset+i+row2]);
@@ -462,10 +494,19 @@ void DMD::scanDisplayBySPI()
             SPI_DMD.transfer(bDMDScreenRAM[offset+i]);
         }
         SPI_DMD.endTransaction(); 
-		//digitalWrite(SPI2_NSS_PIN, HIGH); // manually take CSN high between spi transmissions
-
-        //OE_DMD_ROWS_OFF();
-		pwmWrite(pin_DMD_nOE, 0);	//for stm32
+       pwmWrite(pin_DMD_nOE, 0);	//for stm32
+#elif defined(__AVR_ATmega328P__)
+       for (int i=0;i<rowsize;i++) {
+            SPI.transfer(bDMDScreenRAM[offset+i+row3]);
+            SPI.transfer(bDMDScreenRAM[offset+i+row2]);
+            SPI.transfer(bDMDScreenRAM[offset+i+row1]);
+            SPI.transfer(bDMDScreenRAM[offset+i]);
+        }
+		OE_DMD_ROWS_OFF();
+#endif
+       //digitalWrite(SPI2_NSS_PIN, HIGH); // manually take CSN high between spi transmissions
+        //
+		
         LATCH_DMD_SHIFT_REG_TO_OUTPUT();
         switch (bDMDByte) {
         case 0:			// row 1, 5, 9, 13 were clocked out
@@ -492,136 +533,136 @@ void DMD::scanDisplayBySPI()
 			// {OE_DMD_ROWS_ON();}
 		// else
 			//analogWrite(PIN_DMD_nOE, brightness);	//for atmega
-			pwmWrite(pin_DMD_nOE, brightness);	//for stm32
+#if defined(__STM32F1__)
+   pwmWrite(pin_DMD_nOE, brightness);	//for stm32
+#elif defined(__AVR_ATmega328P__)
+   OE_DMD_ROWS_ON();
+#endif	
+
 		
     //}
 }
-
-void DMD::selectFont(const uint8_t * font)
+/*--------------------------------------------------------------------------------------
+       Select current font
+--------------------------------------------------------------------------------------*/
+void DMD::selectFont(DMD_Font * font)
 {
     this->Font = font;
+	
 }
-
-
+/*--------------------------------------------------------------------------------------
+  draw char with selected font at coordinates bX bY
+--------------------------------------------------------------------------------------*/
 int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode)
 {
-	//DEBUG
-	//Serial.println("drawChar");	
-	//DEBUG
 	
-    if (bX > (DMD_PIXELS_ACROSS*DisplaysWide) || bY > (DMD_PIXELS_DOWN*DisplaysHigh) ) return -1;
-    unsigned char c = letter;
-    uint8_t height = pgm_read_byte(this->Font + FONT_HEIGHT);
-    if (c == ' ') { //CHANGED FROM ' '
-	    int charWide = charWidth(' ');	//CHANGED FROM ' '
-	    this->drawFilledBox(bX, bY, bX + charWide, bY + height, GRAPHICS_INVERSE);
-		
-		//DEBUG
-		//Serial.println("c == ' '");	
-		//DEBUG
 	
-	    return charWide;
-    }
-    uint8_t width = 0;
-    uint8_t bytes = (height + 7) / 8;
+	if (bX > (DMD_PIXELS_ACROSS*DisplaysWide) || bY > (DMD_PIXELS_DOWN*DisplaysHigh)) return -1;
 	
-	//DEBUG
-	//Serial.println("uint8_t bytes");	
-	//DEBUG
+	
+	unsigned char c = letter;
+	if (! Font->is_char_in(c)) return 0;
 
-    uint8_t firstChar = pgm_read_byte(this->Font + FONT_FIRST_CHAR);
-    uint8_t charCount = pgm_read_byte(this->Font + FONT_CHAR_COUNT);
+	uint8_t height = Font->get_height();
 
-    uint16_t index = 0;
-
-    if (c < firstChar || c >= (firstChar + charCount)) 
-	{
-		//DEBUG
-/* 		Serial.print("firstChar ");
-		Serial.println(firstChar);
-		Serial.print("count ");
-		Serial.println(charCount);
-		Serial.print("firstChar + count ");
-		Serial.println(firstChar + charCount);
-		Serial.print("c ");	
-		Serial.println(c, DEC); */
-		//DEBUG
-		return 0; 	
-	
+	if (c == ' ') { //CHANGED FROM ' '
+		int charWide = Font->get_char_width(' ');
+		this->drawFilledBox(bX, bY, bX + charWide , bY + height, GRAPHICS_INVERSE);
+        return charWide;
 	}
-    c -= firstChar;
-	
-	//DEBUG
-	//Serial.println("c -= firstChar;");	
-	//DEBUG
+    
 
-    if (pgm_read_byte(this->Font + FONT_LENGTH) == 0
-	    && pgm_read_byte(this->Font + FONT_LENGTH + 1) == 0) {
-	    // zero length is flag indicating fixed width font (array does not contain width data entries)
-	    width = pgm_read_byte(this->Font + FONT_FIXED_WIDTH);
-	    index = c * bytes * width + FONT_WIDTH_TABLE;
-    } else {
-	    // variable width font, read width data, to get the index
-	    for (uint8_t i = 0; i < c; i++) {
-	        index += pgm_read_byte(this->Font + FONT_WIDTH_TABLE + i);
-	    }
-	    index = index * bytes + charCount + FONT_WIDTH_TABLE;
-	    width = pgm_read_byte(this->Font + FONT_WIDTH_TABLE + c);
-    }
-    if (bX < -width || bY < -height) return width;
 	
-	//DEBUG
-		//Serial.println("Letter Print");	
-	//DEBUG
-	
-    // last but not least, draw the character
-    for (uint8_t j = 0; j < width; j++) { // Width
-	    for (uint8_t i = bytes - 1; i < 254; i--) { // Vertical Bytes
-	        uint8_t data = pgm_read_byte(this->Font + index + j + (i * width));
-		    int offset = (i * 8);
-		    if ((i == bytes - 1) && bytes > 1) {
-		        offset = height - 8;
-            }
-	        for (uint8_t k = 0; k < 8; k++) { // Vertical bits
-		        if ((offset+k >= i*8) && (offset+k <= height)) {
-		            if (data & (1 << k)) {
-			            writePixel(bX + j, bY + offset + k, bGraphicsMode, true);
-		            } else {
-			            writePixel(bX + j, bY + offset + k, bGraphicsMode, false);
-		            }
-		        }
-	        }
-	    }
-    }
-    return width;
+	if (Font->is_gfx_font()) {
+
+		
+
+		
+		DMD_GFX_Font* ff = (DMD_GFX_Font *)Font;
+		GFXfont * gfxFont_p = ff->get_font_by_char(c);
+		c -= ff->get_first_by_char(c);
+		//Serial.print("Char index ");Serial.println(c, HEX);
+		
+		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_p->glyph))[c]);
+		uint8_t  *bitmap = (uint8_t *)pgm_read_pointer(&gfxFont_p->bitmap);
+
+		uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
+		//Serial.print("Bitmap offset ");Serial.println(bo);
+		uint8_t  w = pgm_read_byte(&glyph->width),
+			h = pgm_read_byte(&glyph->height);
+		int8_t   xo = pgm_read_byte(&glyph->xOffset),
+			yo = height + pgm_read_byte(&glyph->yOffset);
+		uint8_t  ww = pgm_read_byte(&glyph->xAdvance);
+		uint8_t  xx, yy, bits = 0, bit = 0;
+		int16_t  xo16 = 0, yo16 = 0;
+
+		this->drawFilledBox(bX, bY, bX + ww, bY + height, GRAPHICS_INVERSE);
+
+
+		for (yy = 0; yy<h; yy++) {
+			for (xx = 0; xx<w; xx++) {
+				if (!(bit++ & 7)) {
+					bits = pgm_read_byte(&bitmap[bo++]);
+				}
+				if (bits & 0x80) {
+					writePixel(bX + xo + xx, bY + yo + yy, bGraphicsMode, true);
+					//writePixel(x+xo+xx, y+yo+yy, color);
+				}
+				else {
+					writePixel(bX + xo + xx, bY + yo + yy, bGraphicsMode, false);
+					//writeFillRect(x+(xo16+xx)*size, y+(yo16+yy)*size,size, size, color);
+				}
+				bits <<= 1;
+			}
+		}
+		return ww;
+	}
+	else {
+		
+		
+		DMD_Standard_Font* ff = (DMD_Standard_Font *) Font;
+		uint8_t width = ff->get_char_width(c);
+		uint8_t bytes = (height + 7) / 8;
+		uint16_t index = ff->get_bitmap_index(c);
+		c -= ff->get_first();
+		
+		if (bX < -width || bY < -height) return width;
+
+		
+
+		// last but not least, draw the character
+		for (uint8_t j = 0; j < width; j++) { // Width
+			for (uint8_t i = bytes - 1; i < 254; i--) { // Vertical Bytes
+				uint8_t data = pgm_read_byte(ff->font_ptr + index + j + (i * width));
+				int offset = (i * 8);
+				if ((i == bytes - 1) && bytes > 1) {
+					offset = height - 8;
+				}
+				for (uint8_t k = 0; k < 8; k++) { // Vertical bits
+					if ((offset + k >= i * 8) && (offset + k <= height)) {
+						if (data & (1 << k)) {
+							writePixel(bX + j, bY + offset + k, bGraphicsMode, true);
+						}
+						else {
+							writePixel(bX + j, bY + offset + k, bGraphicsMode, false);
+						}
+					}
+				}
+			}
+		}
+		return width;
+	}
 }
+ 
+/*--------------------------------------------------------------------------------------
+  char width in pixels with selected font
+     routine moved to DMD_Font classes
+--------------------------------------------------------------------------------------*/
 
 int DMD::charWidth(const unsigned char letter)
 {
-    unsigned char c = letter;
-    // Space is often not included in font so use width of 'n'
-    if (c == ' ') c = 'n';	//CHANGED FROM ' ' 
-    uint8_t width = 0;
-
-    uint8_t firstChar = pgm_read_byte(this->Font + FONT_FIRST_CHAR);
-    uint8_t charCount = pgm_read_byte(this->Font + FONT_CHAR_COUNT);
-
-    uint16_t index = 0;
-
-    if (c < firstChar || c >= (firstChar + charCount)) {
-	    return 0;
-    }
-    c -= firstChar;
-
-    if (pgm_read_byte(this->Font + FONT_LENGTH) == 0
-	&& pgm_read_byte(this->Font + FONT_LENGTH + 1) == 0) {
-	    // zero length is flag indicating fixed width font (array does not contain width data entries)
-	    width = pgm_read_byte(this->Font + FONT_FIXED_WIDTH);
-    } else {
-	    // variable width font, read width data
-	    width = pgm_read_byte(this->Font + FONT_WIDTH_TABLE + c);
-    }
-    return width;
+  return (uint8_t)Font->get_char_width(letter);
+ 
 }
 
 /// Next part is customly added by mozokevgen
@@ -791,8 +832,10 @@ void
 	}
 	
 }
+/*--------------------------------------------------------------------------------------
+   string width in pixels
+--------------------------------------------------------------------------------------*/
 
-// string width in pixels
 uint16_t DMD::stringWidth(const char *bChars, uint8_t length)
 {
 	// this->Font

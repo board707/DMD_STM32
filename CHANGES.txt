@@ -1,0 +1,22 @@
+# ChangeLog
+
+## Unreleased
+ - Add new fonts
+ - Add Atmega328 support
+ - Add inverseAll flag
+ - Add possibility of using second font object for same font for national charsets
+ - Add new DMD_Font class with support of Adafruit GFX font format
+ 
+ 
+## [0.1] - 2019-05-05
+
+### Initial release.
+    Based on DMDSTM code. The functionality corresponds to the original DMD library.
+	
+### Changed 
+   - Change constructor, move pins from #define to object data
+   
+### Added
+   - Example of using two DMD instanses simultaneously - double_dmd
+  
+

@@ -2,21 +2,23 @@
 
  dmd_cyrillic_chars
 
-  DMD_STM32 example code for STM32F103xxx board
- ------------------------------------------------------------------------------------- */
+  DMD_STM32 example code for Atmega328 board
+  */
 
 /*--------------------------------------------------------------------------------------
   Includes
 --------------------------------------------------------------------------------------*/
 #include <DMD_STM32.h> 
+#include <TimerOne.h> 
 //#include "fonts/SystemFont5x7.h"
 //#include "fonts/Arial_Black_16_ISO_8859_1.h"
 #include "fonts/UkrRusArial14.h";
 #include "fonts/GlametrixLight12pt7b.h"
 #include "fonts/GlametrixBold9pt7b.h"
 
-// We'll use SPI 2   
-SPIClass dmd_spi(2);
+
+// We'll use SPI 1   
+SPIClass dmd_spi;
 
 //Fire up the DMD library as dmd
 #define DISPLAYS_ACROSS 1
@@ -25,17 +27,15 @@ SPIClass dmd_spi(2);
 // ----- Select pins for P10 matrix connection ------------
 // pins A, B, SCLK may be any digital I/O, pin nOE should be PWM pin as PB1,PA8
 
-// SPI specific pins as CLK and R_DATA has predefined values:
-//   for SPI(1) CLK = PA5  R_DATA = PA7
-//   for SPI(2) CLK = PB13  R_DATA = PB15
+
 // --------------------------------------------------------
 
-#define DMD_PIN_A PA10
-#define DMD_PIN_B PA9
-#define DMD_PIN_nOE PB0
-#define DMD_PIN_SCLK PA8
+#define DMD_PIN_A 6
+#define DMD_PIN_B 7
+#define DMD_PIN_OE 9
+#define DMD_PIN_SCLK 8
+DMD dmd(DMD_PIN_A, DMD_PIN_B, DMD_PIN_OE, DMD_PIN_SCLK, DISPLAYS_ACROSS, DISPLAYS_DOWN, dmd_spi );
 
-DMD dmd(DMD_PIN_A, DMD_PIN_B, DMD_PIN_nOE, DMD_PIN_SCLK, DISPLAYS_ACROSS, DISPLAYS_DOWN, dmd_spi );
 
 // --- Define fonts ----
 // DMD.h old style font
@@ -61,6 +61,8 @@ int utf8_rus(char* dest, const unsigned char* src) {
   dest[j] ='\0';
   return j;
 }
+
+
 /*--------------------------------------------------------------------------------------
   Interrupt handler for Timer1 (TimerOne) driven DMD refresh scanning, this gets
   called at the period set in Timer1.initialize();
@@ -75,18 +77,17 @@ void ScanDMD()
   Called by the Arduino architecture before the main loop begins
 --------------------------------------------------------------------------------------*/
 void setup(void)
-{
-   // initialize Timer3
-    Timer3.setMode(TIMER_CH1, TIMER_OUTPUTCOMPARE);
-    Timer3.setPeriod(3000);          // in microseconds
-    Timer3.setCompare(TIMER_CH1, 1); // overflow might be small
-    Timer3.attachInterrupt(TIMER_CH1, ScanDMD);
+{  
    
-   //clear/init the DMD pixels held in RAM
-   dmd.clearScreen( true );   //true is normal (all pixels off), false is negative (all pixels on)
-   dmd.setBrightness(2000);
-}
 
+   //initialize TimerOne's interrupt/CPU usage used to scan and refresh the display
+   Timer1.initialize( 3000 );           //period in microseconds to call ScanDMD. Anything longer than 5000 (5ms) and you can see flicker.
+   Timer1.attachInterrupt( ScanDMD );   //attach the Timer1 interrupt to ScanDMD which goes to dmd.scanDisplayBySPI()
+   
+  //clear/init the DMD pixels held in RAM
+   dmd.clearScreen( true );   //true is normal (all pixels off), false is negative (all pixels on)
+   
+}
 
 /*--------------------------------------------------------------------------------------
   loop
