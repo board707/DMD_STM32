@@ -1,6 +1,8 @@
 # ChangeLog
 
 ## Unreleased
+
+## [0.2.0] - 2019-05-15
  - Add new fonts
  - Add Atmega328 support
  - Add inverseAll flag
