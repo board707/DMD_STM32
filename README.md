@@ -16,9 +16,15 @@ What works and not?
 * Adafruit_GFX fonts can be used on drawString() and drawMarquee() routines (see dmd_cyr_chars example)
 * Using more than one P10 matrix on channel are **not tested** yet.
 
+Example videos
+--------------
+* Two simultaneous scrolling texts on STM32 https://youtu.be/OCpLTLpwgRI
+* Displaying text with converted Unicode font (Cyrillic) https://youtu.be/9xUB8-jk5Tc
+* Vertical scrolling text https://youtu.be/JNL-5qp6bDc
+
 Versions
 ---------
-For version history see [Changes.txt](Changes.txt)
+For version history see [CHANGES.txt](CHANGES.txt)
 
 Compatible IDE
 ----------
