@@ -1,6 +1,7 @@
 # ChangeLog
 
 ## Unreleased
+ - Add vertical scrolling text
 
 ## [0.2.0] - 2019-05-15
  - Add new fonts
