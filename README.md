@@ -1,4 +1,4 @@
-# DMD_STM32 with support Unicode fonts
+# DMD_STM32 with Unicode fonts support 
 The library is STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD) and designed to make it easy to display graphics and scrolling text on p10 DMD 32x16 matrix display. Its fundamental difference from the original DMD library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language.
 
 STM32 specific code of the library based on DMDSTM by Evgen Mozok: https://github.com/mozok/DMDSTM
