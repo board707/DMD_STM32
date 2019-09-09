@@ -105,13 +105,13 @@ void loop(void)
    dmd.clearScreen( true ); 
    dmd.selectFont(&GlametrixL);
    utf8_rus(k,m);
-   dmd.drawMarquee(k,strlen(k),(32*DISPLAYS_ACROSS)-1,0);
+   dmd.drawMarquee(k,strlen(k),(32*DISPLAYS_ACROSS)-1,0,1);
    
    long prev_step =millis();
    
    while(1){
      if ((millis() - prev_step) > 30 ) {
-       dmd.stepMarquee(-1,0);
+       dmd.stepMarquee(-1,0,1);
        prev_step=millis();
       
      }

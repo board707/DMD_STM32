@@ -58,7 +58,7 @@ bool DMD_Standard_Font::is_mono_font() {
 	return (pgm_read_byte(this->font_ptr + FONT_LENGTH) == 0
 		    && pgm_read_byte(this->font_ptr + FONT_LENGTH + 1) == 0);
 }
-uint8_t DMD_Standard_Font::get_char_width(unsigned char c) {
+uint8_t DMD_Standard_Font::get_char_width(unsigned char c, byte orientation) {
 	uint8_t width = 0;
 	if (this->is_char_in(c)) {
 		if (c == ' ') c = 'n';
@@ -129,7 +129,7 @@ bool DMD_GFX_Font::is_char_in(unsigned char c) {
 	else return false;
 }
 
-uint8_t DMD_GFX_Font::get_char_width(unsigned char c) {
+uint8_t DMD_GFX_Font::get_char_width(unsigned char c, byte orientation) {
 	if (this->is_char_in(c)) {
 		GFXfont* gfxFont_ptr;
 		if (font2_flag && (c > get_last() )) {
@@ -142,7 +142,10 @@ uint8_t DMD_GFX_Font::get_char_width(unsigned char c) {
 		}
 		
 		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_ptr->glyph))[c]);
-		return (uint8_t)pgm_read_byte(&glyph->xAdvance);
+		if (orientation) {
+			   return (uint8_t)(fontHeight + pgm_read_byte(&glyph->yOffset) + pgm_read_byte(&glyph->height) );
+		}	
+		else { return (uint8_t)pgm_read_byte(&glyph->xAdvance);}
 	}
 	else return 0;
 }

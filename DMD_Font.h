@@ -69,7 +69,7 @@ public:
 
 	virtual bool is_char_in(unsigned char c) {} ;
 
-	virtual uint8_t get_char_width(unsigned char c) {};
+	virtual uint8_t get_char_width(unsigned char c, byte orientation = 0) {};
 };
 /******************************************************/
 class DMD_Standard_Font : public DMD_Font {
@@ -78,7 +78,7 @@ public:
 	
 	DMD_Standard_Font(const uint8_t* ptr);
 	bool is_char_in(unsigned char c);
-	uint8_t get_char_width(unsigned char c);
+	uint8_t get_char_width(unsigned char c, byte orientation =0 );
 	uint16_t get_bitmap_index(unsigned char c);
 	bool is_mono_font();
 };
@@ -96,7 +96,7 @@ public:
 	uint8_t firstChar2;
 	uint8_t lastChar2;
 	bool is_char_in(unsigned char c);
-	uint8_t get_char_width(unsigned char c);
+	uint8_t get_char_width(unsigned char c, byte orientation = 0);
 	void add_second_font(GFXfont* second, uint8_t start_code);
 	uint8_t get_first_by_char(unsigned char c);
 	GFXfont* get_font_by_char(unsigned char c);

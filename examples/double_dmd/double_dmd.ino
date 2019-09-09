@@ -11,11 +11,11 @@
   Includes
 --------------------------------------------------------------------------------------*/
 #include <DMD_STM32.h> 
-//#include "fonts/SystemFont5x7.h"
-//#include "fonts/Arial_Black_16_ISO_8859_1.h"
-#include "fonts/UkrRusArial14.h";
-#include "fonts/GlametrixLight12pt7b.h"
-#include "fonts/GlametrixBold9pt7b.h"
+//#include "st_fonts/SystemFont5x7.h"
+//#include "st_fonts/Arial_Black_16_ISO_8859_1.h"
+#include "st_fonts/UkrRusArial14.h";
+#include "gfx_fonts/GlametrixLight12pt7b.h"
+#include "gfx_fonts/GlametrixBold9pt7b.h"
 
 // We'll use SPI_1 for first DMD and SPI_2 for second
 SPIClass dmd_spi(1);
@@ -34,16 +34,15 @@ SPIClass dmd_spi2(2);
 #define DMD_PIN_A PB11
 #define DMD_PIN_B PB10
 #define DMD_PIN_nOE PB1
-#define DMD_PIN_SCLK PB0
+#define DMD_PIN_SCLK PA3
 
 //Fire up the DMD library at first as dmd
 DMD dmd(DMD_PIN_A, DMD_PIN_B, DMD_PIN_nOE, DMD_PIN_SCLK, DISPLAYS_ACROSS, DISPLAYS_DOWN, dmd_spi );
 
-
-#define DMD2_PIN_A PB7
-#define DMD2_PIN_B PB6
-#define DMD2_PIN_nOE PA8
-#define DMD2_PIN_SCLK PB8
+#define DMD2_PIN_A PA10
+#define DMD2_PIN_B PA9
+#define DMD2_PIN_nOE PB0
+#define DMD2_PIN_SCLK PA8 
 
 // and at second as dmd2
 DMD dmd2(DMD2_PIN_A, DMD2_PIN_B, DMD2_PIN_nOE, DMD2_PIN_SCLK, DISPLAYS_ACROSS, DISPLAYS_DOWN, dmd_spi2 );
@@ -71,10 +70,10 @@ void ScanDMD()
 void setup(void)
 {
    // initialize Timer
-    Timer3.setMode(TIMER_CH1, TIMER_OUTPUTCOMPARE);
+    Timer3.setMode(TIMER_CH4, TIMER_OUTPUTCOMPARE);
     Timer3.setPeriod(3000);          // in microseconds
-    Timer3.setCompare(TIMER_CH1, 1); // overflow might be small
-    Timer3.attachInterrupt(TIMER_CH1, ScanDMD);
+    Timer3.setCompare(TIMER_CH4, 1); // overflow might be small
+    Timer3.attachInterrupt(TIMER_CH4, ScanDMD);
    
    //clear/init the DMD pixels held in RAM
    dmd.clearScreen( true );   //true is normal (all pixels off), false is negative (all pixels on)
@@ -82,7 +81,17 @@ void setup(void)
   
   
 }
-
+int utf8_rus(char* dest, const unsigned char* src) {
+  
+  uint8_t i, j;
+  for ( i =0, j =0; src[i]; i++) {
+   if ((src[i] == 0xD0 )&& src[i+1])  { dest[j++] = src[++i] - 0x10;}
+    else if ((src[i] == 0xD1 )&& src[i+1]) {dest[j++] = src[++i] + 0x30;  }
+    else dest[j++] = src[i];
+  }
+  dest[j] ='\0';
+  return j;
+}
 /*--------------------------------------------------------------------------------------
   loop
   Arduino architecture main loop
@@ -99,8 +108,10 @@ void loop(void)
 
    dmd2.clearScreen( true );
    dmd2.selectFont(&GlametrixL);
-   const char *MSG2 = "Привет STM32";
-   dmd2.drawMarquee(MSG2,strlen(MSG2),(32*DISPLAYS_ACROSS)-1,0);
+   char k[30];
+   const unsigned char MSG2[] = "Привет STM32";
+   utf8_rus(k,MSG2);
+   dmd2.drawMarquee(k,strlen(k),(32*DISPLAYS_ACROSS)-1,0);
    dmd2.setBrightness(2000);
    
    while(1){

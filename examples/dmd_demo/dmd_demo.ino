@@ -40,9 +40,9 @@
   Includes
 --------------------------------------------------------------------------------------*/
 #include <DMD_STM32.h> 
-#include "fonts/SystemFont5x7.h"
-#include "fonts/Arial_black_16.h"
-#include "fonts/Arial_Black_16_ISO_8859_1.h"
+#include "st_fonts/SystemFont5x7.h"
+#include "st_fonts/Arial_black_16.h"
+#include "st_fonts/Arial_Black_16_ISO_8859_1.h"
 
 // We'll use SPI 2   
 SPIClass dmd_spi(2);
@@ -87,10 +87,10 @@ void ScanDMD()
 void setup(void)
 {
    // initialize Timer3
-    Timer3.setMode(TIMER_CH1, TIMER_OUTPUTCOMPARE);
+    Timer3.setMode(TIMER_CH4, TIMER_OUTPUTCOMPARE);
     Timer3.setPeriod(3000);          // in microseconds
-    Timer3.setCompare(TIMER_CH1, 1); // overflow might be small
-    Timer3.attachInterrupt(TIMER_CH1, ScanDMD);
+    Timer3.setCompare(TIMER_CH4, 1); // overflow might be small
+    Timer3.attachInterrupt(TIMER_CH4, ScanDMD);
    
    //clear/init the DMD pixels held in RAM
    dmd.clearScreen( true );   //true is normal (all pixels off), false is negative (all pixels on)

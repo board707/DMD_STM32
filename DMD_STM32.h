@@ -99,22 +99,25 @@ class DMD
   void writePixel( unsigned int bX, unsigned int bY, byte bGraphicsMode, byte bPixel );
 
   //Draw a string
-  void drawString( int bX, int bY, const char* bChars, byte length, byte bGraphicsMode);
+  void drawString( int bX, int bY, const char* bChars, byte length, byte bGraphicsMode,  byte orientation =0);
 
   //Select a text font
   void selectFont(DMD_Font * font);
 
   //Draw a single character
-  int drawChar(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode);
+  int drawChar(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode,  byte orientation =0);
+  
+  //Draw a single character vertically 
+  int drawCharV(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode);
 
   //Find the width of a character
-  int charWidth(const unsigned char letter);
+  int charWidth(const unsigned char letter,  byte orientation =0);
 
   //Draw a scrolling string
-  void drawMarquee(const char* bChars, byte length, int left, int top);
+  void drawMarquee(const char* bChars, byte length, int left, int top,  byte orientation =0);
 
   //Move the maquee accross by amount
-  boolean stepMarquee( int amountX, int amountY);
+  boolean stepMarquee( int amountX, int amountY,  byte orientation =0);
 
   //Clear the screen in DMD RAM
   void clearScreen( byte bNormal );
