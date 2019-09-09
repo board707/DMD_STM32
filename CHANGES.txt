@@ -1,6 +1,7 @@
 # ChangeLog
 
 ## Unreleased
+ - Add vertical scrolling text
 
 ## [0.2.2] - 2019-09-08
  - Change Timer2_CH1 to Timer3_CH1 and then to Timer3_CH4 for stability (STM32)

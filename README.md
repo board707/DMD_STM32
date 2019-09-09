@@ -1,7 +1,7 @@
-# DMD_STM32
-Port of Freetronics DMD library (https://github.com/freetronics/DMD) for STM32Duino
+# DMD_STM32 with Unicode fonts support 
+The library is STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD) and designed to make it easy to display graphics and scrolling text on p10 DMD 32x16 matrix display. Its fundamental difference from the original DMD library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language.
 
-This project based on DMDSTM by Evgen Mozok: https://github.com/mozok/DMDSTM
+STM32 specific code of the library based on DMDSTM by Evgen Mozok: https://github.com/mozok/DMDSTM
 
 Notice
 ------
@@ -10,10 +10,21 @@ This software is experimental and a work in progress. THE SOFTWARE IS PROVIDED "
 What works and not?
 ---------- 
 
-* All examples of original DMD library are works
-* Simple brightness control included (not fully tested)
+* All examples adopted from original DMD library are works
+* Simple brightness control included (STM32 only)
 * On the "bluepill" board can be used two independent DMD instances simultaneously - on SPI(1) and SPI(2) (see double_dmd example)
+* Adafruit_GFX fonts can be used on drawString() and drawMarquee() routines (see dmd_cyr_chars example)
 * Using more than one P10 matrix on channel are **not tested** yet.
+
+Example videos
+--------------
+* Two simultaneous scrolling texts on STM32 https://youtu.be/OCpLTLpwgRI
+* Displaying text with converted Unicode font (Cyrillic) https://youtu.be/9xUB8-jk5Tc
+* Vertical scrolling text https://youtu.be/JNL-5qp6bDc
+
+Versions
+---------
+For version history see [CHANGES.txt](CHANGES.txt)
 
 Compatible IDE
 ----------
@@ -22,7 +33,8 @@ This library works with Arduino IDE 1.8, other versions are **not tested**
 Compatible boards
 -----------------
 
-**The code only tested on STM32F103C8TB (bluepill) board !**
+* STM32 - only STM32F103C8TB (bluepill) board tested !
+* AVR - Atmega328
 
 Connections
 -----------
