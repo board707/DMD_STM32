@@ -26,6 +26,14 @@
 #ifndef DMD_STM32_H_
 #define DMD_STM32_H_
 
+#define DMD_SPI_CLOCK_8MHZ    8000000
+#define DMD_SPI_CLOCK_4MHZ    4000000
+#define DMD_SPI_CLOCK_2MHZ    2000000
+#define DMD_SPI_CLOCK_1MHZ    1000000
+
+
+	
+
 //Arduino toolchain header, version dependent
  #if defined(ARDUINO) && ARDUINO >= 100
 	 #include "Arduino.h"
@@ -39,7 +47,8 @@
 #include "DMD_Font.h"
 
 #if defined(__STM32F1__)
-       #define DMD_SPI_CLOCK SPI_CLOCK_DIV8
+       #define DMD_SPI_CLOCK DMD_SPI_CLOCK_8MHZ
+       #define DMD_USE_DMA	1
 #elif defined(__AVR_ATmega328P__)
        #define DMD_SPI_CLOCK SPI_CLOCK_DIV4
 #endif
@@ -70,6 +79,7 @@
 #define DMD_BITSPERPIXEL           1      //1 bit per pixel, use more bits to allow for pwm screen brightness control
 #define DMD_RAM_SIZE_BYTES        ((DMD_PIXELS_ACROSS*DMD_BITSPERPIXEL/8)*DMD_PIXELS_DOWN)
                                   // (32x * 1 / 8) = 4 bytes, * 16y = 64 bytes per screen here.
+#define DMD_DMA_BUF_SIZE 		 (DMD_RAM_SIZE_BYTES/4)
 //lookup table for DMD::writePixel to make the pixel indexing routine faster
 static byte bPixelLookupTable[8] =
 {
@@ -181,6 +191,9 @@ class DMD
 
     //Mirror of DMD pixels in RAM, ready to be clocked out by the main loop or high speed timer calls
     byte *bDMDScreenRAM;
+    
+    uint8_t *dmd_dma_buf;
+    uint8_t *rx_dma_buf;
 
 	//DMD I/O pin macros
   void LIGHT_DMD_ROW_01_05_09_13();

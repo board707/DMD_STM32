@@ -37,6 +37,15 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
 :pin_DMD_A(_pin_A), pin_DMD_B(_pin_B), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK), 
  DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), SPI_DMD(_spi)
 {
+	
+	uint16_t ui;
+    
+    DisplaysTotal=DisplaysWide*DisplaysHigh;
+    row1 = DisplaysTotal<<4;
+    row2 = DisplaysTotal<<5;
+    row3 = ((DisplaysTotal<<2)*3)<<2;
+    bDMDScreenRAM = (byte *) malloc(DisplaysTotal*DMD_RAM_SIZE_BYTES);
+    
  #if defined(__STM32F1__)
     pin_DMD_CLK = SPI_DMD.sckPin();   
     pin_DMD_R_DATA = SPI_DMD.mosiPin() ; 
@@ -45,6 +54,11 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
 	SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
 	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI_2 data mode 0
 	SPI_DMD.setClockDivider(SPI_CLOCK_DIV16);  // Use a different speed to SPI 1 */
+#if defined( DMD_USE_DMA )	
+	dmd_dma_buf = (byte *) malloc(DisplaysTotal*DMD_DMA_BUF_SIZE);
+    rx_dma_buf =  (byte *) malloc(DisplaysTotal*DMD_DMA_BUF_SIZE);
+    
+#endif
 	
   #elif defined(__AVR_ATmega328P__)
     pin_DMD_CLK = 13;
@@ -56,13 +70,7 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
     SPI.setDataMode(SPI_MODE0);	// CPOL=0, CPHA=0
     SPI.setClockDivider(DMD_SPI_CLOCK);
  #endif
-    uint16_t ui;
     
-    DisplaysTotal=DisplaysWide*DisplaysHigh;
-    row1 = DisplaysTotal<<4;
-    row2 = DisplaysTotal<<5;
-    row3 = ((DisplaysTotal<<2)*3)<<2;
-    bDMDScreenRAM = (byte *) malloc(DisplaysTotal*DMD_RAM_SIZE_BYTES);
 
     digitalWrite(pin_DMD_A, LOW);	// 
     digitalWrite(pin_DMD_B, LOW);	// 
@@ -497,14 +505,31 @@ void DMD::scanDisplayBySPI()
 		//digitalWrite(SPI2_NSS_PIN, LOW); // manually take CSN low for SPI_1 transmission
         
 #if defined(__STM32F1__)
+	    
+        SPI_DMD.setDataSize(DATA_SIZE_8BIT);
         SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
-		
+        
+#if defined(DMD_USE_DMA)
+	    uint8_t* buf_ptr = dmd_dma_buf;
+        for (int i=0;i<rowsize;i++) {
+        	//SPI_DMD.dmaSendAsync(bDMDScreenRAM, 16);
+            *buf_ptr = (bDMDScreenRAM[offset+i+row3]);buf_ptr++;
+            *buf_ptr = (bDMDScreenRAM[offset+i+row2]);buf_ptr++;
+            *buf_ptr = (bDMDScreenRAM[offset+i+row1]);buf_ptr++;
+            *buf_ptr = (bDMDScreenRAM[offset+i]);buf_ptr++;
+        }
+	
+	    SPI_DMD.dmaTransfer(dmd_dma_buf, rx_dma_buf, rowsize*4);
+#else   //  not DMA
+
         for (int i=0;i<rowsize;i++) {
             SPI_DMD.transfer(bDMDScreenRAM[offset+i+row3]);
             SPI_DMD.transfer(bDMDScreenRAM[offset+i+row2]);
             SPI_DMD.transfer(bDMDScreenRAM[offset+i+row1]);
             SPI_DMD.transfer(bDMDScreenRAM[offset+i]);
         }
+#endif  //   DMA
+	
         SPI_DMD.endTransaction(); 
        pwmWrite(pin_DMD_nOE, 0);	//for stm32
 #elif defined(__AVR_ATmega328P__)
