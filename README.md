@@ -1,7 +1,9 @@
 # DMD_STM32 with Unicode fonts support 
 The library is STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD) and designed to make it easy to display graphics and scrolling text on p10 DMD 32x16 matrix display. Its fundamental difference from the original DMD library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language.
 
-STM32 specific code of the library based on DMDSTM by Evgen Mozok: https://github.com/mozok/DMDSTM
+Last version of the code has significantly improved performance through the use of DMA for SPI transfer. You can connect up to 16 DMD matrices on channel without significant slowing down the main program code
+
+Initial version of STM32 specific code based on DMDSTM by Evgen Mozok: https://github.com/mozok/DMDSTM
 
 Notice
 ------
@@ -11,10 +13,10 @@ What works and not?
 ---------- 
 
 * All examples adopted from original DMD library are works
+* Adafruit_GFX fonts can be used on drawString() and drawMarquee() routines (see dmd_cyr_chars example)
 * Simple brightness control included (STM32 only)
 * On the "bluepill" board can be used two independent DMD instances simultaneously - on SPI(1) and SPI(2) (see double_dmd example)
-* Adafruit_GFX fonts can be used on drawString() and drawMarquee() routines (see dmd_cyr_chars example)
-* Using more than one P10 matrix on channel are **not tested** yet.
+* On STM run up to 16 DMD matrices on channel without significant performance loss (6 tested)  
 
 Example videos
 --------------
@@ -47,6 +49,6 @@ Connections
 | SCLK | PB0/PB8... |  User adjustable, almost any digital pin, see exclusions |
 | R_DATA | PA7/PB15 for SPI(1)/SPI(2) |  Predefined by SPI |
 
-* **Exclusions:** Do not use these pins: PB3/PB4 (JTAG), PA11/PA12 (USB D+ D-) and PA15 - Timer(2) output
+* **Exclusions:** Do not use these pins: PB3/PB4 (JTAG), PA11/PA12 (USB D+ D-) and PB1 - Timer3_CH4 output
 * For tested pin combinations see examples.
 * Pulldown resistor 3-10K between nOE and GND is recommended.

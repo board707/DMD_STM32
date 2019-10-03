@@ -1,7 +1,10 @@
 # ChangeLog
 
 ## Unreleased
- 
+
+## [0.3.1] - 2019-09-30
+ - Fix SPI clock settings (ST32)
+ - Add Sync DMA Transfer (STM32)
 
 ## [0.2.2] - 2019-09-08
  - Change Timer2_CH1 to Timer3_CH1 and then to Timer3_CH4 for stability (STM32)
