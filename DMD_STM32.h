@@ -104,6 +104,8 @@ class DMD
     //Instantiate the DMD
     
 	DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh, SPIClass _spi );
+	
+	void init();
 
  //Set or clear a pixel at the x and y location (0,0 is the top left corner)
   void writePixel( unsigned int bX, unsigned int bY, byte bGraphicsMode, byte bPixel );
@@ -151,6 +153,8 @@ class DMD
   //Call 4 times to scan the whole display which is made up of 4 interleaved rows within the 16 total rows.
   //Insert the calls to this function into the main loop for the highest call rate, or from a timer interrupt
   void scanDisplayBySPI();
+  void scanDisplayByDMA(void(*tx_callback)(void));
+  void latchDMA();
   
   
   ///Next part is customly added by mozokevgen
@@ -186,12 +190,15 @@ class DMD
     byte pin_DMD_R_DATA ;   // is SPI Master Out if SPI is used
 	
 	SPIClass SPI_DMD;
+
 	
 	void drawCircleSub( int cx, int cy, int x, int y, byte bGraphicsMode );
 
     //Mirror of DMD pixels in RAM, ready to be clocked out by the main loop or high speed timer calls
     byte *bDMDScreenRAM;
     
+    dma_channel  spiTxDmaChannel;
+	dma_dev* spiDmaDev;
     uint8_t *dmd_dma_buf;
     uint8_t *rx_dma_buf;
 
