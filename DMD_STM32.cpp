@@ -24,6 +24,54 @@
 --------------------------------------------------------------------------------------*/
 #include "DMD_STM32.h"
 
+static volatile DMD* running_dmds[2];
+static volatile uint8_t running_dmd_len =0;
+
+static void register_running_dmd(DMD *dmd)
+{
+  uint8_t spi_num =dmd->spi_num;
+  if (!spi_num) return;
+  if (running_dmd_len == 0) {
+	  Timer4.pause(); // останавливаем таймер перед настройкой
+      Timer4.setPeriod(2000); // время в микросекундах (500мс)
+      Timer4.attachInterrupt(TIMER_UPDATE_INTERRUPT, scan_running_dmds); // активируем прерывание
+      Timer4.refresh(); // обнулить таймер 
+      Timer4.resume(); // запускаем таймер  
+
+      Timer3.pause();
+      Timer3.setPeriod(30); 
+      Timer3.refresh();
+	  Timer3.resume();
+	  }
+  if (!running_dmds[spi_num -1]) running_dmd_len++;
+
+  running_dmds[spi_num -1] = dmd;
+}
+
+static void inline __attribute__((always_inline)) scan_running_dmds()
+{
+  static volatile uint8_t i =0;
+ 
+    DMD *next = (DMD*)running_dmds[i%2];
+	i++;
+    if(next) {
+      next->scanDisplayByDMA();
+	  
+    }
+  
+}
+static void SPI1_DMA_callback() {
+	DMD *next = (DMD*)running_dmds[0];
+	next->latchDMA();
+}
+
+static void SPI2_DMA_callback() {
+	DMD *next = (DMD*)running_dmds[1];
+	next->latchDMA();
+}
+
+  
+ 
 
 
 /*--------------------------------------------------------------------------------------
@@ -61,8 +109,12 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
     spiDmaDev = DMA1;
     if (SPI_DMD.dev() == SPI1) {
       	  spiTxDmaChannel = DMA_CH3;
+		  spi_num =1;
       }
-      else spiTxDmaChannel = DMA_CH5;
+      else {
+		  spiTxDmaChannel = DMA_CH5;
+		  spi_num =2;
+      }
 #endif
 	
   #elif defined(__AVR_ATmega328P__)
@@ -108,6 +160,8 @@ void DMD::init() {
 	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI_2 data mode 0
 	//SPI_DMD.setClockDivider(SPI_CLOCK_DIV16);  // Use a different speed to SPI 1 */
 	SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
+	register_running_dmd(this);
+	brightrange = Timer3.getOverflow();
 }
 //DMD I/O pin macros
 void
@@ -560,7 +614,7 @@ void DMD::latchDMA() {
 
 
 
-void DMD::scanDisplayByDMA(void(*tx_callback)(void))
+void DMD::scanDisplayByDMA()
 {
     //if PIN_OTHER_SPI_nCS is in use during a DMD scan request then scanDisplayBySPI() will exit without conflict! (and skip that scan)
     //if( digitalRead( PIN_OTHER_SPI_nCS ) == HIGH )
@@ -590,13 +644,14 @@ void DMD::scanDisplayByDMA(void(*tx_callback)(void))
 		//SPI_DMD.onReceive(tx_callback);
 		//SPI_DMD.onTransmit(tx_callback);
 		//SPI_DMD.dmaTransfer(dmd_dma_buf, tt_buf, rowsize*4);
-		SPI_DMD.onTransmit(tx_callback);
-	/*	dma_channel ccdma;
-      if (SPI_DMD.dev() == SPI1) {
-      	  ccdma = DMA_CH3;
-      }
-      else ccdma = DMA_CH5;*/
-      dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, tx_callback);
+		if (SPI_DMD.dev() == SPI1) {
+			SPI_DMD.onTransmit(SPI1_DMA_callback);
+	        dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI1_DMA_callback);
+			}
+        else if (SPI_DMD.dev() == SPI2) {
+			SPI_DMD.onTransmit(SPI2_DMA_callback);
+	        dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI2_DMA_callback);
+			}
 		//dma_attach_interrupt(DMA1, ccdma, tx_callback);
         //SPI_DMD.dmaTransferAsync(dmd_dma_buf,  rowsize*4, tx_callback);
         SPI_DMD.dmaSend(dmd_dma_buf,  rowsize*4, 1);

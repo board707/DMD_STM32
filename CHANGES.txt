@@ -1,9 +1,19 @@
 # ChangeLog
 
 ## Unreleased
+## [0.4.0] - 2019-10-16
+ - Move all timer and interrupt settings to the library from user code
+ - Add static functions to register and scan multiple DMD instances
+ - This version still not support AVR MCs
 
-## [0.3.1] - 2019-09-30
- - Fix SPI clock settings (ST32)
+## [0.3.3] - 2019-10-14
+ - Add Async DMA Transfer (STM32)
+ - Add scanDisplaybyDMA, latchDMA and init() methods
+ - Remove SPI Transactions, change SPITransfer to SPI.write
+ - This version does not support AVR MCs
+
+## [0.3.2] - 2019-09-30
+ - Fix SPI clock settings (STM32)
  - Add Sync DMA Transfer (STM32)
 
 ## [0.2.2] - 2019-09-08

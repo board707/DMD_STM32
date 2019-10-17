@@ -153,14 +153,15 @@ class DMD
   //Call 4 times to scan the whole display which is made up of 4 interleaved rows within the 16 total rows.
   //Insert the calls to this function into the main loop for the highest call rate, or from a timer interrupt
   void scanDisplayBySPI();
-  void scanDisplayByDMA(void(*tx_callback)(void));
+  void scanDisplayByDMA();
   void latchDMA();
   
   
   ///Next part is customly added by mozokevgen
   
   //ADD from DMD2 library, set brightness of panel
-  inline void setBrightness(uint16_t level) { this->brightness = level; };
+  inline void setBrightness(uint8_t level) { 
+   this->brightness = map(level, 0, 255, 0, brightrange); };
   
   // Inverse all data on display - for p10 matrix inversed by design
   inline void inverseAll(uint8_t flag) { this->inverse_ALL_flag = flag; };
@@ -177,7 +178,7 @@ class DMD
   // return string width in pixels
   uint16_t stringWidth(const char *bChars, uint8_t length);
   
-  uint16_t brightness=20000;
+  uint8_t spi_num =0;
   
   
   private:
@@ -190,7 +191,8 @@ class DMD
     byte pin_DMD_R_DATA ;   // is SPI Master Out if SPI is used
 	
 	SPIClass SPI_DMD;
-
+    uint16_t brightness=10000;
+    uint16_t brightrange=32565;
 	
 	void drawCircleSub( int cx, int cy, int x, int y, byte bGraphicsMode );
 
@@ -242,5 +244,15 @@ class DMD
 	//uint8_t marqueeImg[64];
     uint8_t inverse_ALL_flag = PANEL_INVERSE;
 };
+
+static void register_running_dmd(DMD *dmd);
+
+static void inline __attribute__((always_inline)) scan_running_dmds();
+
+static void SPI1_DMA_callback();
+
+static void SPI2_DMA_callback();
+
+
 
 #endif /* DMD_H_ */
