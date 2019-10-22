@@ -44,11 +44,11 @@ Connections
 | DMD Signal | STM32 Pin | Comments |
 | ---------- | --------- | -------- |
 | A, B | PB6/PB7/PB10/PB11... | User adjustable, almost any digital pin, see exclusions |
-| nOE | PA8/PB0... | User adjustable, should be PWM pin, see exclusions |
+| nOE | PB0/PB1/PB5 | Should be TIMER3 PWM pin
 | CLK | PA5/PB13 for SPI(1)/SPI(2) | Predefined by SPI |
-| SCLK | PB1/PB8... |  User adjustable, almost any digital pin, see exclusions |
+| SCLK | PB11/PB8... |  User adjustable, almost any digital pin, see exclusions |
 | R_DATA | PA7/PB15 for SPI(1)/SPI(2) |  Predefined by SPI |
 
-* **Exclusions:** Do not use these pins: PB3/PB4 (JTAG), PA11/PA12 (USB D+ D-) and PB1 - Timer3_CH4 output
+* **Exclusions:** Do not use these pins: PB3/PB4 (JTAG), PA11/PA12 (USB D+ D-) 
 * For tested pin combinations see examples.
 * Pulldown resistor 3-10K between nOE and GND is recommended.
