@@ -32,9 +32,9 @@ SPIClass dmd_spi2(2);
 //   for SPI(2) CLK = PB13  R_DATA = PB15
 // --------------------------------------------------------
 #define DMD_PIN_A PB11
-#define DMD_PIN_B PB10
+#define DMD_PIN_B PB12
 #define DMD_PIN_nOE PB1
-#define DMD_PIN_SCLK PA3
+#define DMD_PIN_SCLK PB10
 
 //Fire up the DMD library at first as dmd
 DMD dmd(DMD_PIN_A, DMD_PIN_B, DMD_PIN_nOE, DMD_PIN_SCLK, DISPLAYS_ACROSS, DISPLAYS_DOWN, dmd_spi );
@@ -53,15 +53,7 @@ DMD_Standard_Font UkrRusArial_F(UkrRusArial_14);
 
 // GFX font with sepatate parts for Latin and Cyrillic chars
 DMD_GFX_Font GlametrixL((uint8_t*)&GlametrixLight12pt7b,(uint8_t*)&GlametrixLight12pt8b_rus,0x80,13);
-/*--------------------------------------------------------------------------------------
-  Interrupt handler for Timer1 (TimerOne) driven DMD refresh scanning, this gets
-  called at the period set in Timer1.initialize();
---------------------------------------------------------------------------------------*/
-void ScanDMD()
-{ 
-  dmd.scanDisplayBySPI();
-  dmd2.scanDisplayBySPI();
-}
+
 
 /*--------------------------------------------------------------------------------------
   setup
@@ -69,15 +61,16 @@ void ScanDMD()
 --------------------------------------------------------------------------------------*/
 void setup(void)
 {
-   // initialize Timer
-    Timer3.setMode(TIMER_CH4, TIMER_OUTPUTCOMPARE);
-    Timer3.setPeriod(3000);          // in microseconds
-    Timer3.setCompare(TIMER_CH4, 1); // overflow might be small
-    Timer3.attachInterrupt(TIMER_CH4, ScanDMD);
-   
-   //clear/init the DMD pixels held in RAM
+  
+   dmd.init();
    dmd.clearScreen( true );   //true is normal (all pixels off), false is negative (all pixels on)
-  dmd2.clearScreen( true );  
+   // set brightness ( 0-255, default is 100)
+   dmd.setBrightness(80);
+
+   dmd2.init();
+   dmd2.clearScreen( true );   //true is normal (all pixels off), false is negative (all pixels on)
+   // set matrix brightness (0-255)
+   dmd2.setBrightness(80);
   
   
 }
@@ -102,8 +95,8 @@ void loop(void)
    dmd.selectFont(&UkrRusArial_F);
    const char *MSG = "Привет Ардуино";
    dmd.drawMarquee(MSG,strlen(MSG),(32*DISPLAYS_ACROSS)-1,0);
-   // set brightness ( 0-65536, default is 30000)
-   dmd.setBrightness(4000);
+   
+   
    long prev_step =millis();
 
    dmd2.clearScreen( true );
@@ -112,7 +105,6 @@ void loop(void)
    const unsigned char MSG2[] = "Привет STM32";
    utf8_rus(k,MSG2);
    dmd2.drawMarquee(k,strlen(k),(32*DISPLAYS_ACROSS)-1,0);
-   dmd2.setBrightness(2000);
    
    while(1){
      if ((millis() - prev_step) > 50 ) {

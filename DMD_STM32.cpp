@@ -24,8 +24,11 @@
 --------------------------------------------------------------------------------------*/
 #include "DMD_STM32.h"
 
+
+#if defined(__STM32F1__)
 static volatile DMD* running_dmds[2];
 static volatile uint8_t running_dmd_len =0;
+static uint16_t scan_int = 2000;
 
 static void register_running_dmd(DMD *dmd)
 {
@@ -33,7 +36,7 @@ static void register_running_dmd(DMD *dmd)
   if (!spi_num) return;
   if (running_dmd_len == 0) {
 	  Timer4.pause(); // останавливаем таймер перед настройкой
-      Timer4.setPeriod(2000); // время в микросекундах (500мс)
+      Timer4.setPeriod(scan_int); // время в микросекундах (500мс)
       Timer4.attachInterrupt(TIMER_UPDATE_INTERRUPT, scan_running_dmds); // активируем прерывание
       Timer4.refresh(); // обнулить таймер 
       Timer4.resume(); // запускаем таймер  
@@ -71,7 +74,7 @@ static void SPI2_DMA_callback() {
 }
 
   
- 
+#endif
 
 
 /*--------------------------------------------------------------------------------------
@@ -117,7 +120,7 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
       }
 #endif
 	
-  #elif defined(__AVR_ATmega328P__)
+#elif defined(__AVR_ATmega328P__)
     pin_DMD_CLK = 13;
     pin_DMD_R_DATA = 11;
 	pinMode(pin_DMD_nOE, OUTPUT); 
@@ -143,7 +146,7 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
     
 
     clearScreen(true);
-    brightness =20000;
+    //brightness =20000;
     bDMDByte = 0;
 
 }
@@ -154,7 +157,9 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
 //   // nothing needed here
 //}
 
-void DMD::init() {
+void DMD::init(uint16_t scan_interval) {
+#if defined(__STM32F1__)
+    scan_int = scan_interval;
 	SPI_DMD.begin(); //Initialize the SPI_2 port.
 	SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
 	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI_2 data mode 0
@@ -162,6 +167,12 @@ void DMD::init() {
 	SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
 	register_running_dmd(this);
 	brightrange = Timer3.getOverflow();
+	setBrightness(brightrange/3);
+	/*
+	pinMode(PA1, OUTPUT);
+	digitalWrite(PA1, LOW);*/
+	
+#endif
 }
 //DMD I/O pin macros
 void
@@ -554,26 +565,19 @@ void DMD::drawTestPattern(byte bPattern)
     }
 }
 
-
+#if defined(__STM32F1__)
 
 void DMD::latchDMA() {
 	   //SPI_DMD.dmaTransferFinish();
-	   while (spi_is_tx_empty(SPI_DMD.dev()) == 0); // "5. Wait until TXE=1 ..."
+	  while (spi_is_tx_empty(SPI_DMD.dev()) == 0); // "5. Wait until TXE=1 ..."
       while (spi_is_busy(SPI_DMD.dev()) != 0); // "... and then wait until BSY=0 before disabling the SPI." 
       spi_tx_dma_disable(SPI_DMD.dev());
-      /*dma_channel ccdma;
-      if (SPI_DMD.dev() == SPI1) {
-      	  ccdma = DMA_CH3;
-      }
-      else ccdma = DMA_CH5;*/
+     
       dma_disable(spiDmaDev, spiTxDmaChannel);
       dma_clear_isr_bits(spiDmaDev, spiTxDmaChannel);
-      //dma_disable(DMA1, ccdma);
-      //dma_clear_isr_bits(DMA1, ccdma);
-       pwmWrite(pin_DMD_nOE, 0);	//for stm32
+      
+	  pwmWrite(pin_DMD_nOE, 0);	//for stm32
 
-       //digitalWrite(SPI2_NSS_PIN, HIGH); // manually take CSN high between spi transmissions
-        //
 		
         LATCH_DMD_SHIFT_REG_TO_OUTPUT();
         switch (bDMDByte) {
@@ -594,21 +598,12 @@ void DMD::latchDMA() {
             bDMDByte=0;
             break;
         }
-        //OE_DMD_ROWS_ON();
-		
-		// Output enable pin is either fixed on, or PWMed for a variable brightness display
-		 //if(brightness == 255)
-			// {OE_DMD_ROWS_ON();}
-		// else
-			//analogWrite(PIN_DMD_nOE, brightness);	//for atmega
-#if defined(__STM32F1__)
-   pwmWrite(pin_DMD_nOE, brightness);	//for stm32
-#elif defined(__AVR_ATmega328P__)
-   OE_DMD_ROWS_ON();
-#endif	
+       
 
-		
-    //}
+   pwmWrite(pin_DMD_nOE, brightness);	//for stm32
+   
+   //digitalWrite(PA1, LOW);
+
 }
 	
 
@@ -619,7 +614,7 @@ void DMD::scanDisplayByDMA()
     //if PIN_OTHER_SPI_nCS is in use during a DMD scan request then scanDisplayBySPI() will exit without conflict! (and skip that scan)
     //if( digitalRead( PIN_OTHER_SPI_nCS ) == HIGH )
     //{
-				
+	    //digitalWrite(PA1, HIGH);
         //SPI transfer pixels to the display hardware shift registers
         int rowsize=DisplaysTotal<<2;
         int offset=rowsize * bDMDByte;
@@ -655,8 +650,12 @@ void DMD::scanDisplayByDMA()
 		//dma_attach_interrupt(DMA1, ccdma, tx_callback);
         //SPI_DMD.dmaTransferAsync(dmd_dma_buf,  rowsize*4, tx_callback);
         SPI_DMD.dmaSend(dmd_dma_buf,  rowsize*4, 1);
+		//digitalWrite(PA1, LOW);
       
 }
+
+
+#endif	
 /*--------------------------------------------------------------------------------------
  Scan the dot matrix LED panel display, from the RAM mirror out to the display hardware.
  Call 4 times to scan the whole display which is made up of 4 interleaved rows within the 16 total rows.
@@ -682,7 +681,7 @@ void DMD::scanDisplayBySPI()
 #if defined(DMD_USE_DMA)
 	    uint8_t* buf_ptr = dmd_dma_buf;
         for (int i=0;i<rowsize;i++) {
-        	//SPI_DMD.dmaSendAsync(bDMDScreenRAM, 16);
+        	
             *buf_ptr = (bDMDScreenRAM[offset+i+row3]);buf_ptr++;
             *buf_ptr = (bDMDScreenRAM[offset+i+row2]);buf_ptr++;
             *buf_ptr = (bDMDScreenRAM[offset+i+row1]);buf_ptr++;

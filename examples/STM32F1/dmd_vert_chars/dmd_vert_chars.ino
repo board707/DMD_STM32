@@ -32,10 +32,10 @@ SPIClass dmd_spi(2);
 // --------------------------------------------------------
 
 
-#define DMD_PIN_A PA10
-#define DMD_PIN_B PA9
-#define DMD_PIN_nOE PB0
-#define DMD_PIN_SCLK PA8
+#define DMD_PIN_A PB11
+#define DMD_PIN_B PB12
+#define DMD_PIN_nOE PB1
+#define DMD_PIN_SCLK PB10
 
 DMD dmd(DMD_PIN_A, DMD_PIN_B, DMD_PIN_nOE, DMD_PIN_SCLK, DISPLAYS_ACROSS, DISPLAYS_DOWN, dmd_spi );
 
@@ -64,14 +64,7 @@ int utf8_rus(char* dest, const unsigned char* src) {
   dest[j] ='\0';
   return j;
 }
-/*--------------------------------------------------------------------------------------
-  Interrupt handler for Timer1 (TimerOne) driven DMD refresh scanning, this gets
-  called at the period set in Timer1.initialize();
---------------------------------------------------------------------------------------*/
-void ScanDMD()
-{ 
-  dmd.scanDisplayBySPI();
-}
+
 
 /*--------------------------------------------------------------------------------------
   setup
@@ -79,15 +72,11 @@ void ScanDMD()
 --------------------------------------------------------------------------------------*/
 void setup(void)
 {
-   // initialize Timer3
-    Timer3.setMode(TIMER_CH4, TIMER_OUTPUTCOMPARE);
-    Timer3.setPeriod(3000);          // in microseconds
-    Timer3.setCompare(TIMER_CH4, 1); // overflow might be small
-    Timer3.attachInterrupt(TIMER_CH4, ScanDMD);
-   
-   //clear/init the DMD pixels held in RAM
+  
+   dmd.init();
    dmd.clearScreen( true );   //true is normal (all pixels off), false is negative (all pixels on)
-   dmd.setBrightness(8000);
+   // set matrix brightness (0-255)
+   dmd.setBrightness(80);
 }
 
 
@@ -97,11 +86,7 @@ void setup(void)
 --------------------------------------------------------------------------------------*/
 void loop(void)
 {
-   dmd.selectFont(&UkrRusArial_F);
-   const char *MSG = "DMD STM32";
-   dmd.drawString(0, 0, MSG, strlen(MSG), GRAPHICS_NORMAL);
-   delay(5000);
-   dmd.clearScreen( true ); 
+   
    dmd.selectFont(&GlametrixBold);
    
    const unsigned char m[] = "Привет Ардуино!";

@@ -105,7 +105,7 @@ class DMD
     
 	DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh, SPIClass _spi );
 	
-	void init();
+	void init(uint16_t scan_interval = 2000);
 
  //Set or clear a pixel at the x and y location (0,0 is the top left corner)
   void writePixel( unsigned int bX, unsigned int bY, byte bGraphicsMode, byte bPixel );
@@ -153,8 +153,11 @@ class DMD
   //Call 4 times to scan the whole display which is made up of 4 interleaved rows within the 16 total rows.
   //Insert the calls to this function into the main loop for the highest call rate, or from a timer interrupt
   void scanDisplayBySPI();
+  
+ #if defined(__STM32F1__)
   void scanDisplayByDMA();
   void latchDMA();
+ #endif
   
   
   ///Next part is customly added by mozokevgen
@@ -191,18 +194,21 @@ class DMD
     byte pin_DMD_R_DATA ;   // is SPI Master Out if SPI is used
 	
 	SPIClass SPI_DMD;
-    uint16_t brightness=10000;
-    uint16_t brightrange=32565;
+    uint16_t brightness=100;
+    uint16_t brightrange=255;
 	
 	void drawCircleSub( int cx, int cy, int x, int y, byte bGraphicsMode );
 
     //Mirror of DMD pixels in RAM, ready to be clocked out by the main loop or high speed timer calls
     byte *bDMDScreenRAM;
-    
+	
+#if defined(__STM32F1__)
     dma_channel  spiTxDmaChannel;
 	dma_dev* spiDmaDev;
     uint8_t *dmd_dma_buf;
     uint8_t *rx_dma_buf;
+#endif
+    
 
 	//DMD I/O pin macros
   void LIGHT_DMD_ROW_01_05_09_13();
@@ -245,13 +251,16 @@ class DMD
     uint8_t inverse_ALL_flag = PANEL_INVERSE;
 };
 
-static void register_running_dmd(DMD *dmd);
+#if defined(__STM32F1__)
+    
+    static void register_running_dmd(DMD *dmd);
 
-static void inline __attribute__((always_inline)) scan_running_dmds();
+    static void inline __attribute__((always_inline)) scan_running_dmds();
 
-static void SPI1_DMA_callback();
+    static void SPI1_DMA_callback();
 
-static void SPI2_DMA_callback();
+    static void SPI2_DMA_callback();
+#endif
 
 
 

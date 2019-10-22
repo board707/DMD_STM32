@@ -1,6 +1,8 @@
 # ChangeLog
 
 ## Unreleased
+
+
 ## [0.4.0] - 2019-10-16
  - Move all timer and interrupt settings to the library from user code
  - Add static functions to register and scan multiple DMD instances
