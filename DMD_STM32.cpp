@@ -255,10 +255,16 @@ void
     }
 
 }
-/*--------------------------------------------------------------------------------------
- 
---------------------------------------------------------------------------------------*/
-void DMD::drawString(int bX, int bY, const char *bChars, byte length,
+/*--------------------------------------------------------------------------------------*/
+ void DMD::drawStringX(int bX, int bY, const char *bChars,
+		     byte bGraphicsMode, byte orientation)
+{
+	int len =0;
+	while (bChars[len] && len < MAX_STRING_LEN) {len++;}
+	DMD::drawString(bX, bY, bChars, len, bGraphicsMode, orientation);
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD::drawString(int bX, int bY, const char *bChars, int length,
 		     byte bGraphicsMode, byte orientation)
 {
     if (bX >= (DMD_PIXELS_ACROSS*DisplaysWide) || bY >= DMD_PIXELS_DOWN * DisplaysHigh)
@@ -289,10 +295,14 @@ void DMD::drawString(int bX, int bY, const char *bChars, byte length,
         if ((bX + strWidth) >= DMD_PIXELS_ACROSS * DisplaysWide || bY >= DMD_PIXELS_DOWN * DisplaysHigh) return;
     }
 }
-/*--------------------------------------------------------------------------------------
- 
---------------------------------------------------------------------------------------*/
-void DMD::drawMarquee(const char *bChars, byte length, int left, int top, byte orientation) 
+/*--------------------------------------------------------------------------------------*/
+void DMD::drawMarqueeX(const char *bChars, int left, int top, byte orientation) 
+{   int len =0;
+	while (bChars[len] && len < MAX_STRING_LEN) {len++;}
+	DMD::drawMarquee(bChars, len, left, top, orientation) ;
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD::drawMarquee(const char *bChars, int length, int left, int top, byte orientation) 
 {    
 // temp parameter for beta version
 	uint8_t matrix_h =16;
@@ -323,6 +333,14 @@ void DMD::drawMarquee(const char *bChars, byte length, int left, int top, byte o
 --------------------------------------------------------------------------------------*/
 boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
 {
+    uint8_t msb_bit = 0x80;
+    uint8_t lsb_bit = 0x01;
+    
+    if (inverse_ALL_flag) {
+    	msb_bit = 0;
+        lsb_bit = 0;
+    }
+    
     boolean ret=false;
     marqueeOffsetX += amountX;
     marqueeOffsetY += amountY;
@@ -352,7 +370,7 @@ boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
         // Shift entire screen one bit
         for (int i=0; i<DMD_RAM_SIZE_BYTES*DisplaysTotal;i++) {
             if ((i%(DisplaysWide*4)) == (DisplaysWide*4) -1) {
-                bDMDScreenRAM[i]=(bDMDScreenRAM[i]<<1)+1;
+                bDMDScreenRAM[i]=(bDMDScreenRAM[i]<<1)+lsb_bit;
             } else {
                 bDMDScreenRAM[i]=(bDMDScreenRAM[i]<<1) + ((bDMDScreenRAM[i+1] & 0x80) >>7);
             }
@@ -360,7 +378,7 @@ boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
 
         // Redraw last char on screen
         int strWidth=marqueeOffsetX;
-        for (byte i=0; i < marqueeLength; i++) {
+        for (int i=0; i < marqueeLength; i++) {
             int wide = charWidth(marqueeText[i], orientation);
             if (strWidth+wide >= DisplaysWide*DMD_PIXELS_ACROSS) {
                 drawChar(strWidth, marqueeOffsetY,marqueeText[i],GRAPHICS_NORMAL, orientation);
@@ -372,7 +390,7 @@ boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
         // Shift entire screen one bit
         for (int i=(DMD_RAM_SIZE_BYTES*DisplaysTotal)-1; i>=0;i--) {
             if ((i%(DisplaysWide*4)) == 0) {
-                bDMDScreenRAM[i]=(bDMDScreenRAM[i]>>1)+128;
+                bDMDScreenRAM[i]=(bDMDScreenRAM[i]>>1)+msb_bit;
             } else {
                 bDMDScreenRAM[i]=(bDMDScreenRAM[i]>>1) + ((bDMDScreenRAM[i-1] & 1) <<7);
             }
@@ -380,7 +398,7 @@ boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
 
         // Redraw last char on screen
         int strWidth=marqueeOffsetX;
-        for (byte i=0; i < marqueeLength; i++) {
+        for (int i=0; i < marqueeLength; i++) {
             int wide = charWidth(marqueeText[i], orientation);
             if (strWidth+wide >= 0) {
                 drawChar(strWidth, marqueeOffsetY,marqueeText[i],GRAPHICS_NORMAL, orientation);

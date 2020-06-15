@@ -4,6 +4,7 @@
  
  adapted by Dmitry Dmitriev (c) 2019
  
+ ****** VERSION 0.4.2 ******
  
  DMD.h   - Function and support library for the Freetronics DMD, a 512 LED matrix display
            panel arranged in a 32 x 16 layout.
@@ -26,10 +27,11 @@
 #ifndef DMD_STM32_H_
 #define DMD_STM32_H_
 
-#define DMD_SPI_CLOCK_8MHZ    8000000
-#define DMD_SPI_CLOCK_4MHZ    4000000
-#define DMD_SPI_CLOCK_2MHZ    2000000
-#define DMD_SPI_CLOCK_1MHZ    1000000
+#define DMD_SPI_CLOCK_18MHZ     18000000
+#define DMD_SPI_CLOCK_9MHZ      9000000
+#define DMD_SPI_CLOCK_4_5MHZ    4500000
+#define DMD_SPI_CLOCK_2_2MHZ    2300000
+#define DMD_SPI_CLOCK_1MHZ      1000000
 
 
 	
@@ -47,7 +49,7 @@
 #include "DMD_Font.h"
 
 #if defined(__STM32F1__)
-       #define DMD_SPI_CLOCK DMD_SPI_CLOCK_8MHZ
+       #define DMD_SPI_CLOCK DMD_SPI_CLOCK_9MHZ
        #define DMD_USE_DMA	1
 #elif defined(__AVR_ATmega328P__)
        #define DMD_SPI_CLOCK SPI_CLOCK_DIV4
@@ -66,6 +68,9 @@
 
 //Panel inverse mode (for some panels)
 #define PANEL_INVERSE 0
+	
+//Max length of scrolling text
+#define MAX_STRING_LEN 300
 
 //drawTestPattern Patterns
 #define PATTERN_ALT_0     0
@@ -111,7 +116,8 @@ class DMD
   void writePixel( unsigned int bX, unsigned int bY, byte bGraphicsMode, byte bPixel );
 
   //Draw a string
-  void drawString( int bX, int bY, const char* bChars, byte length, byte bGraphicsMode,  byte orientation =0);
+  void drawString( int bX, int bY, const char* bChars, int length, byte bGraphicsMode,  byte orientation =0);
+  void drawStringX( int bX, int bY, const char* bChars, byte bGraphicsMode,  byte orientation =0);
 
   //Select a text font
   void selectFont(DMD_Font * font);
@@ -126,7 +132,8 @@ class DMD
   int charWidth(const unsigned char letter,  byte orientation =0);
 
   //Draw a scrolling string
-  void drawMarquee(const char* bChars, byte length, int left, int top,  byte orientation =0);
+  void drawMarquee(const char* bChars, int length, int left, int top,  byte orientation =0);
+  void drawMarqueeX(const char* bChars, int left, int top,  byte orientation =0);
 
   //Move the maquee accross by amount
   boolean stepMarquee( int amountX, int amountY,  byte orientation =0);
@@ -221,8 +228,8 @@ class DMD
 
 
   //Marquee values
-    char marqueeText[256];
-    byte marqueeLength;
+    char marqueeText[MAX_STRING_LEN];
+    int marqueeLength;
     int marqueeWidth;
     int marqueeHeight;
     int marqueeOffsetX;
