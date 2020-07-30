@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [0.4.2] - 2020-06-16
+ - Fix stepMarquee() bug in inverse displays
+ 
+## [0.4.1] - 2019-10-23
+ - Minor fix, move all STM32 specific to conditional compolation
 
 ## [0.4.0] - 2019-10-16
  - Move all timer and interrupt settings to the library from user code
