@@ -110,10 +110,12 @@ class DMD
     
 	DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh, SPIClass _spi );
 	
-	void init(uint16_t scan_interval = 2000);
+	~DMD();
+
+	virtual void init(uint16_t scan_interval = 2000);
 
  //Set or clear a pixel at the x and y location (0,0 is the top left corner)
-  void writePixel( unsigned int bX, unsigned int bY, byte bGraphicsMode, byte bPixel );
+  virtual void writePixel( unsigned int bX, unsigned int bY, byte bGraphicsMode, byte bPixel );
 
   //Draw a string
   void drawString( int bX, int bY, const char* bChars, int length, byte bGraphicsMode,  byte orientation =0);
@@ -136,11 +138,12 @@ class DMD
   void drawMarqueeX(const char* bChars, int left, int top,  byte orientation =0);
 
   //Move the maquee accross by amount
-  boolean stepMarquee( int amountX, int amountY,  byte orientation =0);
-
+  //virtual uint8_t stepMarquee( int amountX, int amountY, int left_x, byte orientation =0);
+  virtual uint8_t stepMarquee(int amountX, int amountY, byte orientation = 0);
   //Clear the screen in DMD RAM
-  void clearScreen( byte bNormal );
-
+  virtual void clearScreen( byte bNormal );
+  //void shiftScreen(int8_t step, uint16_t left = 0, uint16_t right= 0);
+  void shiftScreen(int8_t step);
   //Draw or clear a line from x1,y1 to x2,y2
   void drawLine( int x1, int y1, int x2, int y2, byte bGraphicsMode );
 
@@ -189,9 +192,9 @@ class DMD
   uint16_t stringWidth(const char *bChars, uint8_t length);
   
   uint8_t spi_num =0;
-  
-  
-  private:
+  void swapBuffers(boolean copy);
+  uint16_t WIDTH, HEIGHT;
+  protected:
     // pins
 	byte pin_DMD_nOE;   // active low Output Enable, setting this low lights all the LEDs in the selected rows. Can pwm it at very high frequency for brightness control.
     byte pin_DMD_A;   
@@ -208,7 +211,12 @@ class DMD
 
     //Mirror of DMD pixels in RAM, ready to be clocked out by the main loop or high speed timer calls
     byte *bDMDScreenRAM;
-	
+	uint16_t mem_Buffer_Size;
+	uint8_t         *matrixbuff[2];
+	volatile uint8_t backindex = 0;
+	volatile boolean swapflag;
+	volatile uint8_t *front_buff;
+
 #if defined(__STM32F1__)
     dma_channel  spiTxDmaChannel;
 	dma_dev* spiDmaDev;

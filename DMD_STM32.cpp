@@ -90,13 +90,29 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
 {
 	
 	uint16_t ui;
-    
+	bool dbuf = false;
+#if (USE_DUAL_BUFFER == 1)
+	dbuf = true;
+#endif 
+
+	
+
+
     DisplaysTotal=DisplaysWide*DisplaysHigh;
     row1 = DisplaysTotal<<4;
     row2 = DisplaysTotal<<5;
     row3 = ((DisplaysTotal<<2)*3)<<2;
-    bDMDScreenRAM = (byte *) malloc(DisplaysTotal*DMD_RAM_SIZE_BYTES);
-    
+	mem_Buffer_Size = DMD_RAM_SIZE_BYTES * DisplaysTotal;
+	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
+	matrixbuff[0] = (uint8_t *)malloc(allocsize);
+	//memset(matrixbuff[0], 0, allocsize);
+	// If not double-buffered, both buffers then point to the same address:
+	matrixbuff[1] = (dbuf == true) ? &matrixbuff[0][mem_Buffer_Size] : matrixbuff[0];
+	backindex = 0;
+	bDMDScreenRAM = matrixbuff[backindex]; // Back buffer
+	front_buff = matrixbuff[1 - backindex]; // -> front buffer 
+	WIDTH = DisplaysWide * DMD_PIXELS_ACROSS;
+	HEIGHT = DisplaysHigh * DMD_PIXELS_DOWN;
  #if defined(__STM32F1__)
     pin_DMD_CLK = SPI_DMD.sckPin();   
     pin_DMD_R_DATA = SPI_DMD.mosiPin() ; 
@@ -145,19 +161,26 @@ DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWid
     pinMode(pin_DMD_R_DATA, OUTPUT);	//
     
 
-    clearScreen(true);
+    //clearScreen(true);
     //brightness =20000;
     bDMDByte = 0;
 
 }
 
 
-//DMD::~DMD()
-//{
+DMD::~DMD()
+{
 //   // nothing needed here
-//}
+	free(matrixbuff[0]);
+#if defined( DMD_USE_DMA )	
+	free(dmd_dma_buf);
+	free(rx_dma_buf);
+#endif
+}
 
 void DMD::init(uint16_t scan_interval) {
+	
+
 #if defined(__STM32F1__)
     scan_int = scan_interval;
 	SPI_DMD.begin(); //Initialize the SPI_2 port.
@@ -168,6 +191,13 @@ void DMD::init(uint16_t scan_interval) {
 	register_running_dmd(this);
 	brightrange = Timer3.getOverflow();
 	setBrightness(brightrange/3);
+	// clean both buffers
+	if (matrixbuff[0] != matrixbuff[1]) {
+		bDMDScreenRAM = matrixbuff[1 - backindex];
+		clearScreen(true);
+	}
+	bDMDScreenRAM = matrixbuff[backindex];
+	clearScreen(true);
 	/*
 	pinMode(PA1, OUTPUT);
 	digitalWrite(PA1, LOW);*/
@@ -331,50 +361,106 @@ void DMD::drawMarquee(const char *bChars, int length, int left, int top, byte or
  /*--------------------------------------------------------------------------------------
  
 --------------------------------------------------------------------------------------*/
-boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
+//boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
+//{
+//	boolean ret = false;
+//	marqueeOffsetX += amountX;
+//	marqueeOffsetY += amountY;
+//
+//	// check if marquee reached to the limits of matrix panel
+//	// X axis
+//	if (marqueeOffsetX < -marqueeWidth) {
+//		marqueeOffsetX = WIDTH;
+//		ret = true;
+//	}
+//	else if (marqueeOffsetX > WIDTH) {
+//		marqueeOffsetX = -marqueeWidth;
+//		ret = true;
+//	}
+//	// Y axis
+//	if (marqueeOffsetY < -marqueeHeight) {
+//		marqueeOffsetY = HEIGHT;
+//		ret = true;
+//	}
+//	else if (marqueeOffsetY > HEIGHT) {
+//		marqueeOffsetY = -marqueeHeight;
+//		ret = true;
+//	}
+//	if (ret) {
+//		clearScreen(true);
+//		//fillScreen(textbgcolor);
+//	}
+//
+//	// Special case horizontal scrolling to improve speed
+//	if (amountY == 0 &&
+//		((amountX == -1) || (amountX == 1))) {
+//		// Shift entire screen one pixel
+//		shiftScreen(amountX);
+//
+//		uint16_t limit_X = 0;                 // if (amountX == 1)
+//		if (amountX == -1) limit_X = WIDTH;   // if (amountX == -1)
+//		// Redraw last char on screen
+//		int strWidth = marqueeOffsetX;
+//		for (int i = 0; i < marqueeLength; i++) {
+//			int wide = charWidth(marqueeText[i], orientation);
+//			if (strWidth + wide >= limit_X) {
+//				DMD::drawChar(strWidth, marqueeOffsetY, marqueeText[i], textcolor, orientation);
+//				return ret;
+//			}
+//			strWidth += wide + 1;
+//		}
+//
+//	}
+//	else {
+//		DMD::drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
+//			textcolor, orientation);
+//	}
+//
+//	return ret;
+//}
+
+uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 {
-    uint8_t msb_bit = 0x80;
-    uint8_t lsb_bit = 0x01;
-    
-    if (inverse_ALL_flag) {
-    	msb_bit = 0;
-        lsb_bit = 0;
-    }
-    
-    boolean ret=false;
+	uint8_t ret=0;
     marqueeOffsetX += amountX;
     marqueeOffsetY += amountY;
-    if (marqueeOffsetX < -marqueeWidth) {
+    if (marqueeOffsetX < (-marqueeWidth)) {
 	    marqueeOffsetX = DMD_PIXELS_ACROSS * DisplaysWide;
-	    clearScreen(true);
-        ret=true;
+	    
+        ret|=1;
     } else if (marqueeOffsetX > DMD_PIXELS_ACROSS * DisplaysWide) {
 	    marqueeOffsetX = -marqueeWidth;
-	    clearScreen(true);
-        ret=true;
+	    
+		ret |= 1;
     }
     
         
     if (marqueeOffsetY < -marqueeHeight) {
 	    marqueeOffsetY = DMD_PIXELS_DOWN * DisplaysHigh;
-	    clearScreen(true);
-        ret=true;
+	    
+		ret |= 1;
     } else if (marqueeOffsetY > DMD_PIXELS_DOWN * DisplaysHigh) {
 	    marqueeOffsetY = -marqueeHeight;
-	    clearScreen(true);
-        ret=true;
+	    
+		ret |= 1;
     }
+	
+	if (ret) clearScreen(true);
+	
+	// if text left justify at screen
+	if (marqueeOffsetX == 0) {
+		ret |= 2;
+	}
+	// if text right justify at screen
+	if ((marqueeOffsetX+ marqueeWidth )== DMD_PIXELS_ACROSS * DisplaysWide) {
+		ret |= 4;
+	}
 
     // Special case horizontal scrolling to improve speed
     if (amountY==0 && amountX==-1) {
         // Shift entire screen one bit
-        for (int i=0; i<DMD_RAM_SIZE_BYTES*DisplaysTotal;i++) {
-            if ((i%(DisplaysWide*4)) == (DisplaysWide*4) -1) {
-                bDMDScreenRAM[i]=(bDMDScreenRAM[i]<<1)+lsb_bit;
-            } else {
-                bDMDScreenRAM[i]=(bDMDScreenRAM[i]<<1) + ((bDMDScreenRAM[i+1] & 0x80) >>7);
-            }
-        }
+		shiftScreen(-1);
+		
 
         // Redraw last char on screen
         int strWidth=marqueeOffsetX;
@@ -388,13 +474,8 @@ boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
         }
     } else if (amountY==0 && amountX==1) {
         // Shift entire screen one bit
-        for (int i=(DMD_RAM_SIZE_BYTES*DisplaysTotal)-1; i>=0;i--) {
-            if ((i%(DisplaysWide*4)) == 0) {
-                bDMDScreenRAM[i]=(bDMDScreenRAM[i]>>1)+msb_bit;
-            } else {
-                bDMDScreenRAM[i]=(bDMDScreenRAM[i]>>1) + ((bDMDScreenRAM[i-1] & 1) <<7);
-            }
-        }
+		shiftScreen(1);
+		
 
         // Redraw last char on screen
         int strWidth=marqueeOffsetX;
@@ -414,7 +495,84 @@ boolean DMD::stepMarquee(int amountX, int amountY, byte orientation)
     return ret;
 }
 
+//void DMD::shiftScreen(int8_t step, uint16_t left, uint16_t right) {
+void DMD::shiftScreen(int8_t step) {
+	uint8_t msb_bit = 0x80;
+	uint8_t lsb_bit = 0x01;
 
+	if (inverse_ALL_flag) {
+		msb_bit = 0;
+		lsb_bit = 0;
+	}
+	
+	
+	/*uint8_t shift_mask[] = {
+		B00000000,
+		B10000000,
+		B11000000,
+		B11100000,
+		B11110000,
+		B11111000,
+		B11111100,
+		B11111110
+	};
+
+	if ((right != 0) && (right >= left) && (right < WIDTH)) {
+		uint8_t left_byte = left / 8;
+		uint8_t right_byte = right / 8;
+		uint8_t left_bit = left % 8;
+		uint8_t right_bit = right % 8;
+		uint8_t mask = shift_mask[left_bit];
+		uint8_t v_mask =  ~mask;
+
+		if (step < 0) {
+
+			for (int i = 0; i < HEIGHT;i++) {
+				left_byte = left / 8;
+				uint16_t b = i * (WIDTH / 8) + left_byte;
+				
+		        if (left_bit) {
+					uint8_t remain = bDMDScreenRAM[b] & mask;
+					uint8_t shift_part = bDMDScreenRAM[b] & (v_mask >>1 );
+					shift_part = shift_part << 1;
+					bDMDScreenRAM[b] = remain + shift_part + ((bDMDScreenRAM[b + 1] & 0x80) >> 7);
+					left_byte++;
+					b++;
+				}
+
+				for (int j = left_byte; j < (WIDTH / 8 - 1);j++) {
+					
+					bDMDScreenRAM[b] = (bDMDScreenRAM[b] << 1) + ((bDMDScreenRAM[b + 1] & 0x80) >> 7);
+					b++;
+				}
+				bDMDScreenRAM[b] = (bDMDScreenRAM[b] << 1) + lsb_bit;
+			}
+		}
+	}
+	else {*/
+		if (step < 0) {
+
+			for (int i = 0; i < mem_Buffer_Size;i++) {
+				if ((i % (DisplaysWide * 4)) == (DisplaysWide * 4) - 1) {
+					bDMDScreenRAM[i] = (bDMDScreenRAM[i] << 1) + lsb_bit;
+				}
+				else {
+					bDMDScreenRAM[i] = (bDMDScreenRAM[i] << 1) + ((bDMDScreenRAM[i + 1] & 0x80) >> 7);
+				}
+			}
+		}
+		else if (step > 0) {
+			for (int i = (mem_Buffer_Size)-1; i >= 0;i--) {
+				if ((i % (DisplaysWide * 4)) == 0) {
+					bDMDScreenRAM[i] = (bDMDScreenRAM[i] >> 1) + msb_bit;
+				}
+				else {
+					bDMDScreenRAM[i] = (bDMDScreenRAM[i] >> 1) + ((bDMDScreenRAM[i - 1] & 1) << 7);
+				}
+			}
+		}
+	//}
+}
 /*--------------------------------------------------------------------------------------
  Clear the screen in DMD RAM
 --------------------------------------------------------------------------------------*/
@@ -541,6 +699,8 @@ void DMD::drawBox(int x1, int y1, int x2, int y2, byte bGraphicsMode)
 void DMD::drawFilledBox(int x1, int y1, int x2, int y2,
 			byte bGraphicsMode)
 {
+	if ((x2 < x1) || (y2 < y1)) return;
+
     for (int b = x1; b <= x2; b++) {
 	    drawLine(b, y1, b, y2, bGraphicsMode);
     }
@@ -595,7 +755,15 @@ void DMD::latchDMA() {
       dma_clear_isr_bits(spiDmaDev, spiTxDmaChannel);
       
 	  pwmWrite(pin_DMD_nOE, 0);	//for stm32
-
+	  if (bDMDByte == 0) {
+		  if (swapflag == true) {    // Swap front/back buffers if requested
+			  backindex = 1 - backindex;
+			  swapflag = false;
+			  //bDMDByte = 0;
+			  bDMDScreenRAM = matrixbuff[backindex]; // Back buffer
+			  front_buff = matrixbuff[1 - backindex]; // -> front buffer
+		  }
+	  }
 		
         LATCH_DMD_SHIFT_REG_TO_OUTPUT();
         switch (bDMDByte) {
@@ -641,17 +809,17 @@ void DMD::scanDisplayByDMA()
 
 	    //uint8_t tt_buf[256];
         uint8_t* buf_ptr = dmd_dma_buf;
-        
+		uint8_t* fr_buff = (uint8_t*)front_buff; // -> front buffer 
 		/*memcpy(buf_ptr, bDMDScreenRAM +offset+row3, rowsize); buf_ptr += rowsize;
 		memcpy(buf_ptr, bDMDScreenRAM +offset+row2, rowsize); buf_ptr += rowsize;
 		memcpy(buf_ptr, bDMDScreenRAM +offset+row1, rowsize); buf_ptr += rowsize;
 		memcpy(buf_ptr, bDMDScreenRAM +offset, rowsize); */
 		 for (int i=0;i<rowsize;i++) {
         	//SPI_DMD.dmaSendAsync(bDMDScreenRAM, 16);
-            *buf_ptr = (bDMDScreenRAM[offset+i+row3]);buf_ptr++;
-            *buf_ptr = (bDMDScreenRAM[offset+i+row2]);buf_ptr++;
-            *buf_ptr = (bDMDScreenRAM[offset+i+row1]);buf_ptr++;
-            *buf_ptr = (bDMDScreenRAM[offset+i]);buf_ptr++;
+            *buf_ptr = (fr_buff[offset+i+row3]);buf_ptr++;
+            *buf_ptr = (fr_buff[offset+i+row2]);buf_ptr++;
+            *buf_ptr = (fr_buff[offset+i+row1]);buf_ptr++;
+            *buf_ptr = (fr_buff[offset+i]);buf_ptr++;
         }
 		
 		//SPI_DMD.onReceive(tx_callback);
@@ -779,12 +947,15 @@ void DMD::selectFont(DMD_Font * font)
 --------------------------------------------------------------------------------------*/
 int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte bGraphicsMode, byte orientation)
 {
-	
+	byte Foreground = bGraphicsMode;
+	byte Backgroud = GRAPHICS_INVERSE;
+	if (bGraphicsMode == GRAPHICS_INVERSE) Backgroud = GRAPHICS_NORMAL;
+
 	if (orientation) {
 		return drawCharV(bX, bY, letter, bGraphicsMode);
 	}
 	if (bX > (DMD_PIXELS_ACROSS*DisplaysWide) || bY > (DMD_PIXELS_DOWN*DisplaysHigh)) return -1;
-	
+	 
 	
 	unsigned char c = letter;
 	if (! Font->is_char_in(c)) return 0;
@@ -793,7 +964,7 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte b
 
 	if (c == ' ') { //CHANGED FROM ' '
 		int charWide = Font->get_char_width(' ');
-		this->drawFilledBox(bX, bY, bX + charWide , bY + height, GRAPHICS_INVERSE);
+		this->drawFilledBox(bX, bY, bX + charWide , bY + height, Backgroud);
         return charWide;
 	}
     
@@ -822,7 +993,7 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, byte b
 		uint8_t  xx, yy, bits = 0, bit = 0;
 		int16_t  xo16 = 0, yo16 = 0;
 
-		this->drawFilledBox(bX, bY, bX + ww, bY + height, GRAPHICS_INVERSE);
+		this->drawFilledBox(bX, bY, bX + ww, bY + height, Backgroud);
 
 
 		for (yy = 0; yy<h; yy++) {
@@ -887,7 +1058,9 @@ int DMD::drawCharV(const int bX, const int bY, const unsigned char letter, byte 
 {
 	// temp parameter for beta version
 	uint8_t matrix_h =16;
-	
+	byte Foreground = bGraphicsMode;
+	byte Backgroud = GRAPHICS_INVERSE;
+	if (bGraphicsMode == GRAPHICS_INVERSE) Backgroud = GRAPHICS_NORMAL;
 	
 	if (bX > (DMD_PIXELS_ACROSS*DisplaysWide) || bY > (DMD_PIXELS_DOWN*DisplaysHigh)) return -1;
 	
@@ -899,7 +1072,7 @@ int DMD::drawCharV(const int bX, const int bY, const unsigned char letter, byte 
 
 	if (c == ' ') { //CHANGED FROM ' '
 		int charWide = Font->get_char_width(' ');
-		this->drawFilledBox(bX, bY, bX + height , bY + matrix_h, GRAPHICS_INVERSE);
+		this->drawFilledBox(bX, bY, bX + height , bY + matrix_h, Backgroud);
         return height;
 	}
     
@@ -928,7 +1101,7 @@ int DMD::drawCharV(const int bX, const int bY, const unsigned char letter, byte 
 		uint8_t  xx, yy, bits = 0, bit = 0;
 		int16_t  xo16 = 0, yo16 = 0;
 
-		this->drawFilledBox(bX, bY, bX + hh, bY + matrix_h, GRAPHICS_INVERSE);
+		this->drawFilledBox(bX, bY, bX + hh, bY + matrix_h, Backgroud);
 
 
 		for (xx = 0; xx<h; xx++) {
@@ -1053,28 +1226,7 @@ void
 boolean DMD::stepImg(int amountX, int amountY)
 {
     boolean ret=false;
-    // marqueeOffsetX += amountX;
-    // marqueeOffsetY += amountY;
-    // if (marqueeOffsetX < -marqueeWidth) {
-	    // marqueeOffsetX = DMD_PIXELS_ACROSS * DisplaysWide;
-	    // clearScreen(true);
-        // ret=true;
-    // } else if (marqueeOffsetX > DMD_PIXELS_ACROSS * DisplaysWide) {
-	    // marqueeOffsetX = -marqueeWidth;
-	    // clearScreen(true);
-        // ret=true;
-    // }
     
-        
-    // if (marqueeOffsetY < -marqueeHeight) {
-	    // marqueeOffsetY = DMD_PIXELS_DOWN * DisplaysHigh;
-	    // clearScreen(true);
-        // ret=true;
-    // } else if (marqueeOffsetY > DMD_PIXELS_DOWN * DisplaysHigh) {
-	    // marqueeOffsetY = -marqueeHeight;
-	    // clearScreen(true);
-        // ret=true;
-    // }
 
     // Special case horizontal scrolling to improve speed
     if (amountY==0 && amountX==-1) {
@@ -1088,17 +1240,7 @@ boolean DMD::stepImg(int amountX, int amountY)
             }
         }
 
-        // Redraw last char on screen
-        // int imgWidth=marqueeOffsetX;
-        // for (byte i=0; i < marqueeLength; i++) {
-            // int wide = 1;
-            // if (imgWidth+wide >= DisplaysWide*DMD_PIXELS_ACROSS) {
-				// uint8_t buf[] = {marqueeImg[i], marqueeImg[i+32]};
-                // drawImg(imgWidth, marqueeOffsetY,buf, false);
-                // return ret;
-            // }
-            // imgWidth += wide+1;
-        // }
+       
     } else if (amountY==0 && amountX==1) {
         // Shift entire screen one bit
         for (int i=(DMD_RAM_SIZE_BYTES*DisplaysTotal)-1; i>=0;i--) {
@@ -1109,22 +1251,7 @@ boolean DMD::stepImg(int amountX, int amountY)
             }
         }
 
-        // Redraw last line on screen
-		// if (marqueeOffsetX + marqueeLength > DisplaysWide*DMD_PIXELS_ACROSS)
-		// {
-			// int overflow = DisplaysWide*DMD_PIXELS_ACROSS - marqueeOffsetX + marqueeLength;
-			
-		// }
-        // int imgWidth=marqueeOffsetX;
-        // for (byte i=0; i < marqueeLength; i++) {
-            // int wide = 1;
-            // if (imgWidth+wide >= 0) {
-				// uint8_t buf[] = {marqueeImg[i], marqueeImg[i+32]};
-                // drawImg(imgWidth, marqueeOffsetY, buf, false);
-                // return ret;
-            // }
-            // imgWidth += wide+1;
-        // }
+     
     } else {
         // drawImg(marqueeOffsetX, marqueeOffsetY, marqueeImg,
 	        // false);
@@ -1183,4 +1310,16 @@ uint16_t DMD::stringWidth(const char *bChars, uint8_t length)
 		width--;
 	}
 	return width;
+}
+void DMD::swapBuffers(boolean copy) {
+	if (matrixbuff[0] != matrixbuff[1]) {
+		// To avoid 'tearing' display, actual swap takes place in the interrupt
+		// handler, at the end of a complete screen refresh cycle.
+		swapflag = true;                  // Set flag here, then...
+		while (swapflag == true) delay(1); // wait for interrupt to clear it
+		bDMDScreenRAM = matrixbuff[backindex]; // Back buffer
+		front_buff = matrixbuff[1 - backindex]; // -> front buffer
+		if (copy == true)
+			memcpy(matrixbuff[backindex], matrixbuff[1 - backindex], mem_Buffer_Size);
+	}
 }
