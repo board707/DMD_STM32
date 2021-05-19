@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## [0.5.0] - 2021-05-18
+   New develop branch.
+ - New module structure with base class DMD_STM32a and child modules for
+   varius Monochrome and RGB panels
+ 
+## [0.4.3] - 2020-07-31
+ - Add dual buffering
+
+## [0.4.2] - 2020-06-16   <<<<<<< Stable version for Monochrome panels
+ - Fix stepMarquee() bug in inverse displays
+ 
+## [0.4.1] - 2019-10-23
+ - Minor fix, move all STM32 specific to conditional compolation
 
 ## [0.4.0] - 2019-10-16
  - Move all timer and interrupt settings to the library from user code
