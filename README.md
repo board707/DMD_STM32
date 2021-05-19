@@ -52,3 +52,8 @@ Connections
 * **Exclusions:** Do not use these pins: PB3/PB4 (JTAG), PA11/PA12 (USB D+ D-) 
 * For tested pin combinations see examples.
 * Pulldown resistor 3-10K between nOE and GND is recommended.
+
+Acknowledgements
+-----------
+- Evgeny Fokin for testing and provided matrices.
+- Eduard Yansapov - for testing.
