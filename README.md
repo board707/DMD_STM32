@@ -1,28 +1,24 @@
-# DMD_STM32 with Unicode fonts support 
-The library is STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD) and designed to make it easy to display graphics and scrolling text on p10 DMD 32x16 matrix display. Its fundamental difference from the original DMD library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language.
+# DMD_STM32a - development branch of DMD_STM32 with RGB panels support
+This code branch is further development of DMD_STM32 library. The code was rewritten by 70%, the library received a modular structure with a DMD_STM32a base class and several child classes for various matrices and connection types. Major change is **support of RGB matrix panels.** For more details on RGB matrices, [ see here.](https://cdn-learn.adafruit.com/downloads/pdf/32x16-32x32-rgb-led-matrix.pdf)
 
-Last version of the code has significantly improved performance through the use of DMA for SPI transfer. You can connect up to 16 DMD matrices on channel without significant slowing down the main program code
+The principles of handling RGB matrices are based on RGBMatrixPanel library https://github.com/adafruit/RGB-matrix-Panel, with a changes, necessary to port code to STM32 controllers. For a start, the code can work with the following types of RGB matrices:
 
-Initial version of STM32 specific code based on DMDSTM by Evgen Mozok: https://github.com/mozok/DMDSTM
+- 32x16 8scan
+- 64x32 16scan
+- 80x40 20scan
+- 64x64 32scan
+
+The number of matrices is limited by the size of the controller memory.
+
+#### Other improvements:
+ - The graphics subsystem is now inherited from Adafruit GFX library https://github.com/adafruit/Adafruit-GFX-Library
+ - Dual memory buffering for reducing scanning artefacts and making some visual effects
+ - For monochrome display - a new "Parallel" connection scheme, in which each horizontal row of panels is connected to a separate R_DATA pin
+ 
 
 Notice
 ------
 This software is experimental and a work in progress. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
-
-What works and not?
----------- 
-
-* All examples adopted from original DMD library are works
-* Adafruit_GFX fonts can be used on drawString() and drawMarquee() routines (see dmd_cyr_chars example)
-* Simple brightness control included (STM32 only)
-* On the "bluepill" board can be used two independent DMD instances simultaneously - on SPI(1) and SPI(2) (see double_dmd example)
-* On STM run up to 16 DMD matrices on channel without significant performance loss (6 tested)  
-
-Example videos
---------------
-* Two simultaneous scrolling texts on STM32 https://youtu.be/OCpLTLpwgRI
-* Displaying text with converted Unicode font (Cyrillic) https://youtu.be/9xUB8-jk5Tc
-* Vertical scrolling text https://youtu.be/JNL-5qp6bDc
 
 Versions
 ---------
@@ -30,25 +26,13 @@ For version history see [CHANGES.txt](CHANGES.txt)
 
 Compatible IDE
 ----------
-This library works with Arduino IDE 1.8, other versions are **not tested**
+This library works with Arduino IDE 1.8, other versions are **not tested**. Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is required to support STM32 based boards on Arduino IDE.
 
 Compatible boards
 -----------------
 
 * STM32 - only STM32F103C8TB (bluepill) board tested !
-* AVR - Atmega328
 
-Connections
+Documentation
 -----------
-
-| DMD Signal | STM32 Pin | Comments |
-| ---------- | --------- | -------- |
-| A, B | PB6/PB7/PB10/PB11... | User adjustable, almost any digital pin, see exclusions |
-| nOE | PB0/PB1/PB5 | Should be TIMER3 PWM pin
-| CLK | PA5/PB13 for SPI(1)/SPI(2) | Predefined by SPI |
-| SCLK | PB11/PB8... |  User adjustable, almost any digital pin, see exclusions |
-| R_DATA | PA7/PB15 for SPI(1)/SPI(2) |  Predefined by SPI |
-
-* **Exclusions:** Do not use these pins: PB3/PB4 (JTAG), PA11/PA12 (USB D+ D-) 
-* For tested pin combinations see examples.
-* Pulldown resistor 3-10K between nOE and GND is recommended.
+No documentation available (hopefully yet). See examples for connection.
