@@ -26,7 +26,7 @@ Example videos
 
 Versions
 ---------
-This branch is contain the stable version 0.4.2 of the code. Development version of the library [see here](../dev-V2/)
+This branch is contain the stable version 0.4.2 of the code. Development version of the library [see here](https://github.com/board707/DMD_STM32/tree/dev-V2)
 
 For version history see [CHANGES.txt](CHANGES.txt)
 
