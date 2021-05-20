@@ -24,9 +24,11 @@ Versions
 ---------
 For version history see [CHANGES.txt](CHANGES.txt)
 
-Compatible IDE
+Compatible IDE and libraries
 ----------
 This library works with Arduino IDE 1.8, other versions are **not tested**. Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is required to support STM32 based boards on Arduino IDE.
+
+DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
 
 Compatible boards
 -----------------
