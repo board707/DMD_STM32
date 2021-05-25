@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.5.0 ******
+ ****** VERSION 0.5.1 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library 
  
@@ -77,18 +77,7 @@ typedef uint32_t PortType;
 #define DMD_BITSPERPIXEL           1       // used for Monochrome panels only
 #define DMD_MONO_SCAN              4
 
-//lookup table for DMD::writePixel to make the pixel indexing routine faster
-static byte bPixelLookupTable[8] =
-{
-   0x80,   //0, bit 7
-   0x40,   //1, bit 6
-   0x20,   //2. bit 5
-   0x10,   //3, bit 4
-   0x08,   //4, bit 3
-   0x04,   //5, bit 2
-   0x02,   //6, bit 1
-   0x01    //7, bit 0
-};
+
 
 
 typedef uint8_t (*FontCallback)(const uint8_t*);
@@ -159,9 +148,9 @@ class DMD : public Adafruit_GFX
   void swapBuffers(boolean copy);
 protected:
 	// pins
-	byte pin_DMD_nOE;   // active low Output Enable, setting this low lights all the LEDs in the selected rows. Can pwm it at very high frequency for brightness control.
 	byte pin_DMD_A;
 	byte pin_DMD_B;
+	byte pin_DMD_nOE;   // active low Output Enable, setting this low lights all the LEDs in the selected rows. Can pwm it at very high frequency for brightness control.
 
 	byte pin_DMD_SCLK;  // LATCH PORT
 	

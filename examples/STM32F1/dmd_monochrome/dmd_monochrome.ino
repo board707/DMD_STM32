@@ -16,7 +16,7 @@
 #endif
 
 // Fonts includes
-#include "st_fonts/UkrRusArial14.h";
+#include "st_fonts/UkrRusArial14.h"
 #pragma GCC diagnostic ignored "-Wnarrowing"
 #pragma GCC diagnostic ignored "-Woverflow"
 #include "gfx_fonts/GlametrixLight12pt7b.h"

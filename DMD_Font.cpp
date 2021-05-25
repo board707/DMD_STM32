@@ -104,14 +104,14 @@ DMD_GFX_Font::DMD_GFX_Font(const uint8_t* ptr, const uint8_t* ptr2, uint8_t star
 	gfx_flag = true;
 	gfxFont = (GFXfont*)font_ptr;
 
-	firstChar = (uint8_t)pgm_read_word(&gfxFont->first);
-	lastChar = (uint8_t) pgm_read_word(&gfxFont->last);
+	firstChar = pgm_read_byte(&gfxFont->first);
+	lastChar =  pgm_read_byte(&gfxFont->last);
 	fontHeight = font_h;
 	if (font_ptr2 != NULL) {
 		gfxFont2 = (GFXfont*)font_ptr2;
 		font2_flag = true;
 		firstChar2 = start_code;
-		lastChar2 = start_code + pgm_read_word(&gfxFont2->last) - pgm_read_word(&gfxFont2->first);
+		lastChar2 = start_code + pgm_read_byte(&gfxFont2->last) - pgm_read_byte(&gfxFont2->first);
 	}
 }	
 
@@ -154,7 +154,7 @@ void DMD_GFX_Font::add_second_font(GFXfont* second, uint8_t start_code) {
 	gfxFont2 = second;
 	font2_flag = true;
 	firstChar2 = start_code;
-	lastChar2 = start_code + pgm_read_word(&gfxFont2->last) - pgm_read_word(&gfxFont2->first);
+	lastChar2 = start_code + pgm_read_byte(&gfxFont2->last) - pgm_read_byte(&gfxFont2->first);
 }
 
 uint8_t DMD_GFX_Font::get_first_by_char(unsigned char c) {

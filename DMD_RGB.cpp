@@ -238,7 +238,7 @@ void DMD_RGB_BASE::oe_disable() {
 }
 
 void DMD_RGB_BASE::scan_dmd() {
-	uint8_t  i, tick, tock;
+	//uint8_t  i, tick, tock;
 	uint16_t t, duration, x_len;
 	volatile uint8_t* ptr;
 	// Calculate time to next interrupt BEFORE incrementing plane #.

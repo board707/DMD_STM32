@@ -391,7 +391,7 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 			yo = height + pgm_read_byte(&glyph->yOffset);
 		uint8_t  ww = pgm_read_byte(&glyph->xAdvance);
 		uint8_t  xx, yy, bits = 0, bit = 0;
-		int16_t  xo16 = 0, yo16 = 0;
+		//int16_t  xo16 = 0, yo16 = 0;
 
 		this->drawFilledBox(bX, bY, bX + ww, bY + height, inverse_color(color));
 
@@ -468,7 +468,7 @@ int DMD::drawCharV(const int bX, const int bY, const unsigned char letter, uint1
 	uint8_t height = Font->get_height();
 
 	if (c == ' ') { //CHANGED FROM ' '
-		int charWide = Font->get_char_width(' ');
+		//int charWide = Font->get_char_width(' ');
 		this->drawFilledBox(bX, bY, bX + height , bY + matrix_h, inverse_color(color));
         return height;
 	}
@@ -496,7 +496,7 @@ int DMD::drawCharV(const int bX, const int bY, const unsigned char letter, uint1
 			xo = height + pgm_read_byte(&glyph->yOffset);
 		uint8_t  hh = xo + h;
 		uint8_t  xx, yy, bits = 0, bit = 0;
-		int16_t  xo16 = 0, yo16 = 0;
+		//int16_t  xo16 = 0, yo16 = 0;
 
 		this->drawFilledBox(bX, bY, bX + hh, bY + matrix_h, inverse_color(color));
 
@@ -554,7 +554,8 @@ int DMD::drawCharV(const int bX, const int bY, const unsigned char letter, uint1
 			}
 		}
 		return width; */
-	} 
+		return -1;
+	}
 } 
  
 /*--------------------------------------------------------------------------------------

@@ -38,7 +38,7 @@
 // 32 bits elsewhere.  Try to accommodate both...
 
 #if !defined(__INT_MAX__) || (__INT_MAX__ > 0xFFFF)
-#define pgm_read_pointer(addr) ((void *)pgm_read_dword(addr))
+#define pgm_read_pointer(addr) ((void *)(addr))
 #else
 #define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
 #endif 
@@ -67,9 +67,9 @@ public:
 	uint8_t get_last();
 	uint8_t get_height();
 
-	virtual bool is_char_in(unsigned char c) {} ;
+	virtual bool is_char_in(unsigned char c) = 0;
 
-	virtual uint8_t get_char_width(unsigned char c, byte orientation = 0) {};
+	virtual uint8_t get_char_width(unsigned char c, byte orientation = 0) = 0;
 };
 /******************************************************/
 class DMD_Standard_Font : public DMD_Font {
