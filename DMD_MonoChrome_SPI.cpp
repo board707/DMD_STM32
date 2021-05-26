@@ -2,6 +2,19 @@
 #include "SPI_DMA.h"
 
 
+//lookup table for DMD::writePixel to make the pixel indexing routine faster
+static byte bPixelLookupTable[8] =
+{
+   0x80,   //0, bit 7
+   0x40,   //1, bit 6
+   0x20,   //2. bit 5
+   0x10,   //3, bit 4
+   0x08,   //4, bit 3
+   0x04,   //5, bit 2
+   0x02,   //6, bit 1
+   0x01    //7, bit 0
+};
+
 
 DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, 
 	                                   byte panelsWide, byte panelsHigh, SPIClass _spi,
