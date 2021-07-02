@@ -54,8 +54,8 @@
 #if defined(DMD_PARA)
 //pins for rows at x axis
 // example for two rows
-// all those pins must be selected from same port!
-uint8_t pins[] = { PA5, PA7, PA8 };  // CLK , row1, row 2
+// all those pins must be selected from lower byte of same port!
+uint8_t pins[] = { PA5, PA7, PA6 };  // CLK , row1, row 2
 
 //Fire up the DMD object as dmd
 DMD_Monochrome_Parallel dmd(DMD_PIN_A, DMD_PIN_B, DMD_PIN_nOE, DMD_PIN_SCLK, pins, DISPLAYS_ACROSS, DISPLAYS_DOWN,ENABLE_DUAL_BUFFER);
