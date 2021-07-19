@@ -116,14 +116,18 @@ void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
 	unsigned int uiDMDRAMPointer;
 	uint8_t bPixel = color;
-	uint16_t bX = x;
-	uint16_t bY = y;
+	int16_t bX = x;
+	int16_t bY = y;
 	if (bX >= (WIDTH) || bY >= (HEIGHT)) {
 		return;
 	}
 	if (bX < 0 || bY < 0) {
 		return;
 	}
+
+	// transform X & Y for Rotate and connect scheme
+	transform_XY(bX, bY);
+
 	// inverse data bits for some panels
 	bPixel = bPixel ^ inverse_ALL_flag;
 

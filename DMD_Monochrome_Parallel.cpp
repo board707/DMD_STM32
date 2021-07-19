@@ -82,6 +82,9 @@ void DMD_Monochrome_Parallel::drawPixel(int16_t x, int16_t y, uint16_t color) {
 	if (bX < 0 || bY < 0) {
 		return;
 	}
+	// transform X & Y for Rotate and connect scheme
+	transform_XY(bX, bY);
+
 	// inverse data bits for some panels
 	bPixel = bPixel ^ inverse_ALL_flag;
 	byte panel_row = bY / DMD_PIXELS_DOWN;

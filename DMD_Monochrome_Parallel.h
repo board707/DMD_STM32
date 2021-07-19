@@ -14,6 +14,8 @@ public:
 	void scan_dmd();
 	virtual void clearScreen(byte bNormal);
 	virtual void shiftScreen(int8_t step);
+	// changing connect scheme not allowed for Parallel
+	virtual void setConnectScheme(uint8_t sch) {};
 	
 private:
 	
