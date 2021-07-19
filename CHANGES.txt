@@ -1,6 +1,13 @@
 # ChangeLog
 
 ## Unreleased
+## [0.6.3] - 2021-07-18
+ - Add 1-bit RGB color depth
+ - Rewrite marquee text code
+ - Many other changes as ZigZag connect scheme etc
+
+## [0.5.1] - 2021-05-26
+ - Minor fix
 
 ## [0.5.0] - 2021-05-18
    New develop branch.

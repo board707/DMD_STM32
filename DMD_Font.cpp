@@ -143,7 +143,9 @@ uint8_t DMD_GFX_Font::get_char_width(unsigned char c, byte orientation) {
 		
 		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_ptr->glyph))[c]);
 		if (orientation) {
-			   return (uint8_t)(fontHeight + pgm_read_byte(&glyph->yOffset) + pgm_read_byte(&glyph->height) );
+			   int8_t char_w = fontHeight + (int8_t)pgm_read_byte(&glyph->yOffset) + pgm_read_byte(&glyph->height) ;
+			   if (char_w < 0) return 0;
+			   else return (uint8_t)char_w;
 		}	
 		else { return (uint8_t)pgm_read_byte(&glyph->xAdvance);}
 	}

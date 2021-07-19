@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.5.1 ******
+ ****** VERSION 0.6.3 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library 
  
@@ -72,13 +72,17 @@ typedef uint32_t PortType;
 #define PATTERN_STRIPE_1  3
 
 //display screen (and subscreen) sizing
-//#define DMD_PIXELS_ACROSS         32      //pixels across x axis 
-//#define DMD_PIXELS_DOWN           16      //pixels down y axis
 #define DMD_BITSPERPIXEL           1       // used for Monochrome panels only
 #define DMD_MONO_SCAN              4
 
+// Panel connections variants
+#define CONNECT_NORMAL 0
+#define CONNECT_ROTATE90 1
+#define CONNECT_ZIGZAG 2
 
-
+#ifndef _swap_int16_t
+#define _swap_int16_t(a, b) { int16_t t = a; a = b; b = t; }
+#endif
 
 typedef uint8_t (*FontCallback)(const uint8_t*);
 
@@ -97,18 +101,19 @@ class DMD : public Adafruit_GFX
 	virtual void init(uint16_t scan_interval = 2000);
 
  //Set or clear a pixel at the x and y location (0,0 is the top left corner)
-  //void writePixel(int16_t x, int16_t y, uint16_t color);
   virtual void drawPixel(int16_t x, int16_t y, uint16_t color) = 0;
   //Draw a string
-  void drawString( int bX, int bY, const char* bChars, int length, uint16_t color,  byte orientation =0);
+  void drawString( int bX, int bY, const char* bChars, int length, uint16_t color, int16_t miny, int16_t maxy, byte orientation =0);
+  void drawString(int bX, int bY, const char* bChars, int length, uint16_t color, byte orientation = 0);
   void drawStringX( int bX, int bY, const char* bChars, uint16_t color,  byte orientation =0);
 
   //Select a text font
   void selectFont(DMD_Font * font);
 
   //Draw a single character
-  int drawChar(const int bX, const int bY, const unsigned char letter, uint16_t color, byte orientation =0);
  
+  int drawChar(const int bX, const int bY, const unsigned char letter, uint16_t color, byte orientation = 0) ;
+  int drawChar(const int bX, const int bY, const unsigned char letter, uint16_t color, int16_t miny, int16_t maxy, byte orientation = 0);
   //Draw a single character vertically 
   int drawCharV(const int bX, const int bY, const unsigned char letter, uint16_t color );
 
@@ -126,12 +131,33 @@ class DMD : public Adafruit_GFX
   virtual void clearScreen( byte bNormal );
   virtual void fillScreen(uint16_t color);
   virtual void shiftScreen(int8_t step) =0;
-
+  virtual void transform_XY(int16_t& x, int16_t& y);
+  // set panel connection scheme
+  virtual void setConnectScheme(uint8_t sch) { 
+	  this->connectScheme = sch; 
+	  if (sch != CONNECT_NORMAL) {
+		  this->use_shift = false;
+		  this->fast_Hbyte = false;
+	  }
+  };
+  virtual void setRotation(uint8_t x) {
+	  uint8_t rot = (x & 3);
+	  if (rot) {
+		  this->use_shift = false;
+		  this->fast_Hbyte = false;
+	  }
+	  Adafruit_GFX::setRotation(rot);
+  };
+  
+  
+  virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+	  uint8_t* bg_col_bytes) {};
+  virtual void getColorBytes(uint8_t* cbytes, uint16_t color) {} ;
  //Draw or clear a filled box(rectangle) with a single pixel border
   void drawFilledBox( int x1, int y1, int x2, int y2, uint16_t color );
 
   //ADD from DMD2 library, set brightness of panel
-  inline void setBrightness(uint8_t level) { 
+  void setBrightness(uint8_t level) { 
    this->brightness = map(level, 0, 255, 0, brightrange); };
   
   // Inverse all data on display - for p10 matrix inversed by design
@@ -144,8 +170,11 @@ class DMD : public Adafruit_GFX
   {
 	  return stringWidth(bChars, length, 1);
   } 
+  void stringBounds(const char* bChars, uint8_t length,
+	  int16_t* w, int16_t* min_y, int16_t* max_y, byte orientation = 0);
   void dumpDDbuf(void);
   void swapBuffers(boolean copy);
+ 
 protected:
 	// pins
 	byte pin_DMD_A;
@@ -155,11 +184,14 @@ protected:
 	byte pin_DMD_SCLK;  // LATCH PORT
 	
 	// Pin bitmasks
-	PortType latmask, oemask, addramask, addrbmask, addrcmask, addrdmask, addremask, mux_clrmask;
+	PortType latmask, oemask, addramask, addrbmask; // addrcmask, addrdmask, addremask, mux_clrmask;
 	// PORT register pointers 
 	volatile PortType* latport, * oeport, * addraport, * addrbport;
-	// * addrcport, * addrdport;
-
+#if defined(__STM32F1__)
+	volatile PortType* oe_CRL;
+	PortType oe_mode_clrmask, oe_out_mode, oe_pwm_mode;
+	uint8_t oe_channel;
+#endif
 	uint16_t brightness = 100;
 	uint16_t brightrange = 255;
 
@@ -176,14 +208,19 @@ protected:
 	void OE_DMD_ROWS_OFF();
 	void OE_DMD_ROWS_ON();
 
-
 	//Marquee values
 	char marqueeText[MAX_STRING_LEN];
-	int marqueeLength;
-	int marqueeWidth;
-	int marqueeHeight;
-	int marqueeOffsetX;
-	int marqueeOffsetY;
+	uint16_t marqueeLength;
+	int16_t marqueeWidth,
+	marqueeHeight,
+	 marqueeOffsetX,
+		marqueeOffsetY,
+		marqueeMarginH,
+		marqueeMarginL;
+	
+	bool use_shift = true;
+	
+	bool fast_Hbyte = false;
 
 	//Pointer to current font
 	DMD_Font* Font;
@@ -201,9 +238,8 @@ protected:
 
 	
 	uint8_t inverse_ALL_flag = PANEL_INVERSE;
-	//uint16_t fg_color = 1;
-	//uint16_t bg_color = 0;
-	
+	byte connectScheme = CONNECT_NORMAL;
+
 	uint8_t graph_mode = GRAPHICS_NORMAL;
 	void set_graph_mode(uint8_t gm = GRAPHICS_NORMAL) {
 		graph_mode = gm;
@@ -213,9 +249,13 @@ protected:
 
 	}
 #if defined(DEBUG2)
-	
-	volatile uint16_t *dd_ptr;
+#define DEBUG_TIME_MARK if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount()
+#define DEBUG_TIME_MARK_333 if (dd_cnt < 100) dd_ptr[dd_cnt++] = 333
+	volatile uint16_t *dd_ptr = 0;
 	volatile uint8_t dd_cnt = 0;
+#else
+#define DEBUG_TIME_MARK 
+#define DEBUG_TIME_MARK_333 
 #endif	
   private:
     

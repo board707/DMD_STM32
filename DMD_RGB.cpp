@@ -1,5 +1,5 @@
 #include "DMD_RGB.h"
-static volatile DMD_RGB_BASE* running_dmd_R;
+static volatile DMD_RGB_BASE *running_dmd_R;
 void inline __attribute__((always_inline)) scan_running_dmd_R()
 
 {
@@ -20,22 +20,18 @@ void inline __attribute__((always_inline)) oe_disable_R()
 #endif
 
 DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
-	byte panelsWide, byte panelsHigh, bool d_buf, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y)
-	: DMD(mux_list[0], mux_list[1], _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, d_buf, dmd_pixel_x, dmd_pixel_y),  nRows(n_Rows)
+	byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y)
+	: DMD(mux_list[0], mux_list[1], _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, d_buf, dmd_pixel_x, dmd_pixel_y),  nRows(n_Rows), nPlanes(col_depth)
 {
-	addraport = portOutputRegister(digitalPinToPort(pin_DMD_A));
-	addramask = digitalPinToBitMask(pin_DMD_A);
-	addrbport = portOutputRegister(digitalPinToPort(pin_DMD_B));
-	addrbmask = digitalPinToBitMask(pin_DMD_B);
-
 	muxsetreg = portSetRegister(pin_DMD_A);
 	muxclrreg = portClearRegister(pin_DMD_A);
-
+	
+	fast_Hbyte = true;
+	
 	if (mux_cnt > 2) {
 		pin_DMD_C = mux_list[2];
 		digitalWrite(pin_DMD_C, LOW);
 		pinMode(pin_DMD_C, OUTPUT);
-		//addrcport = portOutputRegister(digitalPinToPort(pin_DMD_C));
 		addrcmask = digitalPinToBitMask(pin_DMD_C);
 	}
 
@@ -43,7 +39,6 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 		pin_DMD_D = mux_list[3];
 		digitalWrite(pin_DMD_D, LOW);
 		pinMode(pin_DMD_D, OUTPUT);
-		//addrdport = portOutputRegister(digitalPinToPort(pin_DMD_D));
 		addrdmask = digitalPinToBitMask(pin_DMD_D);
 	}
 
@@ -55,11 +50,6 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	}
 	
 	
-	
-	oeport = portOutputRegister(digitalPinToPort(pin_DMD_nOE));
-	oemask = digitalPinToBitMask(pin_DMD_nOE);
-	latport = portOutputRegister(digitalPinToPort(pin_DMD_SCLK));
-	latmask = digitalPinToBitMask(pin_DMD_SCLK);
 	latsetreg = portSetRegister(pin_DMD_SCLK);
 	latclrreg = portClearRegister(pin_DMD_SCLK);
 	oesetreg = portSetRegister(pin_DMD_nOE);
@@ -76,7 +66,10 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	running_dmd_R = this;
 
 	// Allocate and initialize matrix buffer:
-	mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * 3 / 2; // x3 = 3 bytes holds 4 planes "packed"
+
+	// x3 = 3 bytes holds 4 planes "packed"
+	if (nPlanes == 4) mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * 3 / 2; 
+	else if (nPlanes == 1) mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN / 2;
 	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
 
 	mux_mask = (uint16_t*)malloc(nRows * 2);
@@ -86,33 +79,41 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	matrixbuff[1] = (dbuf == true) ? &matrixbuff[0][mem_Buffer_Size] : matrixbuff[0];
 
 #if defined(DEBUG2)
-	dd_ptr = (uint16_t*)malloc(200);
+	if (!dd_ptr) dd_ptr = (uint16_t*)malloc(200);
 #endif	
 }
 
 
 void DMD_RGB_BASE::init(uint16_t scan_interval) {
 	// mux mask
-	for (uint8_t i = 0; i < nRows; i++)
-	{
-		mux_mask[i] = 0;
-		if (i & 0x1)   mux_mask[i] |= addramask;
-		if (i & 0x2)   mux_mask[i] |= addrbmask;
-		if (i & 0x4)   mux_mask[i] |= addrcmask;
+	if (nRows == 2) {
+		
+		mux_mask[0] = addramask;
+		mux_mask[1] = addrbmask;
+		mux_clrmask = addramask | addrbmask;
+	}
+	else {
+		for (uint8_t i = 0; i < nRows; i++)
+		{
+			mux_mask[i] = 0;
+			if (i & 0x1)   mux_mask[i] |= addramask;
+			if (i & 0x2)   mux_mask[i] |= addrbmask;
+			if (i & 0x4)   mux_mask[i] |= addrcmask;
 
+			if (nRows > 8) {
+				if (i & 0x8)   mux_mask[i] |= addrdmask;
+			}
+			if (nRows > 16) {
+				if (i & 0x10)   mux_mask[i] |= addremask;
+			}
+		}
+		mux_clrmask = addramask | addrbmask | addrcmask;
 		if (nRows > 8) {
-			if (i & 0x8)   mux_mask[i] |= addrdmask;
+			mux_clrmask |= addrdmask;
 		}
 		if (nRows > 16) {
-			if (i & 0x10)   mux_mask[i] |= addremask;
+			mux_clrmask |= addremask;
 		}
-	}
-	mux_clrmask = addramask | addrbmask | addrcmask;
-	if (nRows > 8) {
-		mux_clrmask |= addrdmask;
-	}
-	if (nRows > 16) {
-		mux_clrmask |= addremask;
 	}
 
 
@@ -153,85 +154,6 @@ void DMD_RGB_BASE::init(uint16_t scan_interval) {
 }
 
 
-
-void DMD_RGB_BASE::drawPixel(int16_t x, int16_t y, uint16_t c) {
-	uint8_t r, g, b, bit, limit, *ptr;
-
-	if (graph_mode == GRAPHICS_NOR) {
-		if (c == textcolor) c = textbgcolor;
-		else return;
-	}
-	if ((x < 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
-
-	switch (rotation) {
-	case 1:
-		_swap_int16_t(x, y);
-		x = WIDTH - 1 - x;
-		break;
-	case 2:
-		x = WIDTH - 1 - x;
-		y = HEIGHT - 1 - y;
-		break;
-	case 3:
-		_swap_int16_t(x, y);
-		y = HEIGHT - 1 - y;
-		break;
-	}
-
-	// Adafruit_GFX uses 16-bit color in 5/6/5 format, while matrix needs
-	// 4/4/4.  Pluck out relevant bits while separating into R,G,B:
-	r = c >> 12;        // RRRRrggggggbbbbb
-	g = (c >> 7) & 0xF; // rrrrrGGGGggbbbbb
-	b = (c >> 1) & 0xF; // rrrrrggggggBBBBb
-
-	// Loop counter stuff
-	bit = 2;
-	limit = 1 << nPlanes;
-	uint16_t x_len = WIDTH * DisplaysHigh;
-	uint16_t base_addr = (y % nRows) * x_len * (nPlanes - 1) + (y / DMD_PIXELS_DOWN)* WIDTH + x;
-	ptr = &matrixbuff[backindex][base_addr]; // Base addr
-	
-	if (y % DMD_PIXELS_DOWN < nRows) {
-		// Data for the upper half of the display is stored in the lower
-		// bits of each byte.
-		
-		// Plane 0 is a tricky case -- its data is spread about,
-		// stored in least two bits not used by the other planes.
-		ptr[x_len * 2] &= ~B00000011;           // Plane 0 R,G mask out in one op
-		if (r & 1) ptr[x_len * 2] |= B00000001; // Plane 0 R: 64 bytes ahead, bit 0
-		if (g & 1) ptr[x_len * 2] |= B00000010; // Plane 0 G: 64 bytes ahead, bit 1
-		if (b & 1) ptr[x_len] |= B00000001; // Plane 0 B: 32 bytes ahead, bit 0
-		else      ptr[x_len] &= ~B00000001; // Plane 0 B unset; mask out
-		// The remaining three image planes are more normal-ish.
-		// Data is stored in the high 6 bits so it can be quickly
-		// copied to the DATAPORT register w/6 output lines.
-		for (; bit < limit; bit <<= 1) {
-			*ptr &= ~B00011100;            // Mask out R,G,B in one op
-			if (r & bit) *ptr |= B00000100; // Plane N R: bit 2
-			if (g & bit) *ptr |= B00001000; // Plane N G: bit 3
-			if (b & bit) *ptr |= B00010000; // Plane N B: bit 4
-			ptr += x_len;                 // Advance to next bit plane
-		}
-	}
-	else {
-		// Data for the lower half of the display is stored in the upper
-		// bits, except for the plane 0 stuff, using 2 least bits.
-		
-		*ptr &= ~B00000011;                  // Plane 0 G,B mask out in one op
-		if (r & 1)  ptr[x_len] |= B00000010; // Plane 0 R: 32 bytes ahead, bit 1
-		else       ptr[x_len] &= ~B00000010; // Plane 0 R unset; mask out
-		if (g & 1) *ptr |= B00000001; // Plane 0 G: bit 0
-		if (b & 1) *ptr |= B00000010; // Plane 0 B: bit 0
-		for (; bit < limit; bit <<= 1) {
-			*ptr &= ~B11100000;            // Mask out R,G,B in one op
-			if (r & bit) *ptr |= B00100000; // Plane N R: bit 5
-			if (g & bit) *ptr |= B01000000; // Plane N G: bit 6
-			if (b & bit) *ptr |= B10000000; // Plane N B: bit 7
-			ptr += x_len;                 // Advance to next bit plane
-		}
-	}
-}
-
 void DMD_RGB_BASE::oe_disable() {
 	*oeport |= oemask;
 	Timer4.detachInterrupt(TIMER_CC1_INTERRUPT);
@@ -239,7 +161,7 @@ void DMD_RGB_BASE::oe_disable() {
 
 void DMD_RGB_BASE::scan_dmd() {
 	//uint8_t  i, tick, tock;
-	uint16_t t, duration, x_len;
+	uint16_t t, duration;
 	volatile uint8_t* ptr;
 	// Calculate time to next interrupt BEFORE incrementing plane #.
 	// This is because duration is the display time for the data loaded
@@ -249,20 +171,18 @@ void DMD_RGB_BASE::scan_dmd() {
 	// of this method.
 #if defined(__STM32F1__)
 #define CALLOVERHEAD 150  
-#define LOOPTIME     2400 
+#define LOOPTIME     2400
 #endif
 	t = (nRows > 8) ?   LOOPTIME : (LOOPTIME * 2);
 
-	//duration = ((t + CALLOVERHEAD * 2) <<  plane ) - CALLOVERHEAD;
 	if (plane > 0) duration = ((t + CALLOVERHEAD * 2) << (plane -1)) ;
 	else  duration = (t + CALLOVERHEAD * 2);
 	
 
-	x_len = WIDTH * DisplaysHigh;
 #if defined(__STM32F1__)
 	Timer4.pause();
 	Timer4.setOverflow(duration);
-	if (plane == 0) {
+	if ((plane == 0) && (nPlanes > 1)) {
 		Timer4.setCompare1(duration / 2);
 		Timer4.attachInterrupt(TIMER_CC1_INTERRUPT, oe_disable_R);
 	}
@@ -277,12 +197,25 @@ void DMD_RGB_BASE::scan_dmd() {
   // advance lines every time and interleave the planes to reduce
   // vertical scanning artifacts, in practice with this panel it causes
   // a green 'ghosting' effect on black pixels, a much worse artifact.
-	//if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
+
 
 	
 	*oesetreg = oemask; // Disable LED output during row/plane switchover
 	
-	//if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
+	// For OneBitColor set mux BEFORE changing row
+	if (nPlanes == 1) {
+		// Plane 0 was loaded on prior interrupt invocation and is about to
+		// latch now, so update the row address lines before we do that:
+
+		*muxclrreg = mux_clrmask; // Clear all mux channels
+		*muxsetreg = mux_mask[row];
+	
+	}
+
+
+
+
+	
 	if (++plane >= nPlanes) {      // Advance plane counter.  Maxed out?
 		plane = 0;                  // Yes, reset to plane 0, and
 		if (++row >= nRows) {        // advance row counter.  Maxed out?
@@ -295,15 +228,18 @@ void DMD_RGB_BASE::scan_dmd() {
 			
 		}
 	}
+	
+
+	// For 4bit Color set mux at 1st Plane
 	else if (plane == 1) {
 		// Plane 0 was loaded on prior interrupt invocation and is about to
 		// latch now, so update the row address lines before we do that:
 
 		*muxclrreg = mux_clrmask; // Clear all mux channels
 		*muxsetreg = mux_mask[row];
-		//delayMicroseconds(1);
+	
 	}
-	//if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
+
 	// buffptr, being 'volatile' type, doesn't take well to optimization.
 	// A local register copy can speed some things up:
 	ptr = buffptr;
@@ -311,11 +247,8 @@ void DMD_RGB_BASE::scan_dmd() {
 	*latsetreg = latmask; // Latch data loaded during *prior* interrupt
     *latclrreg = latmask; // Latch down
 	*oeclrreg = oemask;   // Re-enable output
-	
-	
-	//if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
 
-	if (plane > 0) {
+	if ((plane > 0) || (nPlanes == 1)) {
 		
 #if defined(__STM32F1__)
 #define pew                    \
@@ -358,7 +291,7 @@ void DMD_RGB_BASE::scan_dmd() {
 		
 	}
 
-#if defined(DEBUG2)
+#if defined(DEBUG3)
 	if (dd_cnt < 100) dd_ptr[dd_cnt++] = plane;
 	if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
 #endif	
@@ -440,19 +373,24 @@ void DMD_RGB_BASE::drawFastVLine(int16_t x, int16_t y,
    @param    color 16-bit 5-6-5 Color to fill with
 */
 /**************************************************************************/
+
 void DMD_RGB_BASE::drawFastHLine(int16_t x, int16_t y,
 	int16_t w, uint16_t color) {
-	for (uint16_t xx = 0; xx < w; xx++) {
-		drawPixel(x + xx, y, color);
+	
+	if (w <= 0) return;
+
+	if (fast_Hbyte) {
+		uint8_t fg_col_bytes[3];
+		getColorBytes(fg_col_bytes, color);
+		drawHByte(x, y, 255, w, fg_col_bytes, fg_col_bytes);
+
+	}
+	else {
+		for (uint16_t xx = 0; xx < w; xx++) {
+			drawPixel(x + xx, y, color);
+		}
 	}
 }
-// Original RGBmatrixPanel library used 3/3/3 color.  Later version used
-// 4/4/4.  Then Adafruit_GFX (core library used across all Adafruit
-// display devices now) standardized on 5/6/5.  The matrix still operates
-// internally on 4/4/4 color, but all the graphics functions are written
-// to expect 5/6/5...the matrix lib will truncate the color components as
-// needed when drawing.  These next functions are mostly here for the
-// benefit of older code using one of the original color formats.
 
 // Promote 3/3/3 RGB to Adafruit_GFX 5/6/5
 uint16_t DMD_RGB_BASE::Color333(uint8_t r, uint8_t g, uint8_t b) {
@@ -494,6 +432,7 @@ void DMD_RGB_BASE::dumpMatrix(void) {
 		}
 	}
 	Serial.println(F("\n};"));
+	
 }
 
 void DMD_RGB_BASE::dumpMask(void) {

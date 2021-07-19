@@ -22,7 +22,7 @@
 #pragma once
 #include <Arduino.h>
 #include "gfxfont.h"
-
+#include "stm_int.h"
 
 #ifndef pgm_read_byte
 #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
@@ -70,6 +70,7 @@ public:
 	virtual bool is_char_in(unsigned char c) = 0;
 
 	virtual uint8_t get_char_width(unsigned char c, byte orientation = 0) = 0;
+	
 };
 /******************************************************/
 class DMD_Standard_Font : public DMD_Font {
@@ -81,6 +82,7 @@ public:
 	uint8_t get_char_width(unsigned char c, byte orientation =0 );
 	uint16_t get_bitmap_index(unsigned char c);
 	bool is_mono_font();
+	
 };
 /******************************************************/
 class DMD_GFX_Font : public DMD_Font {
@@ -97,6 +99,7 @@ public:
 	uint8_t lastChar2;
 	bool is_char_in(unsigned char c);
 	uint8_t get_char_width(unsigned char c, byte orientation = 0);
+
 	void add_second_font(GFXfont* second, uint8_t start_code);
 	uint8_t get_first_by_char(unsigned char c);
 	GFXfont* get_font_by_char(unsigned char c);

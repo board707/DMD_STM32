@@ -25,8 +25,8 @@
 #pragma GCC diagnostic warning "-Woverflow" 
 
 //Number of panels in x and y axis
-#define DISPLAYS_ACROSS 2
-#define DISPLAYS_DOWN 1
+#define DISPLAYS_ACROSS 1
+#define DISPLAYS_DOWN 2
 
 // Enable of output buffering
 // if true, changes only outputs to matrix after
@@ -41,7 +41,9 @@
 #define DMD_PIN_A PA1
 #define DMD_PIN_B PA4
 #define DMD_PIN_nOE PB1
+//#define DMD_PIN_nOE PA6
 #define DMD_PIN_SCLK PA15
+//#define DMD_PIN_SCLK PB4
 
 
 // pins for SPI connect
@@ -54,7 +56,7 @@
 #if defined(DMD_PARA)
 //pins for rows at x axis
 // example for two rows
-// all those pins must be selected from lower byte of same port!
+// all those pins must be selected from same port!
 uint8_t pins[] = { PA5, PA7, PA6 };  // CLK , row1, row 2
 
 //Fire up the DMD object as dmd
@@ -97,10 +99,10 @@ int utf8_rus(char* dest, const unsigned char* src) {
 
 void setup(void)
 {
+   
    // initialize DMD objects
    // scan DMD row each 700 us
     dmd.init(700);
-    
     dmd.setBrightness(80);
    
 }
