@@ -37,4 +37,6 @@ Compatible boards
 
 Documentation
 -----------
-No documentation available (hopefully yet). See examples for connection.
+No english documentation available (hopefully yet). See examples.
+
+Detailed info about matric connection availiable at russian: [Wiki: Connections (rus)](https://github.com/board707/DMD_STM32/wiki/Connecting-for-Monochrome-(rus))
