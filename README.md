@@ -1,4 +1,5 @@
 # DMD_STM32 with Unicode fonts support 
+### Attention - this branch contains old version of library, for new [see here](https://github.com/board707/DMD_STM32/tree/dev-V2)
 The library is STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD) and designed to make it easy to display graphics and scrolling text on p10 DMD 32x16 matrix display. Its fundamental difference from the original DMD library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language.
 
 Last version of the code has significantly improved performance through the use of DMA for SPI transfer. You can connect up to 16 DMD matrices on channel without significant slowing down the main program code
@@ -54,6 +55,8 @@ Connections
 * **Exclusions:** Do not use these pins: PB3/PB4 (JTAG), PA11/PA12 (USB D+ D-) 
 * For tested pin combinations see examples.
 * Pulldown resistor 3-10K between nOE and GND is recommended.
+
+For detailed info about matric connection see [Wiki: Connections](https://github.com/board707/DMD_STM32/wiki/Connecting-for-Monochrome-(rus))(russian)
 
 Acknowledgements
 -----------
