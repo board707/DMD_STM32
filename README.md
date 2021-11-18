@@ -47,7 +47,7 @@ Connections
 | DMD Signal | STM32 Pin | Comments |
 | ---------- | --------- | -------- |
 | A, B | PB6/PB7/PB10/PB11... | User adjustable, almost any digital pin, see exclusions |
-| nOE | PB0/PB1/PB5 | Should be TIMER3 PWM pin
+| nOE | PB0/PB1 | Should be TIMER3 PWM pin
 | CLK | PA5/PB13 for SPI(1)/SPI(2) | Predefined by SPI |
 | SCLK | PB11/PB8... |  User adjustable, almost any digital pin, see exclusions |
 | R_DATA | PA7/PB15 for SPI(1)/SPI(2) |  Predefined by SPI |
@@ -57,6 +57,11 @@ Connections
 * Pulldown resistor 3-10K between nOE and GND is recommended.
 
 For detailed info about matric connection see [Wiki: Connections](https://github.com/board707/DMD_STM32/wiki/Connecting-for-Monochrome-(rus))(russian)
+
+Adapters
+--------
+Sometimes wiring can be tricky so here I will put links to useful PCB-boards for use with this code (are not affiliated with the DMD_STM32)
+* [DMD-STM32 Shield for P10 LED Matrix Panel](https://www.tindie.com/products/lightwell/dmd-stm32-shield-for-p10-led-matrix-panel/)  Designed by LIGHTWELL in Bulgaria 
 
 Acknowledgements
 -----------
