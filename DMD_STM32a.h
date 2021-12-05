@@ -3,11 +3,11 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.6.3 ******
+ ****** VERSION 0.6.8 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library 
  
- adapted by Dmitry Dmitriev (c) 2019
+ adapted by Dmitry Dmitriev (c) 2019-2021
  
  
  DMD.h   - Function and support library for the Freetronics DMD, a 512 LED matrix display
@@ -157,7 +157,7 @@ class DMD : public Adafruit_GFX
   void drawFilledBox( int x1, int y1, int x2, int y2, uint16_t color );
 
   //ADD from DMD2 library, set brightness of panel
-  void setBrightness(uint8_t level) { 
+  virtual void setBrightness(uint8_t level) { 
    this->brightness = map(level, 0, 255, 0, brightrange); };
   
   // Inverse all data on display - for p10 matrix inversed by design
@@ -172,16 +172,20 @@ class DMD : public Adafruit_GFX
   } 
   void stringBounds(const char* bChars, uint8_t length,
 	  int16_t* w, int16_t* min_y, int16_t* max_y, byte orientation = 0);
+  
+  virtual void swapBuffers(boolean copy);
+
+#if defined(DEBUG2)
   void dumpDDbuf(void);
-  void swapBuffers(boolean copy);
- 
+#endif
+
 protected:
 	// pins
-	byte pin_DMD_A;
-	byte pin_DMD_B;
-	byte pin_DMD_nOE;   // active low Output Enable, setting this low lights all the LEDs in the selected rows. Can pwm it at very high frequency for brightness control.
+	const byte pin_DMD_A;
+	const byte pin_DMD_B;
+	const byte pin_DMD_nOE;   // active low Output Enable, setting this low lights all the LEDs in the selected rows. Can pwm it at very high frequency for brightness control.
 
-	byte pin_DMD_SCLK;  // LATCH PORT
+	const byte pin_DMD_SCLK;  // LATCH PORT
 	
 	// Pin bitmasks
 	PortType latmask, oemask, addramask, addrbmask; // addrcmask, addrdmask, addremask, mux_clrmask;
@@ -190,14 +194,14 @@ protected:
 #if defined(__STM32F1__)
 	volatile PortType* oe_CRL;
 	PortType oe_mode_clrmask, oe_out_mode, oe_pwm_mode;
-	uint8_t oe_channel;
+	const uint8_t oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
 #endif
 	uint16_t brightness = 100;
 	uint16_t brightrange = 255;
 
 	//Mirror of DMD pixels in RAM, ready to be clocked out by the main loop or high speed timer calls
 	uint8_t *bDMDScreenRAM;
-	bool  dbuf = false;
+	
 	uint8_t* matrixbuff[2];
 	volatile uint8_t backindex = 0;
 	volatile boolean swapflag;
@@ -226,11 +230,12 @@ protected:
 	DMD_Font* Font;
 
 	//Display information
-	byte DisplaysWide;
-	byte DisplaysHigh;
+	const byte DisplaysWide;
+	const byte DisplaysHigh;
 	byte DisplaysTotal;
-	uint8_t DMD_PIXELS_ACROSS;
-	uint8_t DMD_PIXELS_DOWN;
+	bool  dbuf = false;
+	const uint8_t DMD_PIXELS_ACROSS;
+	const uint8_t DMD_PIXELS_DOWN;
 	uint16_t mem_Buffer_Size;
 
 	//scanning pointer into bDMDScreenRAM, setup init @ 48 for the first valid scan

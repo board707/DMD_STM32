@@ -1,4 +1,5 @@
 #pragma once
+#include <dma_private.h>
 #include "DMD_STM32a.h"
 // MATRIX TYPES
 #define RGB64x64plainS32 1
@@ -8,6 +9,9 @@
 #define RGB32x16plainS4 5
 #define RGB32x16plainS2 6
 
+#define RGB128x64plainS32 16
+
+
 //#define RGB32x16_S4 7
 //#define RGB32x16_S2 8
 //#define RGB32x16_S2_quangli 9
@@ -16,7 +20,11 @@
 #define COLOR_4BITS		4
 #define COLOR_1BITS		1
 
+// RGB TABLE OPTIONS
+#define CLK_WITH_DATA   0x1
+#define CLK_AFTER_DATA   0
 
+void inline __attribute__((always_inline)) scan_running_dmd_R();
 
 class DMD_RGB_BASE :
 	public DMD
@@ -26,17 +34,27 @@ public:
 	DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y);
 
-	void init(uint16_t scan_interval = 700);
+	void init(uint16_t scan_interval = 700) override ;
 	virtual void drawPixel(int16_t x, int16_t y, uint16_t color) =0 ;
 	
 	virtual void scan_dmd();
-	void oe_disable();
-	virtual void clearScreen(byte bNormal);
-	virtual void shiftScreen(int8_t step);
 	
-	void fillScreen(uint16_t color);
-	virtual void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) ;
-	virtual void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) ;
+	virtual void generate_muxmask();
+	virtual void generate_rgbtable() { generate_rgbtable_default(CLK_WITH_DATA); }
+	void generate_rgbtable_default(uint8_t options);
+	virtual void initialize_timers(uint16_t scan_interval);
+	virtual void setCycleLen();
+	void send_to_allRGB(uint16_t data, uint16_t latches);
+	
+	virtual void chip_init() {};
+	
+	void clearScreen(byte bNormal) override;
+	void shiftScreen(int8_t step) override;
+	virtual void set_mux(uint8_t curr_row);
+	
+	void fillScreen(uint16_t color) override;
+	void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) override;
+	void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) override;
 	
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) = 0;
@@ -45,10 +63,17 @@ public:
 		Color333(uint8_t r, uint8_t g, uint8_t b),
 		Color444(uint8_t r, uint8_t g, uint8_t b),
 		Color888(uint8_t r, uint8_t g, uint8_t b);
+
+	void setBrightness(uint8_t level) override {
+		this->brightness = level;
+	};
+	
+
+#if defined(DEBUG2)
 	void dumpMatrix(void);
 	void dumpMask(void);
-	
-	
+#endif
+
 	~DMD_RGB_BASE();
 	
 protected:
@@ -56,15 +81,19 @@ protected:
 	byte pin_DMD_D;
 	byte pin_DMD_E;
 	byte rgbpins[6];
+	
 	// Pin bitmasks
-	PortType clk_clrmask, clkmask, addrcmask, addrdmask, addremask, mux_clrmask;
+	PortType clk_clrmask, clkmask, addrcmask, addrdmask, addremask, mux_clrmask, rgbmask_all;
 	
 	// PORT register pointers 
 	volatile PortType  *dataclrreg, *datasetreg, *dataport, *muxclrreg, *muxsetreg;
 	volatile PortType *latsetreg, *latclrreg, * oesetreg, * oeclrreg;
 	uint16_t           expand[256];           // 6-to-32 bit converter table
+	uint16_t          *mux_ch_masks;
 	uint16_t           *mux_mask;         // muxmask 
+	uint32_t           *mux_mask2;         // muxmask fm6353
 
+	
 	// Counters/pointers for interrupt handler:
 	volatile uint8_t row, plane;
 	volatile uint8_t *buffptr;
@@ -74,10 +103,12 @@ protected:
 	const uint8_t pol_displ = DMD_PIXELS_DOWN / 2;
 	const uint8_t multiplex = pol_displ / nRows;
 	const uint16_t x_len = WIDTH * multiplex * DisplaysHigh;
+
 	uint16_t colors[2] = { 0, 0 };
 	uint8_t col_cache[6] = { 0 };
 	
 	uint8_t last_color = 0;
+	uint16_t scan_cycle_len = 0;
 	
 	
 };
@@ -86,12 +117,8 @@ class DMD_RGB_BASE2 : public DMD_RGB_BASE
 {
 
 public:
-	DMD_RGB_BASE2(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
-		byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y) :
-		DMD_RGB_BASE(mux_cnt, mux_list, _pin_nOE, _pin_SCLK, pinlist,
-			panelsWide, panelsHigh, d_buf, col_depth, n_Rows, dmd_pixel_x, dmd_pixel_y)
-	{}
-
+	DMD_RGB_BASE2() = 0;
+	
 };
 template<>
 class DMD_RGB_BASE2< COLOR_1BITS> : public DMD_RGB_BASE
@@ -103,53 +130,39 @@ public:
 		DMD_RGB_BASE(mux_cnt, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COLOR_1BITS, n_Rows, dmd_pixel_x, dmd_pixel_y)
 	{}
-
-	void init(uint16_t scan_interval) {
-		DMD::init(scan_interval);
-		DMD_RGB_BASE::init(scan_interval);
-		pinMode(pin_DMD_nOE, PWM);
+#if defined(__STM32F1__)
+#define CALLOVERHEAD 100 
+#define LOOPTIME     7200
+#endif
+	void setCycleLen() override {
+		this->scan_cycle_len = LOOPTIME;
+		if ((this->x_len) > 128) this->scan_cycle_len = ((this->x_len) / 128) * LOOPTIME;
 	}
-
-	void setBrightness(uint8_t level) {
-		this->brightness = map(level, 0, 255,  brightrange, 0);
-	};
-	inline void OE_SWITCH_OFF() {
-		*oe_CRL &= oe_mode_clrmask;
-		*oe_CRL |= oe_out_mode;
-		*oesetreg = oemask;
-	}
-
-	inline void OE_SWITCH_ON() {
-		*oe_CRL &= oe_mode_clrmask;
-		*oe_CRL |= oe_pwm_mode;
-	}
-
-	void scan_dmd() {
+	
+	void scan_dmd() override {
 		
-		uint16_t t, duration;
+		uint16_t duration;
 		volatile uint8_t* ptr;
+		
 		// Calculate time to next interrupt BEFORE incrementing plane #.
 		// This is because duration is the display time for the data loaded
 		// on the PRIOR interrupt.  CALLOVERHEAD is subtracted from the
 		// result because that time is implicit between the timer overflow
 		// (interrupt triggered) and the initial LEDs-off line at the start
 		// of this method.
-#if defined(__STM32F1__)
-#define CALLOVERHEAD 150  
-
-#define LOOPTIME     2400
-#endif
-		t = (nRows > 8) ? LOOPTIME : (LOOPTIME * 2);
-
-		 duration = (t + CALLOVERHEAD * 2);
-
+		duration = this->scan_cycle_len;
 
 #if defined(__STM32F1__)
-		Timer4.pause();
-		Timer4.setOverflow(duration);
-		
-		Timer4.refresh();
-		Timer4.resume();
+		timer_pause(TIMER4);
+		timer_set_reload(TIMER4, duration - CALLOVERHEAD);
+
+		timer_pause(TIMER3);
+		timer_set_reload(TIMER3, duration * 2);
+
+		timer_set_compare(TIMER3, this->oe_channel, ((uint32_t)duration * this->brightness) / 255);
+
+
+
 
 #endif
 		// Borrowing a technique here from Ray's Logic:
@@ -161,16 +174,13 @@ public:
 	  // a green 'ghosting' effect on black pixels, a much worse artifact.		
 		
 		//*oesetreg = oemask; // Disable LED output during row/plane switchover
-		OE_SWITCH_OFF();
-
-
-			// For OneBitColor set mux BEFORE changing row
-			*muxclrreg = mux_clrmask; // Clear all mux channels
-			*muxsetreg = mux_mask[row];
+		
+		// For OneBitColor set mux BEFORE changing row
+	    this->set_mux(row);
 	
 		//if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
-		if (++plane >= nPlanes) {      // Advance plane counter.  Maxed out?
-			plane = 0;                  // Yes, reset to plane 0, and
+		
+		    this->plane = 0;                   // Yes, reset to plane 0, and
 			if (++row >= nRows) {        // advance row counter.  Maxed out?
 				row = 0;              // Yes, reset row counter, then...
 				if (swapflag == true) {    // Swap front/back buffers if requested
@@ -180,7 +190,7 @@ public:
 				buffptr = matrixbuff[1 - backindex]; // Reset into front buffer
 
 			}
-		}
+		//}
 		
 		//if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
 		// buffptr, being 'volatile' type, doesn't take well to optimization.
@@ -191,8 +201,12 @@ public:
 		*latclrreg = latmask; // Latch down
 		
 		//*oeclrreg = oemask;   // Re-enable output
-		OE_SWITCH_ON();
-		Timer3.setCompare(oe_channel, brightness);
+		TIMER4_BASE->CNT = 0;
+		TIMER3_BASE->CNT = 0;
+		timer_generate_update(TIMER4);
+		timer_generate_update(TIMER3);
+		TIMER3_BASE->CR1 = (1 << 0);//start timer3
+		TIMER4_BASE->CR1 = (1 << 0);// старт 
 
 
 #if defined(__STM32F1__)
@@ -224,9 +238,14 @@ public:
 
 	}
 
+#undef pew
+#undef CALLOVERHEAD
+#undef LOOPTIME
 
-	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) {
-		uint8_t r, g, b, bit, limit;
+
+
+	void getColorBytes(uint8_t* cbytes, uint16_t color) override {
+		uint8_t r, g, b, bit; // limit;
 		uint8_t* ptr;
 
 		// special case color = 0
@@ -268,8 +287,8 @@ public:
 
 	}
 
-	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
-		uint8_t* bg_col_bytes) {
+	void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+		uint8_t* bg_col_bytes) override {
 
 		static uint8_t ColorByteMask[] = { B00011100 , B00011101 , B00011111 ,
 											  B11100011 , B11100010 , B11100000 };
@@ -331,9 +350,9 @@ public:
 			}
 		
 	}
-	virtual void drawPixel(int16_t x, int16_t y, uint16_t c) {
-		uint8_t r, g, b, bit, limit, * ptr;
-
+	void drawPixel(int16_t x, int16_t y, uint16_t c) override {
+		uint8_t r, g, b; // bit, limit;
+		uint8_t* ptr;
 
 		DEBUG_TIME_MARK_333;
 		DEBUG_TIME_MARK;
@@ -347,7 +366,7 @@ public:
 		transform_XY(x, y);
 		DEBUG_TIME_MARK;
 
-		uint8_t pol_y = y % pol_displ;
+		//uint8_t pol_y = y % pol_displ;
 
 		uint16_t base_addr = 0;
 
@@ -395,10 +414,7 @@ public:
 			panelsWide, panelsHigh, d_buf, COLOR_4BITS, n_Rows, dmd_pixel_x, dmd_pixel_y)
 	{}
 	
-	
-	void setBrightness(uint8_t level) {};
-	
-	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) {
+	void getColorBytes(uint8_t* cbytes, uint16_t color) override {
 		uint8_t r, g, b, bit, limit;
 		uint8_t* ptr;
 
@@ -450,8 +466,8 @@ public:
 
 	}
 
-	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
-		uint8_t* bg_col_bytes) {
+	void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+		uint8_t* bg_col_bytes) override {
 
 		static uint8_t ColorByteMask[] = { B00011100 , B00011101 , B00011111 ,
 											  B11100011 , B11100010 , B11100000 };
@@ -528,7 +544,7 @@ public:
 		
 	}
 
-	virtual void drawPixel(int16_t x, int16_t y, uint16_t c) {
+	void drawPixel(int16_t x, int16_t y, uint16_t c) override {
 		uint8_t r, g, b, bit, limit, * ptr;
 
 
@@ -615,6 +631,8 @@ class DMD_RGB : public DMD_RGB_BASE2<COL_DEPTH>
 {
 public:
 	DMD_RGB() = 0;
+
+	
 };
 
 // Matrix types templates
@@ -653,39 +671,85 @@ public:
 
 
 template<int COL_DEPTH>
-class DMD_RGB<RGB32x16plainS8, COL_DEPTH> : public DMD_RGB_BASE
+class DMD_RGB<RGB32x16plainS8, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
 public:
 	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf = false) :
-		DMD_RGB_BASE(3, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+		DMD_RGB_BASE2<COL_DEPTH>(3, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 8, 32, 16)
 	{}
 
 };
 
 template<int COL_DEPTH>
-class DMD_RGB<RGB32x16plainS4, COL_DEPTH> : public DMD_RGB_BASE
+class DMD_RGB<RGB32x16plainS4, COL_DEPTH> : DMD_RGB_BASE2<COL_DEPTH>
 {
 public:
 	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf = false) :
-		DMD_RGB_BASE(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+		DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
 	{}
 
 };
 
 template<int COL_DEPTH>
-class DMD_RGB<RGB32x16plainS2, COL_DEPTH> : public DMD_RGB_BASE
+class DMD_RGB<RGB32x16plainS2, COL_DEPTH> : DMD_RGB_BASE2<COL_DEPTH>
 {
 public:
 	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf = false) :
-		DMD_RGB_BASE(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+		DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
 	{}
 
 };
 
+template<int COL_DEPTH>
+class DMD_RGB<RGB128x64plainS32, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(5, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, false, COL_DEPTH, 32, 128, 64)
+	{}
 
+	
+
+
+};
+
+
+
+
+
+template <int MATRIX_TYPE, int COL_DEPTH>
+class DMD_RGB_SHIFTREG_ABC : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB_SHIFTREG_ABC() = 0;
+
+	
+};
+template<int COL_DEPTH>
+class DMD_RGB_SHIFTREG_ABC<RGB128x64plainS32, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB_SHIFTREG_ABC(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(3, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, false, COL_DEPTH, 32, 128, 64)
+	{}
+
+	void set_mux(uint8_t curr_row) override {
+		// Just shift the row mux by one for incremental access
+		digitalWrite(this->pin_DMD_B, HIGH);
+		digitalWrite(this->pin_DMD_C, (curr_row == 0)); // Shift out 1 for line 0, 0 otherwise
+		digitalWrite(this->pin_DMD_A, HIGH); // Clock out this bit
+		digitalWrite(this->pin_DMD_A, LOW);
+		digitalWrite(this->pin_DMD_B, LOW);
+	}
+
+};

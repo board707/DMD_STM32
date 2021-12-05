@@ -89,7 +89,7 @@ void DMD::init(uint16_t scan_interval) {
 	brightrange = Timer3.getOverflow();
 	setBrightness(200);
 
-	oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
+	//oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
 	oe_CRL = portConfigRegister(pin_DMD_nOE);
 	uint8_t oe_pin = PIN_MAP[pin_DMD_nOE].gpio_bit;
 	uint32 shift = (oe_pin & 0x7) * 4;
