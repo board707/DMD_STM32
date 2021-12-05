@@ -1,6 +1,9 @@
 # ChangeLog
 
-## Unreleased
+## [0.6.8] - 2021-12-05 
+ - More accurate timings for RGB panels. 
+ - New way of brightness control by synchro-PWM for OE signal in all RGB matrix modes.
+ 
 ## [0.6.3] - 2021-07-18
  - Add 1-bit RGB color depth
  - Rewrite marquee text code
