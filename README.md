@@ -1,5 +1,5 @@
 # DMD_STM32a - development branch of DMD_STM32 with RGB panels support
-### The last version is v.0.6.8alpha. For more stable beta [see 0.6.3](https://github.com/board707/DMD_STM32/releases/tag/v0.6.3)
+### The last version is v.0.6.9a. For more stable beta [see 0.6.3](https://github.com/board707/DMD_STM32/releases/tag/v0.6.3)
 This code branch is further development of DMD_STM32 library. The code was rewritten by 70%, the library received a modular structure with a DMD_STM32a base class and several child classes for various matrices and connection types. Major change is **support of RGB matrix panels.** For more details on RGB matrices, [ see here.](https://cdn-learn.adafruit.com/downloads/pdf/32x16-32x32-rgb-led-matrix.pdf)
 
 The principles of handling RGB matrices are based on RGBMatrixPanel library https://github.com/adafruit/RGB-matrix-Panel, with a changes, necessary to port code to STM32 controllers. For a start, the code can work with the following types of RGB matrices:
