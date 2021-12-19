@@ -8,6 +8,7 @@ The principles of handling RGB matrices are based on RGBMatrixPanel library http
 - 64x32 16scan
 - 80x40 20scan
 - 64x64 32scan
+- 128x64 32 scan
 
 The number of matrices is limited by the size of the controller memory.
 
