@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.6.8 ******
+ ****** VERSION 0.6.9 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library 
  

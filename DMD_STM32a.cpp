@@ -451,9 +451,16 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 		DMD_GFX_Font* ff = (DMD_GFX_Font*)Font;
 		GFXfont* gfxFont_p = ff->get_font_by_char(c);
 		c -= ff->get_first_by_char(c);
-		
+
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+		GFXglyph* glyph = &((gfxFont_p->glyph)[c]);
+		uint8_t* bitmap = gfxFont_p->bitmap;
+#else
 		GFXglyph* glyph = &(((GFXglyph*)pgm_read_pointer(&gfxFont_p->glyph))[c]);
 		uint8_t* bitmap = (uint8_t*)pgm_read_pointer(&gfxFont_p->bitmap);
+#endif		
+	//	GFXglyph* glyph = &(((GFXglyph*)pgm_read_pointer(&gfxFont_p->glyph))[c]);
+	//	uint8_t* bitmap = (uint8_t*)pgm_read_pointer(&gfxFont_p->bitmap);
 
 		uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
 		uint8_t  w = pgm_read_byte(&glyph->width);
@@ -564,9 +571,16 @@ int DMD::drawCharV(const int bX, const int bY, const unsigned char letter, uint1
 		DMD_GFX_Font* ff = (DMD_GFX_Font *)Font;
 		GFXfont * gfxFont_p = ff->get_font_by_char(c);
 		c -= ff->get_first_by_char(c);
-			
-		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_p->glyph))[c]);
-		uint8_t  *bitmap = (uint8_t *)pgm_read_pointer(&gfxFont_p->bitmap);
+
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+		GFXglyph* glyph = &((gfxFont_p->glyph)[c]);
+		uint8_t* bitmap = gfxFont_p->bitmap;
+#else
+		GFXglyph* glyph = &(((GFXglyph*)pgm_read_pointer(&gfxFont_p->glyph))[c]);
+		uint8_t* bitmap = (uint8_t*)pgm_read_pointer(&gfxFont_p->bitmap);
+#endif				
+	//	GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_p->glyph))[c]);
+	//	uint8_t  *bitmap = (uint8_t *)pgm_read_pointer(&gfxFont_p->bitmap);
 
 		uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
 		uint8_t  w = pgm_read_byte(&glyph->width),

@@ -42,4 +42,4 @@ Documentation
 -----------
 No english documentation available (hopefully yet). See examples.
 
-Detailed info about matric connection availiable at russian: [Wiki: Connections (rus)](https://github.com/board707/DMD_STM32/wiki/Connecting-for-Monochrome-(rus))
+Detailed info about matrix connection availiable at russian: [Wiki: Connections (rus)](https://github.com/board707/DMD_STM32/wiki/Connecting-for-Monochrome-(rus))

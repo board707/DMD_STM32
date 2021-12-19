@@ -140,8 +140,12 @@ uint8_t DMD_GFX_Font::get_char_width(unsigned char c, byte orientation) {
 			c -= firstChar;
 			gfxFont_ptr = gfxFont;
 		}
-		
-		GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_ptr->glyph))[c]);
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+		GFXglyph* glyph = &((gfxFont_ptr->glyph)[c]);
+#else
+		GFXglyph* glyph = &(((GFXglyph*)pgm_read_pointer(&(gfxFont_ptr->glyph)))[c]);
+#endif
+	//	GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_ptr->glyph))[c]);
 		if (orientation) {
 			   int8_t char_w = fontHeight + (int8_t)pgm_read_byte(&glyph->yOffset) + pgm_read_byte(&glyph->height) ;
 			   if (char_w < 0) return 0;
