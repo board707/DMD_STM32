@@ -87,9 +87,7 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	// default text colors - green on black
 	textcolor = Color888(0, 255, 0);
 	textbgcolor = 0;
-#if defined(DEBUG2)
-	if (!dd_ptr) dd_ptr = (uint16_t*)malloc(200);
-#endif	
+
 }
 
 void DMD_RGB_BASE::generate_muxmask() {
@@ -151,22 +149,14 @@ void DMD_RGB_BASE::initialize_timers(uint16_t scan_interval)  {
 
 	
 	if (scan_interval) {
-		Timer4.pause();
-		Timer4.setPeriod(scan_interval);
-		Timer4.attachInterrupt(TIMER_UPDATE_INTERRUPT, scan_running_dmd_R);
-		
-		
-	//uint8_t oe_channel = PIN_MAP[this->pin_DMD_nOE].timer_channel;
-	timer_pause(TIMER3);
-	timer_set_prescaler(TIMER3, 0);
-	timer_oc_set_mode(TIMER3, oe_channel, TIMER_OC_MODE_PWM_2, 0);
-	timer_cc_enable(TIMER3, oe_channel);
-	Timer4.refresh();
-	Timer4.resume();
+		this->setCycleLen();
+		timer_pause(OE_TIMER);
+		timer_set_prescaler(OE_TIMER, 0);
+		timer_oc_set_mode(OE_TIMER, oe_channel, TIMER_OC_MODE_PWM_2, 0);
+		timer_cc_enable(OE_TIMER, oe_channel);
+		setup_main_timer(this->scan_cycle_len, scan_running_dmd_R);
 	}
 	gpio_set_mode(PIN_MAP[this->pin_DMD_nOE].gpio_device, PIN_MAP[this->pin_DMD_nOE].gpio_bit, GPIO_AF_OUTPUT_PP);
-	this->setCycleLen();
-	
 	this->setBrightness(255);
 }
 
@@ -229,14 +219,14 @@ void DMD_RGB_BASE::scan_dmd() {
 	else  duration = this->scan_cycle_len;
 
 #if defined(__STM32F1__)
-	timer_pause(TIMER4);
-	timer_set_reload(TIMER4, duration - CALLOVERHEAD);
+	timer_pause(MAIN_TIMER);
+	timer_set_reload(MAIN_TIMER, duration - CALLOVERHEAD);
 
-	timer_pause(TIMER3);
-	timer_set_reload(TIMER3, duration * 2);
+	timer_pause(OE_TIMER);
+	timer_set_reload(OE_TIMER, duration * 2);
 
-	if (this->plane > 0) timer_set_compare(TIMER3, oe_channel, ((uint32_t)duration * this->brightness) / 255);
-	else  timer_set_compare(TIMER3, oe_channel, (((uint32_t)duration * this->brightness) / 255) / 2);
+	if (this->plane > 0) timer_set_compare(OE_TIMER, oe_channel, ((uint32_t)duration * this->brightness) / 255);
+	else  timer_set_compare(OE_TIMER, oe_channel, (((uint32_t)duration * this->brightness) / 255) / 2);
 
 
 
@@ -281,12 +271,14 @@ void DMD_RGB_BASE::scan_dmd() {
 	*latsetreg = latmask; // Latch data loaded during *prior* interrupt
 	*latclrreg = latmask; // Latch down
 	//*oeclrreg = oemask;   // Re-enable output
-	TIMER4_BASE->CNT = 0;
-	TIMER3_BASE->CNT = 0;
-	timer_generate_update(TIMER4);
-	timer_generate_update(TIMER3);
-	TIMER3_BASE->CR1 = (1 << 0);//start timer3
-	TIMER4_BASE->CR1 = (1 << 0);// старт 
+	
+	timer_set_count(MAIN_TIMER, 0);
+	timer_set_count(OE_TIMER, 0);
+	timer_generate_update(MAIN_TIMER);
+	timer_generate_update(OE_TIMER);
+	timer_resume(OE_TIMER);
+	timer_resume(MAIN_TIMER);
+	
 
 	
 
@@ -334,7 +326,7 @@ void DMD_RGB_BASE::scan_dmd() {
 
 #if defined(DEBUG3)
 	if (dd_cnt < 100) dd_ptr[dd_cnt++] = plane;
-	if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
+	if (dd_cnt < 100) dd_ptr[dd_cnt++] = timer_get_count(MAIN_TIMER);
 #endif	
 
 }
@@ -457,26 +449,6 @@ uint16_t DMD_RGB_BASE::Color888(uint8_t r, uint8_t g, uint8_t b) {
 	return ((uint16_t)(r & 0xF8) << 8) | ((uint16_t)(g & 0xFC) << 3) | (b >> 3);
 }
 #if defined(DEBUG2)
-void DMD_RGB_BASE::dumpMatrix(void) {
-
-	int i, buffsize = WIDTH * nRows * 3;
-
-	Serial.print(F("\n\n"
-		"#include <avr/pgmspace.h>\n\n"
-		"static const uint8_t PROGMEM img[] = {\n  "));
-
-	for (i = 0; i < buffsize; i++) {
-		Serial.print(F("0x"));
-		if (matrixbuff[backindex][i] < 0x10) Serial.write('0');
-		Serial.print(matrixbuff[backindex][i], HEX);
-		if (i < (buffsize - 1)) {
-			if ((i & 7) == 7) Serial.print(F(",\n  "));
-			else             Serial.write(',');
-		}
-	}
-	Serial.println(F("\n};"));
-	
-}
 
 void DMD_RGB_BASE::dumpMask(void) {
 
@@ -506,8 +478,5 @@ DMD_RGB_BASE::~DMD_RGB_BASE()
 	free(matrixbuff[0]);
 	free(mux_mask);
 	free(mux_mask2);
-#if defined(DEBUG2)
-	free((uint16_t*)dd_ptr);
-#endif	
 
 }

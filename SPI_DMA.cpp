@@ -8,12 +8,10 @@ void register_running_dmd(DMD_MonoChrome_SPI *dmd, uint16_t scan_int)
 	uint8_t spi_num = dmd->spi_num;
 	if (!spi_num) return;
 	if (running_dmd_len == 0) {
-		Timer4.pause(); // останавливаем таймер перед настройкой
-		Timer4.setPeriod(scan_int); // время в микросекундах (500мс)
-		Timer4.attachInterrupt(TIMER_UPDATE_INTERRUPT, scan_running_dmds); // активируем прерывание
-		Timer4.refresh(); // обнулить таймер 
-		Timer4.resume(); // запускаем таймер  
 
+		uint32 period_cyc = scan_int * CYCLES_PER_MICROSECOND;
+		dmd->setup_main_timer(period_cyc, scan_running_dmds);
+		
 	}
 	if (!running_dmds[spi_num - 1]) running_dmd_len++;
 

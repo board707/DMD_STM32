@@ -30,7 +30,7 @@ public:
 	
 	void scanDisplayBySPI();
 	virtual void shiftScreen(int8_t step);
-	void dumpMatrix(void);
+	
 
 	
 #if defined(__STM32F1__)

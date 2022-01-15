@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [0.6.11] - 2022-01-15 
+ - Fix incorrect string bounds definition for standard and GFXFonts in some cases
+ - Fix artefacts in Parallel Monochrome mode
+ - Add ability to choose timer for OE other than Tim3 (see Alternative Timer Setup in DMD_STM32a.h)
+
 ## [0.6.9] - 2021-12-18 
  - Get rid PGM warnings. 
 

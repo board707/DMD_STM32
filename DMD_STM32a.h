@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.6.9 ******
+ ****** VERSION 0.6.11 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library 
  
@@ -50,6 +50,7 @@
 typedef uint8_t  PortType;
 #elif defined(__STM32F1__)
 typedef uint32_t PortType; 
+#define TIM_MAX_RELOAD ((1 << 16) - 1)
 #endif
 
 //Pixel/graphics writing modes (bGraphicsMode)
@@ -74,6 +75,25 @@ typedef uint32_t PortType;
 //display screen (and subscreen) sizing
 #define DMD_BITSPERPIXEL           1       // used for Monochrome panels only
 #define DMD_MONO_SCAN              4
+
+//          === TIMERs setup  ===
+// Default timers are 
+// MAIN_TIMER = Timer4
+// OE_TIMER = Timer3
+// OE pin may be one of PA6 PA7 PB0 PB1
+//
+// Alternative timers setup
+// MAIN_TIMER = Timer3
+// OE_TIMER = Timer4
+// so OE pin may be one of PB6 PB7 PB8 PB9
+//
+// for alternative timers setup uncomment line below
+//#define ALTERNATIVE_DMD_TIMERS
+
+
+
+// OE PWM period in us
+#define OE_PWM_PERIOD  30
 
 // Panel connections variants
 #define CONNECT_NORMAL 0
@@ -148,7 +168,7 @@ class DMD : public Adafruit_GFX
 	  }
 	  Adafruit_GFX::setRotation(rot);
   };
-  
+  virtual void setup_main_timer(uint32_t cycles, voidFuncPtr handler);
   
   virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
 	  uint8_t* bg_col_bytes) {};
@@ -177,6 +197,7 @@ class DMD : public Adafruit_GFX
 
 #if defined(DEBUG2)
   void dumpDDbuf(void);
+  void dumpMatrix(void);
 #endif
 
 protected:
@@ -245,6 +266,14 @@ protected:
 	uint8_t inverse_ALL_flag = PANEL_INVERSE;
 	byte connectScheme = CONNECT_NORMAL;
 
+#if defined( ALTERNATIVE_DMD_TIMERS )
+	timer_dev* MAIN_TIMER = TIMER3;
+	timer_dev* OE_TIMER = TIMER4;
+#else
+	timer_dev* MAIN_TIMER = TIMER4;
+	timer_dev* OE_TIMER = TIMER3;
+#endif
+
 	uint8_t graph_mode = GRAPHICS_NORMAL;
 	void set_graph_mode(uint8_t gm = GRAPHICS_NORMAL) {
 		graph_mode = gm;
@@ -254,7 +283,7 @@ protected:
 
 	}
 #if defined(DEBUG2)
-#define DEBUG_TIME_MARK if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount()
+#define DEBUG_TIME_MARK if (dd_cnt < 100) dd_ptr[dd_cnt++] = timer_get_count(MAIN_TIMER)
 #define DEBUG_TIME_MARK_333 if (dd_cnt < 100) dd_ptr[dd_cnt++] = 333
 	volatile uint16_t *dd_ptr = 0;
 	volatile uint8_t dd_cnt = 0;

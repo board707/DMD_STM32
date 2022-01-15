@@ -58,13 +58,8 @@ void DMD_Monochrome_Parallel::init(uint16_t scan_interval) {
 	bDMDScreenRAM = matrixbuff[backindex];
 	clearScreen(true);
 
-	Timer4.pause(); // останавливаем таймер перед настройкой
-	Timer4.setPeriod(scan_interval); // время в микросекундах (500мс)
-	Timer4.attachInterrupt(TIMER_UPDATE_INTERRUPT, scan_running_dmd); // активируем прерывание
-	Timer4.refresh(); // обнулить таймер 
-	Timer4.resume(); // запускаем таймер  
-
-	
+	uint32 period_cyc = scan_interval * CYCLES_PER_MICROSECOND;
+	setup_main_timer(period_cyc, scan_running_dmd);
 }
 
 
@@ -170,15 +165,10 @@ for (uint16_t uu = 0; uu < WIDTH; uu += 32)
 
 
 *dataclrreg = clk_clrmask; // Set clock low
-#if defined(DEBUG2)
-if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
-#endif
-
+DEBUG_TIME_MARK;
 switch_row();
+DEBUG_TIME_MARK;
 
-#if defined(DEBUG2)
-if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
-#endif
 }
 
 void DMD_Monochrome_Parallel::clearScreen(byte bNormal)

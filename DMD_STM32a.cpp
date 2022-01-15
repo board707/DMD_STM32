@@ -81,12 +81,18 @@ void DMD::init(uint16_t scan_interval) {
 	
 	
 #if defined(__STM32F1__)
-    
-	Timer3.pause();
-	Timer3.setPeriod(30);
-	Timer3.refresh();
-	Timer3.resume();
-	brightrange = Timer3.getOverflow();
+	timer_pause(OE_TIMER);
+	uint32 period_cyc = OE_PWM_PERIOD * CYCLES_PER_MICROSECOND;
+	uint16 prescaler = (uint16)(period_cyc / TIM_MAX_RELOAD + 1);
+	uint16 overflow = (uint16)((period_cyc + (prescaler / 2)) / prescaler);
+	timer_set_prescaler(OE_TIMER, prescaler - 1 );
+	timer_set_reload(OE_TIMER, overflow);
+	timer_oc_set_mode(OE_TIMER, oe_channel, TIMER_OC_MODE_PWM_1, 0);
+	timer_cc_enable(OE_TIMER, oe_channel);
+	timer_generate_update(OE_TIMER);
+	timer_resume(OE_TIMER);
+
+	brightrange = overflow;
 	setBrightness(200);
 
 	//oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
@@ -107,13 +113,23 @@ void DMD::init(uint16_t scan_interval) {
 }
 
 /*--------------------------------------------------------------------------------------*/
+void DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
+	timer_pause(MAIN_TIMER);
+	uint16 prescaler = (uint16)(cycles / TIM_MAX_RELOAD + 1);
+	uint16 overflow = (uint16)((cycles + (prescaler / 2)) / prescaler);
+	timer_set_prescaler(MAIN_TIMER, prescaler - 1);
+	timer_set_reload(MAIN_TIMER, overflow);
+	timer_attach_interrupt(MAIN_TIMER, TIMER_UPDATE_INTERRUPT, handler);
+	timer_generate_update(MAIN_TIMER);
+	timer_resume(MAIN_TIMER);
+}
 
 void DMD::switch_row() {
 	// switch all LED OFF
 	OE_DMD_ROWS_OFF();
 
 
-	* latport |= latmask; // Latch data loaded during *prior* interrupt
+	//* latport |= latmask; // Latch data loaded during *prior* interrupt
 	
 	if (bDMDByte & 0x2) { *addrbport |= addrbmask; }
 	else { *addrbport &= ~addrbmask; }
@@ -134,7 +150,7 @@ void DMD::switch_row() {
 
 
 	
-	
+	*latport |= latmask; // Latch data loaded during *prior* interrupt
 	* latport &= ~latmask;
 	// reenable LEDs
 	OE_DMD_ROWS_ON();
@@ -152,7 +168,7 @@ void DMD::switch_row() {
 	void DMD::OE_DMD_ROWS_ON()                 { //pinMode( pin_DMD_nOE, OUTPUT  ); 
 		*oe_CRL &= oe_mode_clrmask;
 		*oe_CRL |= oe_pwm_mode;
-		Timer3.setCompare(oe_channel, brightness);
+		timer_set_compare(OE_TIMER, oe_channel, brightness);
 	}
   #elif defined(__AVR_ATmega328P__)
     void DMD::OE_DMD_ROWS_OFF()                 { digitalWrite( pin_DMD_nOE, LOW  ); }
@@ -202,7 +218,7 @@ void DMD::transform_XY(int16_t& bX, int16_t& bY) {
 {
 	int len =0;
 	while (bChars[len] && len < MAX_STRING_LEN) {len++;}
-	DMD::drawString(bX, bY, bChars, len, color, orientation);
+	this->drawString(bX, bY, bChars, len, color, orientation);
 }
 /*--------------------------------------------------------------------------------------*/
  void DMD::drawString(int bX, int bY, const char* bChars, int length,
@@ -245,7 +261,7 @@ void DMD::transform_XY(int16_t& bX, int16_t& bY) {
 void DMD::drawMarqueeX(const char *bChars, int left, int top, byte orientation) 
 {   int len =0;
 	while (bChars[len] && len < MAX_STRING_LEN) {len++;}
-	DMD::drawMarquee(bChars, len, left, top, orientation) ;
+	this->drawMarquee(bChars, len, left, top, orientation) ;
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte orientation)
@@ -267,7 +283,7 @@ void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte or
 	marqueeOffsetY = top;
 	marqueeOffsetX = left;
 	marqueeLength = length;
-	DMD::drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength, textcolor, 
+	this->drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength, textcolor,
 		marqueeMarginH, marqueeMarginL, orientation);
 }
 
@@ -331,7 +347,7 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
             int wide = charWidth(marqueeText[i], orientation);
 			if (wide > 0) {
 				if (strWidth + wide >= limit_X) {
-					DMD::drawChar(strWidth, marqueeOffsetY, marqueeText[i], textcolor, marqueeMarginH, marqueeMarginL, orientation);
+					this->drawChar(strWidth, marqueeOffsetY, marqueeText[i], textcolor, marqueeMarginH, marqueeMarginL, orientation);
 					return ret;
 				}
 				strWidth += wide + 1;
@@ -355,7 +371,7 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 			       inverse_color(textcolor));
 
 		
-		DMD::drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
+		this->drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
 			textcolor, marqueeMarginH, marqueeMarginL, orientation);
     }
 
@@ -368,7 +384,7 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 --------------------------------------------------------------------------------------*/
 void DMD::fillScreen(uint16_t color)
 {
-	DMD::clearScreen(inverse_color(color));
+	this->clearScreen(inverse_color(color));
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD::clearScreen(byte bNormal)
@@ -682,12 +698,15 @@ void DMD::stringBounds(const char* bChars, uint8_t length,
 		uint16_t width = 0;
 		int16_t minx = _width, miny = _height, maxx = -1, maxy = -1;
 		for (int i = 0; i < length; i++) {
-
+			
 			char c = bChars[i];
 
-			if (Font->is_char_in(c)) {
+			if (ff->is_char_in(c)) {
 
 				gfxFont = ff->get_font_by_char(c);
+				if (gfxFont == ff->gfxFont2) {
+					c += pgm_read_byte(&gfxFont->first) - ff->get_first_by_char(c);
+				}
 				int16_t x = 0, y = 0;
 				if (orientation) {
 					miny = _height; maxy = -1;
@@ -718,7 +737,7 @@ void DMD::stringBounds(const char* bChars, uint8_t length,
 	else {
 		*w = stringWidth(bChars, length, orientation);
 		*min_y = 0;
-		*max_y = height;
+		*max_y = height-1;
 	}
 	
 
@@ -747,16 +766,36 @@ uint16_t DMD::stringWidth(const char* bChars, uint8_t length, byte orientation)
 		width--;
 	}
 	return width;
+	
 }
-#if defined(DEBUG2)
 
+#if defined(DEBUG2)
+void DMD::dumpMatrix(void) {
+
+	int i, buffsize = mem_Buffer_Size;
+
+	Serial.print(F("\n\n"
+		"#include <avr/pgmspace.h>\n\n"
+		"static const uint8_t PROGMEM img[] = {\n  "));
+
+	for (i = 0; i < buffsize; i++) {
+		Serial.print(F("0x"));
+		if (matrixbuff[backindex][i] < 0x10) Serial.write('0');
+		Serial.print(matrixbuff[backindex][i], HEX);
+		if (i < (buffsize - 1)) {
+			if ((i & 7) == 7) Serial.print(F(",\n  "));
+			else             Serial.write(',');
+		}
+	}
+	Serial.println(F("\n};"));
+}
 void DMD::dumpDDbuf(void) {
 
 	uint16_t i, buffsize = 100;
 
 	Serial.begin(115200);
 	Serial.print("Prescaler: ");
-	Serial.println(Timer4.getPrescaleFactor());
+	Serial.println(timer_get_prescaler(OE_TIMER));
 
 	for (i = 0; i < buffsize; i++) {
 

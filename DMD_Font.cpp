@@ -60,9 +60,8 @@ bool DMD_Standard_Font::is_mono_font() {
 }
 uint8_t DMD_Standard_Font::get_char_width(unsigned char c, byte orientation) {
 	uint8_t width = 0;
+	
 	if (this->is_char_in(c)) {
-		if (c == ' ') c = 'n';
-		c -= this->firstChar;
 		// code from DMDSTM
 		if (this->is_mono_font()) {
 			// fixed width font
@@ -70,8 +69,17 @@ uint8_t DMD_Standard_Font::get_char_width(unsigned char c, byte orientation) {
 		}
 		else {
 			// variable width font, read width data
-			width = pgm_read_byte(this->font_ptr + FONT_WIDTH_TABLE + c);
+			unsigned char ind = c - this->firstChar;
+			width = pgm_read_byte(this->font_ptr + FONT_WIDTH_TABLE + ind);
+			if ((c == ' ') && (width == 0)) {      // if width of SPACE == 0
+				if (this->is_char_in('n')) {       // and font contain letter n
+					ind = 'n' - this->firstChar;   // set width for SPASE as 'n'
+					width = pgm_read_byte(this->font_ptr + FONT_WIDTH_TABLE + ind);
+				}
+				else { width = 5; }                // else set width SPACE = 5
+			}
 		}
+		
 	}
 	return width;
 }
@@ -145,7 +153,7 @@ uint8_t DMD_GFX_Font::get_char_width(unsigned char c, byte orientation) {
 #else
 		GFXglyph* glyph = &(((GFXglyph*)pgm_read_pointer(&(gfxFont_ptr->glyph)))[c]);
 #endif
-	//	GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_ptr->glyph))[c]);
+	
 		if (orientation) {
 			   int8_t char_w = fontHeight + (int8_t)pgm_read_byte(&glyph->yOffset) + pgm_read_byte(&glyph->height) ;
 			   if (char_w < 0) return 0;

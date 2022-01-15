@@ -24,7 +24,7 @@
 #define CLK_WITH_DATA   0x1
 #define CLK_AFTER_DATA   0
 
-void inline __attribute__((always_inline)) scan_running_dmd_R();
+//void inline __attribute__((always_inline)) scan_running_dmd_R();
 
 class DMD_RGB_BASE :
 	public DMD
@@ -70,7 +70,7 @@ public:
 	
 
 #if defined(DEBUG2)
-	void dumpMatrix(void);
+	//void dumpMatrix(void);
 	void dumpMask(void);
 #endif
 
@@ -109,7 +109,6 @@ protected:
 	
 	uint8_t last_color = 0;
 	uint16_t scan_cycle_len = 0;
-	
 	
 };
 template<int COL_DEPTH>
@@ -153,13 +152,13 @@ public:
 		duration = this->scan_cycle_len;
 
 #if defined(__STM32F1__)
-		timer_pause(TIMER4);
-		timer_set_reload(TIMER4, duration - CALLOVERHEAD);
+		timer_pause(MAIN_TIMER);
+		timer_set_reload(MAIN_TIMER, duration - CALLOVERHEAD);
 
-		timer_pause(TIMER3);
-		timer_set_reload(TIMER3, duration * 2);
+		timer_pause(OE_TIMER);
+		timer_set_reload(OE_TIMER, duration * 2);
 
-		timer_set_compare(TIMER3, this->oe_channel, ((uint32_t)duration * this->brightness) / 255);
+		timer_set_compare(OE_TIMER, this->oe_channel, ((uint32_t)duration * this->brightness) / 255);
 
 
 
@@ -178,7 +177,7 @@ public:
 		// For OneBitColor set mux BEFORE changing row
 	    this->set_mux(row);
 	
-		//if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
+		
 		
 		    this->plane = 0;                   // Yes, reset to plane 0, and
 			if (++row >= nRows) {        // advance row counter.  Maxed out?
@@ -192,7 +191,7 @@ public:
 			}
 		//}
 		
-		//if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
+	
 		// buffptr, being 'volatile' type, doesn't take well to optimization.
 		// A local register copy can speed some things up:
 		ptr = buffptr;
@@ -201,12 +200,14 @@ public:
 		*latclrreg = latmask; // Latch down
 		
 		//*oeclrreg = oemask;   // Re-enable output
-		TIMER4_BASE->CNT = 0;
-		TIMER3_BASE->CNT = 0;
-		timer_generate_update(TIMER4);
-		timer_generate_update(TIMER3);
-		TIMER3_BASE->CR1 = (1 << 0);//start timer3
-		TIMER4_BASE->CR1 = (1 << 0);// старт 
+	
+		timer_set_count(MAIN_TIMER, 0);
+		timer_set_count(OE_TIMER, 0);
+		timer_generate_update(MAIN_TIMER);
+		timer_generate_update(OE_TIMER);
+		timer_resume(OE_TIMER);
+		timer_resume(MAIN_TIMER);
+		
 
 
 #if defined(__STM32F1__)
@@ -233,7 +234,7 @@ public:
 
 #if defined(DEBUG3)
 		if (dd_cnt < 100) dd_ptr[dd_cnt++] = plane;
-		if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
+		if (dd_cnt < 100) dd_ptr[dd_cnt++] = timer_get_count(MAIN_TIMER);
 #endif	
 
 	}

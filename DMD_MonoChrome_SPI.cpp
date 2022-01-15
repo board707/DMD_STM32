@@ -191,14 +191,10 @@ void DMD_MonoChrome_SPI::latchDMA() {
 
 	dma_disable(spiDmaDev, spiTxDmaChannel);
 	dma_clear_isr_bits(spiDmaDev, spiTxDmaChannel);
-#if defined(DEBUG2)
-	if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
-#endif	
+	DEBUG_TIME_MARK;
 	
 	switch_row();
-#if defined(DEBUG2)
-	if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
-#endif	
+	DEBUG_TIME_MARK;
 
 }
 
@@ -232,9 +228,7 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 	}
 	
 	SPI_DMD.dmaSend(dmd_dma_buf, rowsize * 4, 1);
-#if defined(DEBUG2)
-	if (dd_cnt < 100) dd_ptr[dd_cnt++] = Timer4.getCount();
-#endif	
+	DEBUG_TIME_MARK;
 }
 #endif	
 /*--------------------------------------------------------------------------------------
@@ -317,24 +311,6 @@ void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 		}
 	}
 }
-void DMD_MonoChrome_SPI::dumpMatrix(void) {
 
-	int i, buffsize = mem_Buffer_Size;
-
-	Serial.print(F("\n\n"
-		"#include <avr/pgmspace.h>\n\n"
-		"static const uint8_t PROGMEM img[] = {\n  "));
-
-	for (i = 0; i < buffsize; i++) {
-		Serial.print(F("0x"));
-		if (matrixbuff[backindex][i] < 0x10) Serial.write('0');
-		Serial.print(matrixbuff[backindex][i], HEX);
-		if (i < (buffsize - 1)) {
-			if ((i & 7) == 7) Serial.print(F(",\n  "));
-			else             Serial.write(',');
-		}
-	}
-	Serial.println(F("\n};"));
-}
 
 
