@@ -45,3 +45,7 @@ Documentation
 No english documentation available (hopefully yet). See examples.
 
 Detailed info about matrix connection availiable at russian: [Wiki: Connections (rus)](https://github.com/board707/DMD_STM32/wiki/Connecting-for-Monochrome-(rus))
+
+Repo stats
+----------
+![GitHub all releases](https://img.shields.io/github/downloads/board707/DMD_STM32/total)
