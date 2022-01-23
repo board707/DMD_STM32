@@ -48,4 +48,4 @@ Detailed info about matrix connection availiable at russian: [Wiki: Connections 
 
 Repo stats
 ----------
-![GitHub all releases](https://img.shields.io/github/downloads/board707/DMD_STM32/total)
+Downloads since Jan23, 2022:  ![GitHub all releases](https://img.shields.io/github/downloads/board707/DMD_STM32/total)
