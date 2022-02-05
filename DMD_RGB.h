@@ -684,7 +684,7 @@ public:
 };
 
 template<int COL_DEPTH>
-class DMD_RGB<RGB32x16plainS4, COL_DEPTH> : DMD_RGB_BASE2<COL_DEPTH>
+class DMD_RGB<RGB32x16plainS4, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
 public:
 	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
@@ -696,7 +696,7 @@ public:
 };
 
 template<int COL_DEPTH>
-class DMD_RGB<RGB32x16plainS2, COL_DEPTH> : DMD_RGB_BASE2<COL_DEPTH>
+class DMD_RGB<RGB32x16plainS2, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
 public:
 	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,

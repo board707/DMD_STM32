@@ -70,7 +70,7 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	// x3 = 3 bytes holds 4 planes "packed"
 	if (nPlanes == 4) mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * 3 / 2; 
 	else if (nPlanes == 1) mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN / 2;
-	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
+	uint32_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2ul) : mem_Buffer_Size;
 
 	//mux_mask = (uint16_t*)malloc(nRows * 2);
 	
@@ -340,7 +340,8 @@ void DMD_RGB_BASE::fillScreen(uint16_t c) {
 		// For black or white, all bits in frame buffer will be identically
 		// set or unset (regardless of weird bit packing), so it's OK to just
 		// quickly memset the whole thing:
-		memset(matrixbuff[backindex], c, WIDTH * nRows * 3);
+		//memset(matrixbuff[backindex], c, WIDTH * nRows * 3);
+		memset(matrixbuff[backindex], c, this->mem_Buffer_Size);
 	}
 	else {
 		// Otherwise, need to handle it the long way:
