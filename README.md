@@ -65,7 +65,7 @@ No english documentation available (hopefully yet). See examples.
 
 Example videos
 --------------
-[Some videos](https://github.com/board707/DMD_STM32#example-videos) are avaliable at the page of old version of library.
+[Some videos](https://github.com/board707/DMD_STM32/tree/old-V1#example-videos) are avaliable at the page of old version of library.
 
 Adapters
 --------
