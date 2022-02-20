@@ -39,6 +39,10 @@ DMD_Monochrome_Parallel::DMD_Monochrome_Parallel(byte _pin_A, byte _pin_B, byte 
 		pinMode(pinlist[i], OUTPUT);
 		clk_clrmask |= row_mask[i - 1];
 	}
+#ifdef USE_UPPER_8BIT
+	clk_clrmask_low = clk_clrmask >> 8;
+	clkmask_low = clkmask >> 8;
+#endif // USE_UPPER_8BIT
 	running_dmd = this;
 }
 
@@ -87,9 +91,13 @@ void DMD_Monochrome_Parallel::drawPixel(int16_t x, int16_t y, uint16_t color) {
 	byte mux = panel_bY % 4;
 	byte mux_byte_cnt = panel_bY / 4;
 	uiDMDRAMPointer = mux * mux_size + (bX /8 )* column_size + (3 - mux_byte_cnt) * 8 + bX % 8;
+
 	
+#ifdef USE_UPPER_8BIT
+	byte lookup = row_mask[panel_row] >>8;
+#else
 	byte lookup = row_mask[panel_row];
-	
+#endif
 	switch (graph_mode) {
 	case GRAPHICS_NORMAL:
 		if (bPixel == true)
@@ -130,21 +138,26 @@ void  DMD_Monochrome_Parallel::scan_dmd() {
 	uint8_t* fr_buff = matrixbuff[1 - backindex]; // -> front buffer
 	uint8_t* ptr = fr_buff + offset;
 	uint16_t cnt = 0;
-
+#ifdef USE_UPPER_8BIT
+#define pew                    \
+      *dataclrreg = clk_clrmask;     \
+      *datasetreg = (ptr[cnt++]) << 8 ;\
+      //*datasetreg = clkmask;
+#else
 #define pew                    \
       *dataclrreg = clk_clrmask;     \
       *datasetreg = ptr[cnt++] ;\
       //*datasetreg = clkmask;
+#endif
 
-
-for (uint16_t uu = 0; uu < WIDTH; uu += 32)
+for (uint16_t uu = 0; uu < WIDTH; uu += 8)
 {
 	// Loop is unrolled for speed:
 	    pew pew pew pew pew pew pew pew
 		pew pew pew pew pew pew pew pew
 		pew pew pew pew pew pew pew pew
 		pew pew pew pew pew pew pew pew
-
+/*
 		pew pew pew pew pew pew pew pew
 		pew pew pew pew pew pew pew pew
 		pew pew pew pew pew pew pew pew
@@ -158,7 +171,7 @@ for (uint16_t uu = 0; uu < WIDTH; uu += 32)
 		pew pew pew pew pew pew pew pew
 		pew pew pew pew pew pew pew pew
 		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
+		pew pew pew pew pew pew pew pew*/
 }
 
 
@@ -174,22 +187,34 @@ DEBUG_TIME_MARK;
 void DMD_Monochrome_Parallel::clearScreen(byte bNormal)
 {
 	uint8_t mask;
+#ifdef USE_UPPER_8BIT
 	if (bNormal^inverse_ALL_flag) // clear all pixels
-		mask = clk_clrmask & 0x00FF;
+		mask = clk_clrmask_low & 0x00FF;
     else // set all pixels
+		mask = clkmask_low & 0x00FF;
+#else
+	if (bNormal ^ inverse_ALL_flag) // clear all pixels
+		mask = clk_clrmask & 0x00FF;
+	else // set all pixels
 		mask = clkmask & 0x00FF;
-
+#endif
 	memset(bDMDScreenRAM, mask, mem_Buffer_Size);
 
 }
 
 void DMD_Monochrome_Parallel::shiftScreen(int8_t step) {
 	uint8_t mask;
+#ifdef USE_UPPER_8BIT
 	if (inverse_ALL_flag) 
+		mask = clkmask_low & 0x00FF;
+	else
+		mask = clk_clrmask_low & 0x00FF;
+#else
+	if (inverse_ALL_flag)
 		mask = clkmask & 0x00FF;
 	else
 		mask = clk_clrmask & 0x00FF;
-	
+#endif
 	uint16_t column_cnt = WIDTH / 8;
 
 	if (step < 0) {

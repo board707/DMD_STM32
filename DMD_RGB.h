@@ -1,20 +1,41 @@
 #pragma once
 #include <dma_private.h>
 #include "DMD_STM32a.h"
-// MATRIX TYPES
-#define RGB64x64plainS32 1
-#define RGB80x40plainS20 2
-#define RGB64x32plainS16 3
-#define RGB32x16plainS8 4
-#define RGB32x16plainS4 5
-#define RGB32x16plainS2 6
+/*--------------------------------------------------------------------------------------
+ DMD_RGB.h  - part of the library DMD_STM32
 
-#define RGB128x64plainS32 16
+ DMD_STM32.h  - STM32 port of DMD.h library
 
+ adapted by Dmitry Dmitriev (c) 2019-2022
 
-//#define RGB32x16_S4 7
-//#define RGB32x16_S2 8
-//#define RGB32x16_S2_quangli 9
+ =======  based on =========
+
+ * RGBmatrixPanel.h
+ *
+ * Adafruit's RGB LED Matrix Panel library
+ * for the Arduino platform.  
+ *
+ * Written by Limor Fried/Ladyada & Phil Burgess/PaintYourDragon for
+ * Adafruit Industries.
+ */
+
+// == MATRIX TYPES ==
+// = indoor matrices with plain pattern =
+#define RGB64x64plainS32 1			// 64x64 1/32
+#define RGB80x40plainS20 2			// 80x40 1/20
+#define RGB64x32plainS16 3			// 64x32 1/16
+#define RGB32x16plainS8 4			// 32x16 1/8
+#define RGB32x16plainS4 5			// 32x16 1/4
+#define RGB32x16plainS2 6			// 32x16 1/2
+#define RGB32x16plainS4_DIRECT 17	// 32x16 1/4 DIRECT mux
+#define RGB128x64plainS32 16		// 128x64 1/32
+
+// = outdoor matrices =
+#define RGB32x16_S4 7               // 32x16 1/4 ZIGGII pattern matrix, BINARY mux
+#define RGB32x16_S4_bilalibrir 10   // 32x16 1/4 ZAGGIZ pattern, DIRECT mux
+#define RGB32x16_S2 8               // 32x16 1/2 complex pattern, DIRECT mux
+#define RGB32x16_S2_quangli 9       // 32x16 1/2 complex pattern, DIRECT mux
+
 
 // COLOR DEPTH
 #define COLOR_4BITS		4
@@ -45,7 +66,7 @@ public:
 	virtual void initialize_timers(uint16_t scan_interval);
 	virtual void setCycleLen();
 	void send_to_allRGB(uint16_t data, uint16_t latches);
-	
+	virtual uint16_t get_base_addr(int16_t x, int16_t y);
 	virtual void chip_init() {};
 	
 	void clearScreen(byte bNormal) override;
@@ -90,8 +111,7 @@ protected:
 	volatile PortType *latsetreg, *latclrreg, * oesetreg, * oeclrreg;
 	uint16_t           expand[256];           // 6-to-32 bit converter table
 	uint16_t          *mux_ch_masks;
-	uint16_t           *mux_mask;         // muxmask 
-	uint32_t           *mux_mask2;         // muxmask fm6353
+	uint32_t           *mux_mask2;         // muxmask 
 
 	
 	// Counters/pointers for interrupt handler:
@@ -100,9 +120,11 @@ protected:
 	
 	const uint8_t nRows = 0;
 	const uint8_t nPlanes = 4;
+	const uint8_t mux_cnt = 0;
 	const uint8_t pol_displ = DMD_PIXELS_DOWN / 2;
 	const uint8_t multiplex = pol_displ / nRows;
 	const uint16_t x_len = WIDTH * multiplex * DisplaysHigh;
+	const uint16_t displ_len = WIDTH * pol_displ * DisplaysHigh;
 
 	uint16_t colors[2] = { 0, 0 };
 	uint8_t col_cache[6] = { 0 };
@@ -143,12 +165,7 @@ public:
 		uint16_t duration;
 		volatile uint8_t* ptr;
 		
-		// Calculate time to next interrupt BEFORE incrementing plane #.
-		// This is because duration is the display time for the data loaded
-		// on the PRIOR interrupt.  CALLOVERHEAD is subtracted from the
-		// result because that time is implicit between the timer overflow
-		// (interrupt triggered) and the initial LEDs-off line at the start
-		// of this method.
+		// Calculate time to next interrupt 
 		duration = this->scan_cycle_len;
 
 #if defined(__STM32F1__)
@@ -159,9 +176,6 @@ public:
 		timer_set_reload(OE_TIMER, duration * 2);
 
 		timer_set_compare(OE_TIMER, this->oe_channel, ((uint32_t)duration * this->brightness) / 255);
-
-
-
 
 #endif
 		// Borrowing a technique here from Ray's Logic:
@@ -189,11 +203,8 @@ public:
 				buffptr = matrixbuff[1 - backindex]; // Reset into front buffer
 
 			}
-		//}
 		
-	
-		// buffptr, being 'volatile' type, doesn't take well to optimization.
-		// A local register copy can speed some things up:
+		
 		ptr = buffptr;
 
 		*latsetreg = latmask; // Latch data loaded during *prior* interrupt
@@ -266,16 +277,14 @@ public:
 		ptr[0] = 0; 
 
 		// Adafruit_GFX uses 16-bit color in 5/6/5 format, while matrix needs
-			// 4/4/4.  Pluck out relevant bits while separating into R,G,B:
+		// 4/4/4.  Pluck out relevant bits while separating into R,G,B:
 
 		uint16_t c = color;
 		r = c >> 12;        // RRRRrggggggbbbbb
 		g = (c >> 7) & 0xF; // rrrrrGGGGggbbbbb
 		b = (c >> 1) & 0xF; // rrrrrggggggBBBBb
 
-		
-		//if (nPlanes == 1) {
-		
+
 			bit = 8;
 			if (r & bit) *ptr |= B00100100; // Plane N R: bit 2
 			if (g & bit) *ptr |= B01001000; // Plane N G: bit 3
@@ -284,8 +293,6 @@ public:
 
 	    cbytes[0] = *ptr;
 		return;
-
-
 	}
 
 	void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
@@ -307,21 +314,11 @@ public:
 		if ((x + bsize) > WIDTH) bsize = WIDTH - x;
 
 		// transform X & Y for Rotate and connect scheme
-		transform_XY(x, y);
-		DEBUG_TIME_MARK;
+		// replaced with get_base_addr()
 
-		uint8_t pol_y = y % pol_displ;
-
-		uint16_t base_addr = 0;
-
-		
-		//else if (nPlanes == 1) {
-		
-			base_addr = (pol_y / multiplex) * x_len +
-				(pol_y % multiplex) * WIDTH * DisplaysHigh + (y / DMD_PIXELS_DOWN) * WIDTH * multiplex + x;
-			uint8_t* ptr_base = &matrixbuff[backindex][base_addr]; // Base addr
-
-
+		    uint16_t base_addr = get_base_addr(x, y);
+		    uint8_t* ptr_base = &matrixbuff[backindex][base_addr]; // Base addr
+			
 			uint8_t* mask_ptr;
 			uint8_t* col_bytes;
 			uint8_t* ptr = ptr_base;
@@ -337,7 +334,6 @@ public:
 				if (hbyte != 0xff) {
 					if (hbyte & 0x80) {
 						col_bytes = fg_col_bytes;
-
 					}
 					else {
 						col_bytes = bg_col_bytes;
@@ -351,6 +347,7 @@ public:
 			}
 		
 	}
+
 	void drawPixel(int16_t x, int16_t y, uint16_t c) override {
 		uint8_t r, g, b; // bit, limit;
 		uint8_t* ptr;
@@ -363,25 +360,13 @@ public:
 		}
 		if ((x < 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
 
-		// transform X & Y for Rotate and connect scheme
-		transform_XY(x, y);
-		DEBUG_TIME_MARK;
-
-		//uint8_t pol_y = y % pol_displ;
-
-		uint16_t base_addr = 0;
-
-
-		
-		//else if (nPlanes == 1) {
-		
 			// Adafruit_GFX uses 16-bit color in 5/6/5 format, convert to single bits
 			// Pluck out relevant bits while separating into R,G,B:
 			r = c >> 15;        // RRRRrggggggbbbbb
 			g = (c >> 10) & 0x1; // rrrrrGGGGggbbbbb
 			b = (c >> 4) & 0x1; // rrrrrggggggBBBBb
 
-			base_addr = (y % nRows) * x_len + (y / DMD_PIXELS_DOWN) * WIDTH + x;
+			uint16_t base_addr = get_base_addr(x, y);
 			ptr = &matrixbuff[backindex][base_addr]; // Base addr
 
 			if (y % DMD_PIXELS_DOWN < nRows) {
@@ -486,20 +471,9 @@ public:
 		if ((x + bsize) > WIDTH) bsize = WIDTH - x;
 
 		// transform X & Y for Rotate and connect scheme
-		transform_XY(x, y);
-		DEBUG_TIME_MARK;
-
-		uint8_t pol_y = y % pol_displ;
-
-		uint16_t base_addr = 0;
-
-		//if (nPlanes == 4) {
-		//if constexpr (COL_DEPTH == 4) {
-
-			base_addr = (pol_y / multiplex) * x_len * (nPlanes - 1) +
-				(pol_y % multiplex) * WIDTH * DisplaysHigh + (y / DMD_PIXELS_DOWN) * WIDTH * multiplex + x;
-			uint8_t* ptr_base = &matrixbuff[backindex][base_addr]; // Base addr
-
+		
+		uint16_t base_addr = get_base_addr(x, y);
+		uint8_t* ptr_base = &matrixbuff[backindex][base_addr]; // Base addr
 
 			DEBUG_TIME_MARK;
 			uint8_t* mask_ptr, * mask;
@@ -517,7 +491,6 @@ public:
 				if (hbyte != 0xff) {
 					if (hbyte & 0x80) {
 						col_bytes = fg_col_bytes;
-
 					}
 					else {
 						col_bytes = bg_col_bytes;
@@ -528,21 +501,16 @@ public:
 				ptr = ptr_base + j;
 				*ptr &= ~(*mask_ptr);
 				*ptr |= (col_bytes[0] & *mask_ptr++);
-				ptr += x_len;
+				ptr += displ_len;
 				*ptr &= ~(*mask_ptr);
 				*ptr |= (col_bytes[1] & *mask_ptr++);
-				ptr += x_len;
+				ptr += displ_len;
 				*ptr &= ~(*mask_ptr);
 				*ptr |= (col_bytes[2] & *mask_ptr);
-
-
 
 			}
 			DEBUG_TIME_MARK;
 
-		
-		
-		
 	}
 
 	void drawPixel(int16_t x, int16_t y, uint16_t c) override {
@@ -558,25 +526,14 @@ public:
 		if ((x < 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
 
 		// transform X & Y for Rotate and connect scheme
-		transform_XY(x, y);
-		DEBUG_TIME_MARK;
-
-		uint8_t pol_y = y % pol_displ;
-
-		uint16_t base_addr = 0;
-
-
-		//if (nPlanes == 4) {
-		//if constexpr (COL_DEPTH == 4) {
-
+		
 			// Adafruit_GFX uses 16-bit color in 5/6/5 format, while matrix needs
 			// 4/4/4.  Pluck out relevant bits while separating into R,G,B:
 			r = c >> 12;        // RRRRrggggggbbbbb
 			g = (c >> 7) & 0xF; // rrrrrGGGGggbbbbb
 			b = (c >> 1) & 0xF; // rrrrrggggggBBBBb
-
-			base_addr = (pol_y / multiplex) * x_len * (nPlanes - 1) +
-				(pol_y % multiplex) * WIDTH * DisplaysHigh + (y / DMD_PIXELS_DOWN) * WIDTH * multiplex + x;
+			
+			uint16_t base_addr = get_base_addr(x, y);
 			ptr = &matrixbuff[backindex][base_addr]; // Base addr
 			DEBUG_TIME_MARK;
 			bit = 2;
@@ -584,14 +541,14 @@ public:
 			if (y % DMD_PIXELS_DOWN < pol_displ) {
 				// Data for the upper half of the display is stored in the lower
 				// bits of each byte.
-
+				
 				// Plane 0 is a tricky case -- its data is spread about,
 				// stored in least two bits not used by the other planes.
-				ptr[x_len * 2] &= ~B00000011;           // Plane 0 R,G mask out in one op
-				if (r & 1) ptr[x_len * 2] |= B00000001; // Plane 0 R: 64 bytes ahead, bit 0
-				if (g & 1) ptr[x_len * 2] |= B00000010; // Plane 0 G: 64 bytes ahead, bit 1
-				if (b & 1) ptr[x_len] |= B00000001; // Plane 0 B: 32 bytes ahead, bit 0
-				else      ptr[x_len] &= ~B00000001; // Plane 0 B unset; mask out
+				ptr[displ_len * 2] &= ~B00000011;           // Plane 0 R,G mask out in one op
+				if (r & 1) ptr[displ_len * 2] |= B00000001; // Plane 0 R: 64 bytes ahead, bit 0
+				if (g & 1) ptr[displ_len * 2] |= B00000010; // Plane 0 G: 64 bytes ahead, bit 1
+				if (b & 1) ptr[displ_len] |= B00000001; // Plane 0 B: 32 bytes ahead, bit 0
+				else      ptr[displ_len] &= ~B00000001; // Plane 0 B unset; mask out
 				// The remaining three image planes are more normal-ish.
 				// Data is stored in the high 6 bits so it can be quickly
 				// copied to the DATAPORT register w/6 output lines.
@@ -600,7 +557,7 @@ public:
 					if (r & bit) *ptr |= B00000100; // Plane N R: bit 2
 					if (g & bit) *ptr |= B00001000; // Plane N G: bit 3
 					if (b & bit) *ptr |= B00010000; // Plane N B: bit 4
-					ptr += x_len;                 // Advance to next bit plane
+					ptr += displ_len;                 // Advance to next bit plane
 				}
 			}
 			else {
@@ -608,8 +565,8 @@ public:
 				// bits, except for the plane 0 stuff, using 2 least bits.
 
 				*ptr &= ~B00000011;                  // Plane 0 G,B mask out in one op
-				if (r & 1)  ptr[x_len] |= B00000010; // Plane 0 R: 32 bytes ahead, bit 1
-				else       ptr[x_len] &= ~B00000010; // Plane 0 R unset; mask out
+				if (r & 1)  ptr[displ_len] |= B00000010; // Plane 0 R: 32 bytes ahead, bit 1
+				else       ptr[displ_len] &= ~B00000010; // Plane 0 R unset; mask out
 				if (g & 1) *ptr |= B00000001; // Plane 0 G: bit 0
 				if (b & 1) *ptr |= B00000010; // Plane 0 B: bit 0
 				for (; bit < limit; bit <<= 1) {
@@ -617,7 +574,7 @@ public:
 					if (r & bit) *ptr |= B00100000; // Plane N R: bit 5
 					if (g & bit) *ptr |= B01000000; // Plane N G: bit 6
 					if (b & bit) *ptr |= B10000000; // Plane N B: bit 7
-					ptr += x_len;                 // Advance to next bit plane
+					ptr += displ_len;                 // Advance to next bit plane
 				}
 			}
 			DEBUG_TIME_MARK;
@@ -647,6 +604,7 @@ public:
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 32, 64, 64)
 	{}
 };
+
 template<int COL_DEPTH>
 class DMD_RGB<RGB80x40plainS20, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
@@ -658,6 +616,7 @@ public:
 	{}
 
 };
+
 template<int COL_DEPTH>
 class DMD_RGB<RGB64x32plainS16, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
@@ -683,6 +642,9 @@ public:
 
 };
 
+// "plain" type 1/4 scan matrix, BINARY mux
+// with consecutive bytes in horizontal lines 
+// left for testing
 template<int COL_DEPTH>
 class DMD_RGB<RGB32x16plainS4, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
@@ -692,9 +654,104 @@ public:
 		DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
 	{}
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+		uint8_t pol_y = y % this->pol_displ;
+		uint16_t base_addr = (pol_y / this->multiplex) * this->x_len +
+			(pol_y % this->multiplex) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH + x;
+		return base_addr;
+	}
+};
+
+// "plain" type 1/4 scan matrix, DIRECT mux
+// with consecutive bytes in horizontal lines 
+// left for testing
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16plainS4_DIRECT, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(4, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
+	{}
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+		uint8_t pol_y = y % this->pol_displ;
+		uint16_t base_addr = (pol_y / this->multiplex) * this->x_len +
+			(pol_y % this->multiplex) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH + x;
+		return base_addr;
+	}
+};
+
+// 1/4 matrix I have
+//
+// with pattern   [1H|1L] [3H|3L] 
+//                   |   *   |             
+//                [0L|0H] [2L|2H]   
+// and BINARY mux
+
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_S4, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
+	{
+		this->fast_Hbyte = false;
+		this->use_shift = false;
+	}
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+
+
+		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+		uint16_t base_addr = (pol_y % this->nRows) * this->x_len + (x / 8) * this->multiplex * 8;
+		if (pol_y / this->nRows) base_addr += x % 8;
+		else base_addr += (15 - x % 8);
+		return base_addr;
+	}
+};
+
+// 1/4 matrix from Bilal Ibrir
+//
+// with pattern   [0H|0L] [2H|2L] 
+//                   |   /   |   /           
+//                [1L|1H] [3L|3H]   
+// and DIRECT mux
+
+template<int COL_DEPTH>
+class DMD_RGB< RGB32x16_S4_bilalibrir, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(4, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
+	{
+		this->fast_Hbyte = false;
+		this->use_shift = false;
+	}
+protected:
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+
+		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+		uint16_t base_addr = (pol_y % this->nRows) * this->x_len + (x / 8) * this->multiplex * 8;
+		if (pol_y / this->nRows) base_addr += 8 + x % 8;
+		else base_addr += (7 - x % 8);
+		return base_addr;
+	}
 
 };
 
+// "plain" type 1/2 scan matrix  
+// with consecutive bytes in horizontal lines and DIRECT  mux
+// left for testing
 template<int COL_DEPTH>
 class DMD_RGB<RGB32x16plainS2, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
@@ -704,6 +761,85 @@ public:
 		DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
 	{}
+
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+		uint8_t pol_y = y % this->pol_displ;
+		uint16_t base_addr = (pol_y / this->multiplex) * this->x_len +
+				(pol_y % this->multiplex) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH + x;
+		return base_addr;
+	}
+};
+
+// 1/2 matrix I have
+//
+// with pattern   [0H|0L]     [4H|4L] 
+//                   |       /   |              
+//                [1L|1H]   / [5L|5H]   
+//                   |     /     |
+//                [2H|2L] /   [6H|6L] 
+//                   |   /       |   /           
+//                [3L|3H]     [7L|7H]   
+// and DIRECT mux
+
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_S2, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
+	{
+		this->fast_Hbyte = false;
+		this->use_shift = false;
+	}
+
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+		uint16_t base_addr = (pol_y % this->nRows) * this->x_len + (x / 8) * this->multiplex * 8 + (pol_y / this->nRows)*8;
+		if (((pol_y / this->nRows) % 2) == 0) { base_addr += (7 - x % 8); }
+		else base_addr += x % 8;
+		return base_addr;
+	}
+
+};
+
+// 1/2 matrix from quangli with two-byte pattern
+// DIRECT mux
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_S2_quangli, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
+	{
+		this->fast_Hbyte = false;
+		this->use_shift = false;
+	}
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+
+
+		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+		uint16_t base_addr = (pol_y % this->nRows) * this->x_len + (x / 16) * this->multiplex * 16;
+		switch (pol_y / this->nRows) {
+		case 0: base_addr += 32; break;
+		case 1: base_addr += 40; break;
+		case 2:  break;
+		case 3: base_addr += 8; break;
+        }
+		
+		if (x%16 > 7) base_addr += 16 + x % 8;
+		else base_addr += x % 8;
+		return base_addr;
+	}
+ 
 
 };
 
@@ -717,13 +853,7 @@ public:
 			panelsWide, panelsHigh, false, COL_DEPTH, 32, 128, 64)
 	{}
 
-	
-
-
 };
-
-
-
 
 
 template <int MATRIX_TYPE, int COL_DEPTH>
@@ -732,7 +862,7 @@ class DMD_RGB_SHIFTREG_ABC : public DMD_RGB_BASE2<COL_DEPTH>
 public:
 	DMD_RGB_SHIFTREG_ABC() = 0;
 
-	
+
 };
 template<int COL_DEPTH>
 class DMD_RGB_SHIFTREG_ABC<RGB128x64plainS32, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
@@ -754,3 +884,6 @@ public:
 	}
 
 };
+
+
+

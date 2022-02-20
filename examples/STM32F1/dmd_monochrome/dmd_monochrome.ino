@@ -142,7 +142,7 @@ void loop(void)
             if (test >= test_cnt) {
                 test = 0;
                 // draw message
-                dmd.drawMarqueeX(m, -1 * (dmd.stringWidth(m)+10), 0);
+                dmd.drawMarqueeX(m, -1 * (dmd.stringWidth(m)), 0);
                 dmd.swapBuffers(true);
 
             }

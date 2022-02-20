@@ -7,8 +7,9 @@
 
  DMD_STM32.h  - STM32 port of DMD.h library 
  
- adapted by Dmitry Dmitriev (c) 2019-2021
- 
+ adapted by Dmitry Dmitriev (c) 2019-2022
+
+ =======  based on =========
  
  DMD.h   - Function and support library for the Freetronics DMD, a 512 LED matrix display
            panel arranged in a 32 x 16 layout.
@@ -43,6 +44,7 @@
 
 
 #include "Adafruit_GFX.h"
+#include "DMD_Config.h"
 #include "DMD_Font.h"
 
 
@@ -76,24 +78,7 @@ typedef uint32_t PortType;
 #define DMD_BITSPERPIXEL           1       // used for Monochrome panels only
 #define DMD_MONO_SCAN              4
 
-//          === TIMERs setup  ===
-// Default timers are 
-// MAIN_TIMER = Timer4
-// OE_TIMER = Timer3
-// OE pin may be one of PA6 PA7 PB0 PB1
-//
-// Alternative timers setup
-// MAIN_TIMER = Timer3
-// OE_TIMER = Timer4
-// so OE pin may be one of PB6 PB7 PB8 PB9
-//
-// for alternative timers setup uncomment line below
-//#define ALTERNATIVE_DMD_TIMERS
 
-
-
-// OE PWM period in us
-#define OE_PWM_PERIOD  30
 
 // Panel connections variants
 #define CONNECT_NORMAL 0

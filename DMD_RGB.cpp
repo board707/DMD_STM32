@@ -13,7 +13,7 @@ void inline __attribute__((always_inline)) scan_running_dmd_R()
 
 DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 	byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y)
-	: DMD(mux_list[0], mux_list[1], _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, d_buf, dmd_pixel_x, dmd_pixel_y),  nRows(n_Rows), nPlanes(col_depth)
+	: DMD(mux_list[0], mux_list[1], _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, d_buf, dmd_pixel_x, dmd_pixel_y),  nRows(n_Rows), nPlanes(col_depth), mux_cnt(mux_cnt)
 {
 	muxsetreg = portSetRegister(pin_DMD_A);
 	muxclrreg = portClearRegister(pin_DMD_A);
@@ -72,7 +72,6 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	else if (nPlanes == 1) mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN / 2;
 	uint32_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2ul) : mem_Buffer_Size;
 
-	//mux_mask = (uint16_t*)malloc(nRows * 2);
 	
 	matrixbuff[0] = (uint8_t*)malloc(allocsize);
 	memset(matrixbuff[0], 0, allocsize);
@@ -98,15 +97,31 @@ void DMD_RGB_BASE::generate_muxmask() {
 	for (uint8_t i = 0; i < nRows; i++)
 	{
 		mux_mask2[i] = 0;
-		for (uint8_t j = 0; (1 << j) < nRows; j++)
-		{
-			if (i & (1 << j))
+		if (mux_cnt == nRows)                // STRIGHT MUX
+		{  
+			for (uint8_t j = 0; j < nRows; j++)
 			{
-				mux_mask2[i] |= set_mux_ch_by_mask(mux_ch_masks[j]);
+				if (i == j)
+				{
+					mux_mask2[i] |= clr_mux_ch_by_mask(mux_ch_masks[j]);    //low
+				}
+				else
+				{
+					mux_mask2[i] |= set_mux_ch_by_mask(mux_ch_masks[j]);    //high
+				}
 			}
-			else
+		}
+		else {                             // BINARY MUX
+			for (uint8_t j = 0; (1 << j) < nRows; j++)
 			{
-				mux_mask2[i] |= clr_mux_ch_by_mask(mux_ch_masks[j]);
+				if (i & (1 << j))
+				{
+					mux_mask2[i] |= set_mux_ch_by_mask(mux_ch_masks[j]);
+				}
+				else
+				{
+					mux_mask2[i] |= clr_mux_ch_by_mask(mux_ch_masks[j]);
+				}
 			}
 		}
 	}
@@ -164,10 +179,8 @@ void DMD_RGB_BASE::init(uint16_t scan_interval) {
 	
 	generate_muxmask();
 	generate_rgbtable();
-	
 	chip_init();
 	initialize_timers(scan_interval);
-	
 	clearScreen(true);
 	
 }
@@ -202,7 +215,19 @@ void DMD_RGB_BASE::send_to_allRGB(uint16_t data, uint16_t latches) {
 	*dataclrreg = rgbmask_all; // off all rgb channels
 }
 
-
+uint16_t DMD_RGB_BASE::get_base_addr(int16_t x, int16_t y) {
+	this->transform_XY(x, y);
+	uint16_t base_addr = 0;
+	if (multiplex == 1) {
+		base_addr = (y % pol_displ) * WIDTH * DisplaysHigh + (y / DMD_PIXELS_DOWN) * WIDTH + x;
+	}
+	else {
+		uint8_t pol_y = y % pol_displ;
+		x += (y / DMD_PIXELS_DOWN) * WIDTH;
+		base_addr = (pol_y % nRows) * x_len + (x / 8) * multiplex * 8 + (pol_y / nRows) * 8 + x % 8;
+	}
+	return base_addr;
+}
 
 void DMD_RGB_BASE::scan_dmd() {
 	//uint8_t  i, tick, tock;
@@ -239,10 +264,7 @@ void DMD_RGB_BASE::scan_dmd() {
   // vertical scanning artifacts, in practice with this panel it causes
   // a green 'ghosting' effect on black pixels, a much worse artifact.
 
-
-
 	//* oesetreg = oemask; // Disable LED output during row/plane switchover
-
 	
 	if (++plane >= nPlanes) {      // Advance plane counter.  Maxed out?
 		plane = 0;                  // Yes, reset to plane 0, and
@@ -252,11 +274,11 @@ void DMD_RGB_BASE::scan_dmd() {
 				backindex = 1 - backindex;
 				swapflag = false;
 			}
-			buffptr = matrixbuff[1 - backindex]; // Reset into front buffer
-
+	
 		}
+		buffptr = matrixbuff[1 - backindex]; // Reset into front buffer
+		buffptr += row * x_len;
 	}
-
 
 	// For 4bit Color set mux at 1st Plane
 	else if (plane == 1) {
@@ -280,8 +302,6 @@ void DMD_RGB_BASE::scan_dmd() {
 	timer_resume(MAIN_TIMER);
 	
 
-	
-
 	if (plane > 0) {
 #if defined(__STM32F1__)
 #define pew                    \
@@ -289,8 +309,6 @@ void DMD_RGB_BASE::scan_dmd() {
       *datasetreg = expand[*ptr++];
 
 #endif
-
-
 		for (uint16_t uu = 0; uu < x_len; uu += 8)
 		{
 			// Loop is unrolled for speed:
@@ -303,16 +321,16 @@ void DMD_RGB_BASE::scan_dmd() {
 		*dataclrreg = clkmask; // Set clock low
 #endif
 
-		buffptr = ptr; //+= 32;
-
+		//buffptr = ptr; //+= 32;
+		buffptr += displ_len;
 	}
 	else { // 920 ticks from TCNT1=0 (above) to end of function
 
 		for (int i = 0; i < x_len; i++) {
 			byte b =
 				(ptr[i] << 6) |
-				((ptr[i + x_len] << 4) & 0x30) |
-				((ptr[i + x_len * 2] << 2) & 0x0C);
+				((ptr[i + displ_len] << 4) & 0x30) |
+				((ptr[i + displ_len * 2] << 2) & 0x0C);
 #if defined(__STM32F1__)
 			*dataclrreg = clk_clrmask; // Clear all data and clock bits together
 			*datasetreg = expand[b];  // Set new data bits
@@ -340,7 +358,6 @@ void DMD_RGB_BASE::fillScreen(uint16_t c) {
 		// For black or white, all bits in frame buffer will be identically
 		// set or unset (regardless of weird bit packing), so it's OK to just
 		// quickly memset the whole thing:
-		//memset(matrixbuff[backindex], c, WIDTH * nRows * 3);
 		memset(matrixbuff[backindex], c, this->mem_Buffer_Size);
 	}
 	else {
@@ -477,7 +494,6 @@ void DMD_RGB_BASE::dumpMask(void) {
 DMD_RGB_BASE::~DMD_RGB_BASE()
 {
 	free(matrixbuff[0]);
-	free(mux_mask);
 	free(mux_mask2);
 
 }

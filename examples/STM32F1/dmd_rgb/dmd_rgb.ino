@@ -41,8 +41,8 @@ uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E
 #define DMD_PIN_SCLK PB7
 
 // Pins for R0, G0, B0, R1, G1, B1 channels and for clock.
-// By default the library uses RGB color order/
-// If you need to change this - reorder the R0, G0, B0, R1, G1, B1 pins/
+// By default the library uses RGB color order.
+// If you need to change this - reorder the R0, G0, B0, R1, G1, B1 pins.
 // All this pins also must be selected from same port!
 uint8_t custom_rgbpins[] = { PA15, PA0,PA1,PA2,PA3,PA4,PA5 }; // CLK, R0, G0, B0, R1, G1, B1
 
@@ -88,7 +88,7 @@ void setup(void)
 {
 
     // initialize DMD objects
-	dmd.init(700); 
+	dmd.init(); 
     
 }
 
@@ -166,7 +166,7 @@ void loop(void)
                         // go to next stage
                         i = 0;
                         test++;
-                        dmd.drawMarqueeX(m, 0, 8);
+                        dmd.drawMarqueeX(m, 0, (dmd.height() > 16)? 8 : 0);
                     }
                     else {
                         if (step[i] < 0) dmd.drawMarqueeX(m, dmd.width() - 1, 0);
@@ -206,7 +206,8 @@ void loop(void)
                         test++;
                         // select GFX font for vertical scroll
                         dmd.selectFont(&GlametrixL);
-                        dmd.drawMarquee(k, strlen(k), dmd.width() - 1, 8, 1);
+                        dmd.drawMarquee(k, strlen(k), dmd.width() - 1,
+                           (dmd.height() > 16)? 8 : 0, 1);
 
                     }
                     else {

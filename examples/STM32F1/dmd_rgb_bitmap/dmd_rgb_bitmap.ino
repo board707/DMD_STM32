@@ -40,7 +40,7 @@ uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E
 uint8_t custom_rgbpins[] = {PA15, PA0,PA1,PA2,PA3,PA4,PA5 }; // CLK, R0, G0, B0, R1, G1, B1
 
 // Fire up the DMD object as dmd<MATRIX_TYPE, COLOR_DEPTH>
-// We use 64x32 matrix with 16 scans and 1bit color:
+// We use 64x32 matrix with 16 scans and 4bit color:
 DMD_RGB <RGB64x32plainS16,COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 // other options are:
 // <RGB32x16plainS8> -  32x16 matrix with 8scans
@@ -73,7 +73,7 @@ void loop(void)
 {
   if (ptr == (sizeof(bitmaps)/ sizeof(bitmaps[0]))) ptr =0;
   
-  // initial brightnes
+  // initial brightness
   uint8_t b=BRIGHTNESS_DEFAULT;      
   dmd.setBrightness(b);
   

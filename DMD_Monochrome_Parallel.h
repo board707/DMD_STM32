@@ -9,11 +9,11 @@ public:
 
 	~DMD_Monochrome_Parallel();
 
-	virtual void init(uint16_t scan_interval = 2000);
-	virtual void drawPixel(int16_t x, int16_t y, uint16_t color);
+	void init(uint16_t scan_interval = 2000) override;
+	void drawPixel(int16_t x, int16_t y, uint16_t color) override;
 	void scan_dmd();
-	virtual void clearScreen(byte bNormal);
-	virtual void shiftScreen(int8_t step);
+	void clearScreen(byte bNormal) override;
+	void shiftScreen(int8_t step) override;
 	// changing connect scheme not allowed for Parallel
 	virtual void setConnectScheme(uint8_t sch) {};
 	
@@ -22,6 +22,10 @@ private:
 	uint16_t mux_size, column_size;
 	// Pin bitmasks
 	PortType clk_clrmask, clkmask;
+#ifdef USE_UPPER_8BIT
+	PortType clk_clrmask_low, clkmask_low;
+#endif // USE_UPPER_8BIT
+
 	PortType row_mask[8];
 	// PORT register pointers 
 	volatile PortType  *dataclrreg, *datasetreg, *dataport;

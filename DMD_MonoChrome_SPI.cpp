@@ -1,7 +1,6 @@
 #include "DMD_MonoChrome_SPI.h"
 #include "SPI_DMA.h"
 
-
 //lookup table for DMD::writePixel to make the pixel indexing routine faster
 static byte bPixelLookupTable[8] =
 {
@@ -31,7 +30,6 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	
 
 	// Allocate and initialize matrix buffer:
-	
 	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
 	matrixbuff[0] = (uint8_t *)malloc(allocsize);
 	
@@ -44,11 +42,9 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 #if defined(__STM32F1__)
 		pin_DMD_CLK = SPI_DMD.sckPin();
 		pin_DMD_R_DATA = SPI_DMD.mosiPin();
-		SPI_DMD.begin(); //Initialize the SPI_2 port.
 		
 #if defined( DMD_USE_DMA )	
 	dmd_dma_buf = (byte*)malloc(mem_Buffer_Size / DMD_MONO_SCAN);
-	rx_dma_buf = (byte*)malloc(mem_Buffer_Size / DMD_MONO_SCAN);
 		spiDmaDev = DMA1;
 		if (SPI_DMD.dev() == SPI1) {
 			spiTxDmaChannel = DMA_CH3;
@@ -75,7 +71,6 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
         pinMode(pin_DMD_CLK, OUTPUT);	//
 		pinMode(pin_DMD_R_DATA, OUTPUT);	//
 
-
 }
 
 DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
@@ -83,7 +78,7 @@ DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
 	free(matrixbuff[0]);
 #if defined( DMD_USE_DMA )	
 	free(dmd_dma_buf);
-	free(rx_dma_buf);
+
 #endif
 
 }
@@ -98,7 +93,6 @@ void DMD_MonoChrome_SPI::init(uint16_t scan_interval) {
 	SPI_DMD.begin(); //Initialize the SPI_2 port.
 	SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
 	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI_2 data mode 0
-	//SPI_DMD.setClockDivider(SPI_CLOCK_DIV16);  // Use a different speed to SPI 1 */
 	SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
 	register_running_dmd(this, scan_interval);
 	
@@ -131,8 +125,8 @@ void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 	// inverse data bits for some panels
 	bPixel = bPixel ^ inverse_ALL_flag;
 
-	byte panel = (bX / DMD_PIXELS_ACROSS) + (DisplaysWide*(bY / DMD_PIXELS_DOWN));
-	bX = (bX % DMD_PIXELS_ACROSS) + (panel << 5);
+	//byte panel = (bX / DMD_PIXELS_ACROSS) + (DisplaysWide*(bY / DMD_PIXELS_DOWN));
+	bX += (this->WIDTH * (bY / DMD_PIXELS_DOWN));
 	bY = bY % DMD_PIXELS_DOWN;
 	//set pointer to DMD RAM byte to be modified
 	uiDMDRAMPointer = bX / 8 + bY * (DisplaysTotal << 2);
@@ -181,10 +175,10 @@ void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 }
 /*--------------------------------------------------------------------------------------*/
 
-#if defined(__STM32F1__)
+#if (defined(__STM32F1__) && defined( DMD_USE_DMA ))
 
 void DMD_MonoChrome_SPI::latchDMA() {
-	//SPI_DMD.dmaTransferFinish();
+	
 	while (spi_is_tx_empty(SPI_DMD.dev()) == 0); // "5. Wait until TXE=1 ..."
 	while (spi_is_busy(SPI_DMD.dev()) != 0); // "... and then wait until BSY=0 before disabling the SPI." 
 	spi_tx_dma_disable(SPI_DMD.dev());
@@ -203,18 +197,19 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 {
 	
 	uint8_t* fr_buff = matrixbuff[1 - backindex]; // -> front buffer
-    uint16_t offset = rowsize * bDMDByte;
-	
-	//pwmWrite(pin_DMD_nOE, 0);
-
+    //uint16_t offset = rowsize * bDMDByte;
+	uint8_t* offset_ptr = fr_buff + rowsize * bDMDByte;
+	uint8_t* row1_ptr = offset_ptr + row1;
+	uint8_t* row2_ptr = offset_ptr + row2;
+	uint8_t* row3_ptr = offset_ptr + row3;
 	uint8_t* buf_ptr = dmd_dma_buf;
-
+	
 	for (int i = 0;i < rowsize;i++) {
-		//SPI_DMD.dmaSendAsync(bDMDScreenRAM, 16);
-		*buf_ptr = (fr_buff[offset + i + row3]);buf_ptr++;
-		*buf_ptr = (fr_buff[offset + i + row2]);buf_ptr++;
-		*buf_ptr = (fr_buff[offset + i + row1]);buf_ptr++;
-		*buf_ptr = (fr_buff[offset + i]);buf_ptr++;
+		
+		*buf_ptr++ = *(row3_ptr++);
+		*buf_ptr++ = *(row2_ptr++);
+		*buf_ptr++ = *(row1_ptr++);
+		*buf_ptr++ = *(offset_ptr++);
 	}
 
 	
@@ -230,7 +225,7 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 	SPI_DMD.dmaSend(dmd_dma_buf, rowsize * 4, 1);
 	DEBUG_TIME_MARK;
 }
-#endif	
+#else
 /*--------------------------------------------------------------------------------------
  Scan the dot matrix LED panel display, from the RAM mirror out to the display hardware.
  Call 4 times to scan the whole display which is made up of 4 interleaved rows within the 16 total rows.
@@ -242,31 +237,14 @@ void DMD_MonoChrome_SPI::scanDisplayBySPI()
 	uint16_t offset = rowsize * bDMDByte;
 	
 #if defined(__STM32F1__)
-	//pwmWrite(pin_DMD_nOE, 0);
 	
-
-#if defined(DMD_USE_DMA)
-	uint8_t* buf_ptr = dmd_dma_buf;
-	for (int i = 0;i < rowsize;i++) {
-
-		*buf_ptr = (bDMDScreenRAM[offset + i + row3]);buf_ptr++;
-		*buf_ptr = (bDMDScreenRAM[offset + i + row2]);buf_ptr++;
-		*buf_ptr = (bDMDScreenRAM[offset + i + row1]);buf_ptr++;
-		*buf_ptr = (bDMDScreenRAM[offset + i]);buf_ptr++;
-	}
-
-	SPI_DMD.dmaTransfer(dmd_dma_buf, rx_dma_buf, rowsize * 4);
-#else   //  not DMA
-
 	for (int i = 0;i < rowsize;i++) {
 		SPI_DMD.write(bDMDScreenRAM[offset + i + row3]);
 		SPI_DMD.write(bDMDScreenRAM[offset + i + row2]);
 		SPI_DMD.write(bDMDScreenRAM[offset + i + row1]);
 		SPI_DMD.write(bDMDScreenRAM[offset + i]);
 	}
-#endif  //   DMA
-	
-   //pwmWrite(pin_DMD_nOE, 0);	//for stm32
+
 #elif defined(__AVR_ATmega328P__)
 	for (int i = 0;i < rowsize;i++) {
 		SPI.transfer(bDMDScreenRAM[offset + i + row3]);
@@ -279,7 +257,7 @@ void DMD_MonoChrome_SPI::scanDisplayBySPI()
 	switch_row();
 }
 // Shift entire screen one pixel
-
+#endif
 void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 	uint8_t msb_bit = 0x80;
 	uint8_t lsb_bit = 0x01;

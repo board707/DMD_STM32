@@ -9,7 +9,6 @@
 
 #if defined(__STM32F1__)
 #define DMD_SPI_CLOCK DMD_SPI_CLOCK_9MHZ
-#define DMD_USE_DMA	1
 #elif defined(__AVR_ATmega328P__)
 #define DMD_SPI_CLOCK SPI_CLOCK_DIV4
 #endif
@@ -25,18 +24,20 @@ public:
 	
 	~DMD_MonoChrome_SPI();
 
-	virtual void init(uint16_t scan_interval = 2000);
-	virtual void drawPixel(int16_t x, int16_t y, uint16_t color);
-	
-	void scanDisplayBySPI();
-	virtual void shiftScreen(int8_t step);
-	
-
+	void init(uint16_t scan_interval = 2000) override;
+	void drawPixel(int16_t x, int16_t y, uint16_t color) override;
+	void shiftScreen(int8_t step) override;
 	
 #if defined(__STM32F1__)
+#if defined( DMD_USE_DMA )
 	void scanDisplayByDMA();
 	void latchDMA();
+#else
+	void scanDisplayBySPI();
+#endif
 	uint8_t spi_num = 0;
+#else
+	void scanDisplayBySPI();
 #endif
 	
 private:
@@ -45,11 +46,11 @@ private:
 	uint16_t rowsize, row1, row2, row3;
 
 	SPIClass SPI_DMD;
-#if defined(__STM32F1__)
+#if (defined(__STM32F1__) && defined( DMD_USE_DMA ))
 	dma_channel  spiTxDmaChannel;
 	dma_dev* spiDmaDev;
 	uint8_t *dmd_dma_buf;
-	uint8_t *rx_dma_buf;
+	//uint8_t *rx_dma_buf;
 
 	
 #endif
