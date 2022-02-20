@@ -78,6 +78,12 @@ Acknowledgements
 - Eduard Yansapov - for testing.
 - @bilalibrir - for help with the code for Outdoor RGB matrix 
 
+Credits to open source community
+--------------------------------
+* Initial version of STM32 specific code based on DMDSTM by Evgen Mozok: https://github.com/mozok/DMDSTM
+* The principles of handling RGB matrices are based on Adafruit RGB-matrix-Panel library https://github.com/adafruit/RGB-matrix-Panel, with a changes, necessary to port code to STM32 controllers.
+* Some other code solutions are inspired by [PxMatrix](https://github.com/2dom/PxMatrix) and [ESP32-HUB75-MatrixPanel-I2S-DMA](https://github.com/mrfaptastic/ESP32-HUB75-MatrixPanel-I2S-DMA) libraries
+
 Notice
 ------
 This software is experimental and a work in progress. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
