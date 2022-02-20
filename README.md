@@ -38,6 +38,8 @@ Other features
 
 Versions
 ---------
+(19 Feb 2022 - v0.7.0)  - Add support of "Outdoor" RGB panels with 1/2 1/4 1/8 scans
+
 (15 Jan 2022 - v0.6.11) - Fix incorrect string bounds for Standard and GFXFonts - Fix artefacts in Parallel Monochrome mode - Add ability to choose timer for OE other than Tim3
 
 For full version history see [CHANGES.txt](CHANGES.txt)
