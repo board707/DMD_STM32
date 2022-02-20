@@ -15,7 +15,7 @@
 #pragma GCC diagnostic warning "-Woverflow" 
 
 //Number of panels in x and y axis
-#define DISPLAYS_ACROSS 2
+#define DISPLAYS_ACROSS 1
 #define DISPLAYS_DOWN 1
 
 // Enable of output buffering
@@ -36,18 +36,19 @@
 // put all mux pins at list
 uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E };
 
-// 1bit color = pin OE must be one of PB0 PB1 PA6 PA7
-// 4bit color = pin OE any gpio
+// pin OE must be one of PB0 PB1 PA6 PA7
 #define DMD_PIN_nOE PB0
 #define DMD_PIN_SCLK PB7
 
-// pins for R0, G0, B0, R1, G1, B1 channels and for clock
-// all this pins also must be selected from same port!
+// Pins for R0, G0, B0, R1, G1, B1 channels and for clock.
+// By default the library uses RGB color order/
+// If you need to change this - reorder the R0, G0, B0, R1, G1, B1 pins/
+// All this pins also must be selected from same port!
 uint8_t custom_rgbpins[] = { PA15, PA0,PA1,PA2,PA3,PA4,PA5 }; // CLK, R0, G0, B0, R1, G1, B1
 
-//Fire up the DMD object as dmd<MATRIX_TYPE, COLOR_DEPTH>
-// We use 64x32 matrix with 16 scans and 1bit color:
-DMD_RGB <RGB64x32plainS16, COLOR_1BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
+// Fire up the DMD object as dmd<MATRIX_TYPE, COLOR_DEPTH>
+// We use 64x32 matrix with 16 scans and 4bit color:
+DMD_RGB <RGB64x32plainS16, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 // other options are:
 // <RGB32x16plainS8> -  32x16 matrix with 8scans
 // <RGB80x40plainS20> - 80x40 matrix with 20scans
@@ -112,7 +113,6 @@ void loop(void)
 
     // text
     char s[] = "Привет Ардуино!";
-    //char ss[] = "HHHHHHHHHHH";
     // transcode message to UTF for use with GFX fonts
     char k[30];
     
@@ -144,7 +144,7 @@ void loop(void)
             if (test >= test_cnt) {
                 test = 0;
                 // draw message
-                dmd.drawMarqueeX(m, -1 * (dmd.stringWidth(m)), 10);
+                dmd.drawMarqueeX(m, -1 * (dmd.stringWidth(m)), 0);
                 
                 dmd.swapBuffers(true);
                 
