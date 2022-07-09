@@ -1,12 +1,13 @@
+
 #include "DMD_Monochrome_Parallel.h"
 static volatile DMD_Monochrome_Parallel* running_dmd;
 void inline __attribute__((always_inline)) scan_running_dmd()
 {
-	DMD_Monochrome_Parallel *next = (DMD_Monochrome_Parallel*)running_dmd;
+	DMD_Monochrome_Parallel* next = (DMD_Monochrome_Parallel*)running_dmd;
 	next->scan_dmd();
 }
 
-
+/*--------------------------------------------------------------------------------------*/
 DMD_Monochrome_Parallel::DMD_Monochrome_Parallel(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 	byte panelsWide, byte panelsHigh,
 	bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
@@ -15,12 +16,12 @@ DMD_Monochrome_Parallel::DMD_Monochrome_Parallel(byte _pin_A, byte _pin_B, byte 
 	mem_Buffer_Size = DMD_PIXELS_ACROSS * panelsWide * DMD_PIXELS_DOWN;
 	mux_size = mem_Buffer_Size / DMD_MONO_SCAN;
 	column_size = 8 * DMD_MONO_SCAN;
-	
+
 
 	// Allocate and initialize matrix buffer:
-    uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
+	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
 	matrixbuff[0] = (uint8_t*)malloc(allocsize);
-	
+
 	// If not double-buffered, both buffers then point to the same address:
 	matrixbuff[1] = (dbuf == true) ? &matrixbuff[0][mem_Buffer_Size] : matrixbuff[0];
 	backindex = 0;
@@ -29,30 +30,36 @@ DMD_Monochrome_Parallel::DMD_Monochrome_Parallel(byte _pin_A, byte _pin_B, byte 
 
 	byte clk_pin = pinlist[0];
 	datasetreg = portSetRegister(clk_pin);
-	dataclrreg = portClearRegister(clk_pin);
 	clk_clrmask = clkmask = digitalPinToBitMask(clk_pin);
-	dataport = portOutputRegister(digitalPinToPort(clk_pin));
-	pinMode(clk_pin, OUTPUT);
-	
-	for (byte i = 1; i <= panelsHigh; i++) {
-		row_mask[i - 1] = digitalPinToBitMask(pinlist[i]);
-		pinMode(pinlist[i], OUTPUT);
-		clk_clrmask |= row_mask[i - 1];
-	}
+	memcpy(row_pins, pinlist, panelsHigh + 1);
+
 #ifdef USE_UPPER_8BIT
 	clk_clrmask_low = clk_clrmask >> 8;
 	clkmask_low = clkmask >> 8;
 #endif // USE_UPPER_8BIT
 	running_dmd = this;
 }
-
+/*--------------------------------------------------------------------------------------*/
 DMD_Monochrome_Parallel::~DMD_Monochrome_Parallel()
 {
 	free(matrixbuff[0]);
-
 }
-void DMD_Monochrome_Parallel::init(uint16_t scan_interval) {
+/*--------------------------------------------------------------------------------------*/
+void DMD_Monochrome_Parallel::set_pin_modes() {
 
+	DMD::set_pin_modes();
+	byte clk_pin = this->row_pins[0];
+	pinMode(clk_pin, OUTPUT);
+
+	for (byte i = 1; i <= this->DisplaysHigh; i++) {
+		this->row_mask[i - 1] = digitalPinToBitMask(this->row_pins[i]);
+		pinMode(this->row_pins[i], OUTPUT);
+		this->clk_clrmask |= this->row_mask[i - 1];
+	}
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD_Monochrome_Parallel::init(uint16_t scan_interval)
+{
 	DMD::init(scan_interval);
 	// clean both buffers
 	if (matrixbuff[0] != matrixbuff[1]) {
@@ -66,8 +73,7 @@ void DMD_Monochrome_Parallel::init(uint16_t scan_interval) {
 	setup_main_timer(period_cyc, scan_running_dmd);
 }
 
-
-
+/*--------------------------------------------------------------------------------------*/
 void DMD_Monochrome_Parallel::drawPixel(int16_t x, int16_t y, uint16_t color) {
 
 	unsigned int uiDMDRAMPointer;
@@ -90,11 +96,10 @@ void DMD_Monochrome_Parallel::drawPixel(int16_t x, int16_t y, uint16_t color) {
 	byte panel_bY = bY % DMD_PIXELS_DOWN;
 	byte mux = panel_bY % 4;
 	byte mux_byte_cnt = panel_bY / 4;
-	uiDMDRAMPointer = mux * mux_size + (bX /8 )* column_size + (3 - mux_byte_cnt) * 8 + bX % 8;
+	uiDMDRAMPointer = mux * mux_size + (bX / 8) * column_size + (3 - mux_byte_cnt) * 8 + bX % 8;
 
-	
 #ifdef USE_UPPER_8BIT
-	byte lookup = row_mask[panel_row] >>8;
+	byte lookup = row_mask[panel_row] >> 8;
 #else
 	byte lookup = row_mask[panel_row];
 #endif
@@ -132,65 +137,63 @@ void DMD_Monochrome_Parallel::drawPixel(int16_t x, int16_t y, uint16_t color) {
 		break;
 	}
 }
-
+/*--------------------------------------------------------------------------------------*/
 void  DMD_Monochrome_Parallel::scan_dmd() {
 	uint16_t offset = mux_size * bDMDByte;
 	uint8_t* fr_buff = matrixbuff[1 - backindex]; // -> front buffer
 	uint8_t* ptr = fr_buff + offset;
 	uint16_t cnt = 0;
+	static const PortType all_clr_mask = clk_clrmask << 16;
 #ifdef USE_UPPER_8BIT
 #define pew                    \
-      *dataclrreg = clk_clrmask;     \
+      *datasetreg = all_clr_mask;    \
       *datasetreg = (ptr[cnt++]) << 8 ;\
       //*datasetreg = clkmask;
 #else
 #define pew                    \
-      *dataclrreg = clk_clrmask;     \
+      *datasetreg = all_clr_mask;     \
       *datasetreg = ptr[cnt++] ;\
       //*datasetreg = clkmask;
 #endif
 
-for (uint16_t uu = 0; uu < WIDTH; uu += 8)
-{
-	// Loop is unrolled for speed:
-	    pew pew pew pew pew pew pew pew
+	for (uint16_t uu = 0; uu < WIDTH; uu += 8)
+	{
+		// Loop is unrolled for speed:
 		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
-/*
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
+			pew pew pew pew pew pew pew pew
+			pew pew pew pew pew pew pew pew
+			pew pew pew pew pew pew pew pew
+			/*
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
 
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
 
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew
-		pew pew pew pew pew pew pew pew*/
-}
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew
+					pew pew pew pew pew pew pew pew*/
+	}
 
-
-
-
-*dataclrreg = clk_clrmask; // Set clock low
-DEBUG_TIME_MARK;
-switch_row();
-DEBUG_TIME_MARK;
+	*datasetreg = all_clr_mask; // Set clock low
+	DEBUG_TIME_MARK;
+	switch_row();
+	DEBUG_TIME_MARK;
 
 }
-
+/*--------------------------------------------------------------------------------------*/
 void DMD_Monochrome_Parallel::clearScreen(byte bNormal)
 {
 	uint8_t mask;
 #ifdef USE_UPPER_8BIT
-	if (bNormal^inverse_ALL_flag) // clear all pixels
+	if (bNormal ^ inverse_ALL_flag) // clear all pixels
 		mask = clk_clrmask_low & 0x00FF;
-    else // set all pixels
+	else // set all pixels
 		mask = clkmask_low & 0x00FF;
 #else
 	if (bNormal ^ inverse_ALL_flag) // clear all pixels
@@ -201,11 +204,11 @@ void DMD_Monochrome_Parallel::clearScreen(byte bNormal)
 	memset(bDMDScreenRAM, mask, mem_Buffer_Size);
 
 }
-
+/*--------------------------------------------------------------------------------------*/
 void DMD_Monochrome_Parallel::shiftScreen(int8_t step) {
 	uint8_t mask;
 #ifdef USE_UPPER_8BIT
-	if (inverse_ALL_flag) 
+	if (inverse_ALL_flag)
 		mask = clkmask_low & 0x00FF;
 	else
 		mask = clk_clrmask_low & 0x00FF;
@@ -219,7 +222,7 @@ void DMD_Monochrome_Parallel::shiftScreen(int8_t step) {
 
 	if (step < 0) {
 		uint16_t ptr = 0;
-		
+
 		for (byte j = 0; j < 4; j++) {  // mux
 			// columns
 			for (byte k = 0; k < column_cnt;k++) {
@@ -227,23 +230,23 @@ void DMD_Monochrome_Parallel::shiftScreen(int8_t step) {
 				// four lines
 				for (byte jj = 0; jj < 4; jj++) {
 					// seven points
-					for (byte i = 0; i < 7;i++) {    
+					for (byte i = 0; i < 7;i++) {
 						bDMDScreenRAM[ptr] = bDMDScreenRAM[ptr + 1];
 						ptr++;
 					}
 					// eighth point
 					if (last_column) bDMDScreenRAM[ptr] = mask;
-					else bDMDScreenRAM[ptr] = bDMDScreenRAM[ptr + (column_size-7)];
+					else bDMDScreenRAM[ptr] = bDMDScreenRAM[ptr + (column_size - 7)];
 					ptr++;
 				}
 			}
-			
+
 		}
 	}
-		
+
 	else if (step > 0) {
-		uint16_t ptr = mem_Buffer_Size -1;
-		
+		uint16_t ptr = mem_Buffer_Size - 1;
+
 		for (byte j = 0; j < 4; j++) {  // mux
 			// columns
 			for (byte k = 0; k < column_cnt;k++) {

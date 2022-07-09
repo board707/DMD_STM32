@@ -14,88 +14,113 @@ static byte bPixelLookupTable[8] =
    0x01    //7, bit 0
 };
 
-
-DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, 
-	                                   byte panelsWide, byte panelsHigh, SPIClass _spi,
-	                                   bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
-		:DMD(_pin_A, _pin_B, _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, 
-			d_buf, dmd_pixel_x, dmd_pixel_y), SPI_DMD(_spi)
-	{
-
-	mem_Buffer_Size = DisplaysTotal * ((DMD_PIXELS_ACROSS*DMD_BITSPERPIXEL / 8)*DMD_PIXELS_DOWN);
+/*--------------------------------------------------------------------------------------*/
+DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK,
+	byte panelsWide, byte panelsHigh, SPIClass _spi,
+	bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
+	:DMD(_pin_A, _pin_B, _pin_nOE, _pin_SCLK, panelsWide, panelsHigh,
+		d_buf, dmd_pixel_x, dmd_pixel_y), SPI_DMD(_spi)
+{
+	mem_Buffer_Size = DisplaysTotal * ((DMD_PIXELS_ACROSS * DMD_BITSPERPIXEL / 8) * DMD_PIXELS_DOWN);
 	row1 = DisplaysTotal << 4;
 	row2 = DisplaysTotal << 5;
 	row3 = ((DisplaysTotal << 2) * 3) << 2;
 	rowsize = DisplaysTotal << 2;
-	
 
 	// Allocate and initialize matrix buffer:
 	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
-	matrixbuff[0] = (uint8_t *)malloc(allocsize);
-	
+	matrixbuff[0] = (uint8_t*)malloc(allocsize);
+
 	// If not double-buffered, both buffers then point to the same address:
 	matrixbuff[1] = (dbuf == true) ? &matrixbuff[0][mem_Buffer_Size] : matrixbuff[0];
-	backindex = 0;                         
+	backindex = 0;
 	bDMDScreenRAM = matrixbuff[backindex]; // Back buffer
 	front_buff = matrixbuff[1 - backindex]; // -> front buffer
 
-#if defined(__STM32F1__)
-		pin_DMD_CLK = SPI_DMD.sckPin();
-		pin_DMD_R_DATA = SPI_DMD.mosiPin();
-		
-#if defined( DMD_USE_DMA )	
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+
+#if ( DMD_USE_DMA )	
 	dmd_dma_buf = (byte*)malloc(mem_Buffer_Size / DMD_MONO_SCAN);
+#endif
+#if defined(__STM32F1__) 
+	spiDmaDev = DMA1;
+	if (SPI_DMD.dev() == SPI1) {
+		spiTxDmaChannel = DMA_CH3;
+		spi_num = 1;
+	}
+	else {
+		spiTxDmaChannel = DMA_CH5;
+		spi_num = 2;
+	}
+#elif defined(__STM32F4__) 
+
+	if (SPI_DMD.dev() == SPI1) {
+		spiDmaDev = DMA2;
+		spiTxDmaChannel = DMA_CH3;
+		spiTxDmaStream = DMA_STREAM3;
+		spi_num = 1;
+	}
+	else if (SPI_DMD.dev() == SPI2) {
 		spiDmaDev = DMA1;
-		if (SPI_DMD.dev() == SPI1) {
-			spiTxDmaChannel = DMA_CH3;
-			spi_num = 1;
-		}
-		else {
-			spiTxDmaChannel = DMA_CH5;
-			spi_num = 2;
-		}
+		spiTxDmaChannel = DMA_CH0;
+		spiTxDmaStream = DMA_STREAM4;
+		spi_num = 2;
+	}
+	else if (SPI_DMD.dev() == SPI3) {
+		spiDmaDev = DMA1;
+		spiTxDmaChannel = DMA_CH0;
+		spiTxDmaStream = DMA_STREAM5;
+		spi_num = 3;
+	}
 
 #endif
 #elif defined(__AVR_ATmega328P__)
-		pin_DMD_CLK = 13;
-		pin_DMD_R_DATA = 11;
-		
-	  // initialize the SPI port
-		SPI.begin();		// probably don't need this since it inits the port pins only, which we do just below with the appropriate DMD interface setup
-		SPI.setBitOrder(MSBFIRST);	//
-		SPI.setDataMode(SPI_MODE0);	// CPOL=0, CPHA=0
-		SPI.setClockDivider(DMD_SPI_CLOCK);
+	pin_DMD_CLK = 13;
+	pin_DMD_R_DATA = 11;
+
+	// initialize the SPI port
+	SPI.begin();		// probably don't need this since it inits the port pins only, which we do just below with the appropriate DMD interface setup
+	SPI.setBitOrder(MSBFIRST);	//
+	SPI.setDataMode(SPI_MODE0);	// CPOL=0, CPHA=0
+	SPI.setClockDivider(DMD_SPI_CLOCK);
 #endif
-        digitalWrite(pin_DMD_CLK, LOW);	// 
-		digitalWrite(pin_DMD_R_DATA, HIGH);	// 
-        pinMode(pin_DMD_CLK, OUTPUT);	//
-		pinMode(pin_DMD_R_DATA, OUTPUT);	//
 
 }
-
+/*--------------------------------------------------------------------------------------*/
 DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
 {
 	free(matrixbuff[0]);
-#if defined( DMD_USE_DMA )	
+#if ( DMD_USE_DMA )	
 	free(dmd_dma_buf);
-
 #endif
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD_MonoChrome_SPI::set_pin_modes() {
+
+	DMD::set_pin_modes();
+	pin_DMD_CLK = SPI_DMD.sckPin();
+	pin_DMD_R_DATA = SPI_DMD.mosiPin();
+	//SPI_DMD.begin(); //Initialize the SPI port.
+	digitalWrite(pin_DMD_CLK, LOW);	// 
+	digitalWrite(pin_DMD_R_DATA, HIGH);	// 
+	pinMode(pin_DMD_CLK, OUTPUT);	//
+	pinMode(pin_DMD_R_DATA, OUTPUT);	//
 
 }
-
 /*--------------------------------------------------------------------------------------*/
 void DMD_MonoChrome_SPI::init(uint16_t scan_interval) {
-	
+
 	DMD::init(scan_interval);
-	
-#if defined(__STM32F1__)
-	
-	SPI_DMD.begin(); //Initialize the SPI_2 port.
-	SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI_2 bit order
-	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI_2 data mode 0
+
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+
+	SPI_DMD.begin(); //Initialize the SPI port.
+	SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI bit order
+	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI data mode 0
+	//SPI_DMD.setClockDivider(SPI_CLOCK_DIV16);  // Use a different speed to SPI 1 */
 	SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
 	register_running_dmd(this, scan_interval);
-	
+
 #endif
 	// clean both buffers
 	if (matrixbuff[0] != matrixbuff[1]) {
@@ -118,10 +143,8 @@ void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 	if (bX < 0 || bY < 0) {
 		return;
 	}
-
 	// transform X & Y for Rotate and connect scheme
 	transform_XY(bX, bY);
-
 	// inverse data bits for some panels
 	bPixel = bPixel ^ inverse_ALL_flag;
 
@@ -137,33 +160,32 @@ void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 	else
 		bDMDScreenRAM[uiDMDRAMPointer] |= lookup;	// one bit is pixel off
 	*/
-
 	switch (graph_mode) {
 	case GRAPHICS_NORMAL:
 		if (bPixel == true)
-		bDMDScreenRAM[uiDMDRAMPointer] &= ~lookup;	// zero bit is pixel on
-		else
-		bDMDScreenRAM[uiDMDRAMPointer] |= lookup;	// one bit is pixel off
-		break;
-    /*case GRAPHICS_INVERSE:
-		if (bPixel == false)
 			bDMDScreenRAM[uiDMDRAMPointer] &= ~lookup;	// zero bit is pixel on
 		else
 			bDMDScreenRAM[uiDMDRAMPointer] |= lookup;	// one bit is pixel off
 		break;
-	case GRAPHICS_TOGGLE:
-		if (bPixel == true) {
-		if ((bDMDScreenRAM[uiDMDRAMPointer] & lookup) == 0)
-			bDMDScreenRAM[uiDMDRAMPointer] |= lookup;	// one bit is pixel off
-		else
-			bDMDScreenRAM[uiDMDRAMPointer] &= ~lookup;	// one bit is pixel off
-		}
-		break;
-	case GRAPHICS_OR:
-		//only set pixels on
-		if (bPixel == true)
-			bDMDScreenRAM[uiDMDRAMPointer] &= ~lookup;	// zero bit is pixel on
-	    break;*/
+		/*case GRAPHICS_INVERSE:
+			if (bPixel == false)
+				bDMDScreenRAM[uiDMDRAMPointer] &= ~lookup;	// zero bit is pixel on
+			else
+				bDMDScreenRAM[uiDMDRAMPointer] |= lookup;	// one bit is pixel off
+			break;
+		case GRAPHICS_TOGGLE:
+			if (bPixel == true) {
+			if ((bDMDScreenRAM[uiDMDRAMPointer] & lookup) == 0)
+				bDMDScreenRAM[uiDMDRAMPointer] |= lookup;	// one bit is pixel off
+			else
+				bDMDScreenRAM[uiDMDRAMPointer] &= ~lookup;	// one bit is pixel off
+			}
+			break;
+		case GRAPHICS_OR:
+			//only set pixels on
+			if (bPixel == true)
+				bDMDScreenRAM[uiDMDRAMPointer] &= ~lookup;	// zero bit is pixel on
+			break;*/
 	case GRAPHICS_NOR:
 		//only clear on pixels
 		if ((bPixel == true) &&
@@ -171,48 +193,46 @@ void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 			bDMDScreenRAM[uiDMDRAMPointer] |= lookup;	// one bit is pixel off
 		break;
 	}
-	
 }
 /*--------------------------------------------------------------------------------------*/
-
-#if (defined(__STM32F1__) && defined( DMD_USE_DMA ))
+#if ( DMD_USE_DMA )
 
 void DMD_MonoChrome_SPI::latchDMA() {
-	
+
 	while (spi_is_tx_empty(SPI_DMD.dev()) == 0); // "5. Wait until TXE=1 ..."
 	while (spi_is_busy(SPI_DMD.dev()) != 0); // "... and then wait until BSY=0 before disabling the SPI." 
 	spi_tx_dma_disable(SPI_DMD.dev());
 
+#if defined(__STM32F1__) 
 	dma_disable(spiDmaDev, spiTxDmaChannel);
 	dma_clear_isr_bits(spiDmaDev, spiTxDmaChannel);
+#elif defined(__STM32F4__) 
+	dma_disable(spiDmaDev, spiTxDmaStream);
+	dma_clear_isr_bits(spiDmaDev, spiTxDmaStream);
+#endif
 	DEBUG_TIME_MARK;
-	
 	switch_row();
 	DEBUG_TIME_MARK;
-
 }
 
 /*--------------------------------------------------------------------------------------*/
 void DMD_MonoChrome_SPI::scanDisplayByDMA()
 {
-	
 	uint8_t* fr_buff = matrixbuff[1 - backindex]; // -> front buffer
-    //uint16_t offset = rowsize * bDMDByte;
+	//uint16_t offset = rowsize * bDMDByte;
 	uint8_t* offset_ptr = fr_buff + rowsize * bDMDByte;
 	uint8_t* row1_ptr = offset_ptr + row1;
 	uint8_t* row2_ptr = offset_ptr + row2;
 	uint8_t* row3_ptr = offset_ptr + row3;
 	uint8_t* buf_ptr = dmd_dma_buf;
-	
+
 	for (int i = 0;i < rowsize;i++) {
-		
 		*buf_ptr++ = *(row3_ptr++);
 		*buf_ptr++ = *(row2_ptr++);
 		*buf_ptr++ = *(row1_ptr++);
 		*buf_ptr++ = *(offset_ptr++);
 	}
-
-	
+#if defined(__STM32F1__) 
 	if (SPI_DMD.dev() == SPI1) {
 		SPI_DMD.onTransmit(SPI1_DMA_callback);
 		dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI1_DMA_callback);
@@ -221,10 +241,25 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 		SPI_DMD.onTransmit(SPI2_DMA_callback);
 		dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI2_DMA_callback);
 	}
-	
+#elif defined(__STM32F4__) 
+	//SPI_DMD.onTransmit(SPI_DMA_callback);
+
+	if (SPI_DMD.dev() == SPI1) {
+		SPI_DMD.onTransmit(SPI1_DMA_callback);
+		//dma_attach_interrupt(spiDmaDev, spiTxDmaStream, SPI1_DMA_callback);
+	}
+	else if (SPI_DMD.dev() == SPI2) {
+		SPI_DMD.onTransmit(SPI2_DMA_callback);
+		//dma_attach_interrupt(spiDmaDev, spiTxDmaStream, SPI2_DMA_callback);
+	}
+	else if (SPI_DMD.dev() == SPI3) {
+		SPI_DMD.onTransmit(SPI3_DMA_callback);
+	}
+#endif
 	SPI_DMD.dmaSend(dmd_dma_buf, rowsize * 4, 1);
 	DEBUG_TIME_MARK;
 }
+
 #else
 /*--------------------------------------------------------------------------------------
  Scan the dot matrix LED panel display, from the RAM mirror out to the display hardware.
@@ -235,9 +270,10 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 void DMD_MonoChrome_SPI::scanDisplayBySPI()
 {
 	uint16_t offset = rowsize * bDMDByte;
-	
-#if defined(__STM32F1__)
-	
+
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+	//pwmWrite(pin_DMD_nOE, 0);
+
 	for (int i = 0;i < rowsize;i++) {
 		SPI_DMD.write(bDMDScreenRAM[offset + i + row3]);
 		SPI_DMD.write(bDMDScreenRAM[offset + i + row2]);
@@ -258,6 +294,7 @@ void DMD_MonoChrome_SPI::scanDisplayBySPI()
 }
 // Shift entire screen one pixel
 #endif
+/*--------------------------------------------------------------------------------------*/
 void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 	uint8_t msb_bit = 0x80;
 	uint8_t lsb_bit = 0x01;
@@ -266,9 +303,7 @@ void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 		msb_bit = 0;
 		lsb_bit = 0;
 	}
-
 	if (step < 0) {
-
 		for (int i = 0; i < mem_Buffer_Size;i++) {
 			if ((i % (DisplaysWide * 4)) == (DisplaysWide * 4) - 1) {
 				bDMDScreenRAM[i] = (bDMDScreenRAM[i] << 1) + lsb_bit;

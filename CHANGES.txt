@@ -1,5 +1,9 @@
 # ChangeLog
 
+## [0.8.0] - 2022-07-09 
+ - Add support of STM32F4 boards - blackpills STM32F401CC & STM32F411CE
+ - Add support of cheap STM32F103C6 boards
+
 ## [0.7.0] - 2022-02-19 
  - Add support of "Outdoor" RGB panels with 1/2 1/4 1/8 scans
  - Add DMD_Config.h file for user changeable settings

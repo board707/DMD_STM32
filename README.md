@@ -3,7 +3,7 @@
 # DMD_STM32a - LED Matrix library with Unicode fonts support 
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
-### The last version is alpha v.0.7.0. For more stable beta [see 0.6.3](https://github.com/board707/DMD_STM32/releases/tag/v0.6.3)
+### The last version is alpha v.0.8.0. For more stable beta [see 0.6.3](https://github.com/board707/DMD_STM32/releases/tag/v0.6.3)
 The library initially started out as STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD). Now it has grown into a separate project with support for different types of monochrome, two-color and RGB panels. One of the important features of the library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language.
 
 This code branch is further development of [DMD_STM32 library](https://github.com/board707/DMD_STM32/tree/old-V1). The code was totally rewritten, the library received a modular structure with a DMD_STM32a base class and several child classes for various matrices and connection types. At the moment the library has been tested with the following types of matrices:
@@ -38,6 +38,8 @@ Other features
 
 Versions
 ---------
+(10 Jul 2022 - v0.8.0)  - Add support of STM32F4 blackpills - STM32F401CC & STM32F411CE  (**Custom patched STM32 repo required!** see below)
+
 (19 Feb 2022 - v0.7.0)  - Add support of "Outdoor" RGB panels with 1/2 1/4 1/8 scans
 
 (15 Jan 2022 - v0.6.11) - Fix incorrect string bounds for Standard and GFXFonts - Fix artefacts in Parallel Monochrome mode - Add ability to choose timer for OE other than Tim3
@@ -47,6 +49,7 @@ For full version history see [CHANGES.txt](CHANGES.txt)
 Compatible IDE and libraries
 ----------
 This library works with Arduino IDE 1.8, other versions are **not tested**. Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is required to support STM32 based boards on Arduino IDE.
+To support STM32F4 boards you need custom version of repo: https://github.com/board707/Arduino_STM32/tree/lto_for_c6
 
 DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
 

@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------
 
  DMD_STM32.cpp  - STM32 port of DMD.h library (see below)
- 
+
  adapted by Dmitry Dmitriev (c) 2019
- 
+
  DMD.cpp - Function and support library for the Freetronics DMD, a 512 LED matrix display
-           panel arranged in a 32 x 16 layout.
+		   panel arranged in a 32 x 16 layout.
 
  Copyright (C) 2011 Marc Alexander (info <at> freetronics <dot> com)
 
@@ -31,89 +31,92 @@
  careful of possible conflicts with other SPI port devices
 --------------------------------------------------------------------------------------*/
 
-
-DMD::DMD(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
- bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
-:Adafruit_GFX(panelsWide * dmd_pixel_x, panelsHigh * dmd_pixel_y), pin_DMD_A(_pin_A), pin_DMD_B(_pin_B), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK),
- DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), dbuf(d_buf), DMD_PIXELS_ACROSS(dmd_pixel_x), DMD_PIXELS_DOWN(dmd_pixel_y)
+DMD::DMD(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
+	uint8_t n_Rows, bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
+	:Adafruit_GFX(panelsWide* dmd_pixel_x, panelsHigh* dmd_pixel_y), mux_cnt(mux_cnt), nRows(n_Rows), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK),
+	DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), dbuf(d_buf), DMD_PIXELS_ACROSS(dmd_pixel_x), DMD_PIXELS_DOWN(dmd_pixel_y)
 {
-	
-	DisplaysTotal=DisplaysWide*DisplaysHigh;
-    
-	digitalWrite(pin_DMD_A, LOW);	
-    digitalWrite(pin_DMD_B, LOW);	
-    digitalWrite(pin_DMD_SCLK, LOW);	
-    pinMode(pin_DMD_A, OUTPUT);	
-    pinMode(pin_DMD_B, OUTPUT);	
-    pinMode(pin_DMD_SCLK, OUTPUT);	
+
+	DisplaysTotal = DisplaysWide * DisplaysHigh;
 
 	// Look up port registers and pin masks ahead of time,
 	// avoids many slow digitalWrite() calls later.
-	latport = portOutputRegister(digitalPinToPort(pin_DMD_SCLK));
-	latmask = digitalPinToBitMask(pin_DMD_SCLK);
-	addraport = portOutputRegister(digitalPinToPort(pin_DMD_A));
-	addramask = digitalPinToBitMask(pin_DMD_A);
-	addrbport = portOutputRegister(digitalPinToPort(pin_DMD_B));
-	addrbmask = digitalPinToBitMask(pin_DMD_B);
-	oeport = portOutputRegister(digitalPinToPort(pin_DMD_nOE));
-	oemask = digitalPinToBitMask(pin_DMD_nOE);
 
-#if defined(__STM32F1__)
+	latsetreg = portSetRegister(pin_DMD_SCLK);
+	latmask = digitalPinToBitMask(pin_DMD_SCLK);
+
+	oemask = digitalPinToBitMask(pin_DMD_nOE);
+	oesetreg = portSetRegister(pin_DMD_nOE);
+
+	if (mux_list != NULL) {
+		mux_pins = (uint8_t*)malloc(mux_cnt);
+		memcpy(mux_pins, mux_list, mux_cnt);
+	}
+	muxsetreg = portSetRegister(mux_pins[0]);
+	mux_mask2 = (uint32_t*)malloc((nRows + 1) * 4);
+}
+/*--------------------------------------------------------------------------------------*/
+DMD::~DMD()
+{
+	free(mux_mask2);
+#if defined(DEBUG2)
+	free((uint16_t*)dd_ptr);
+#endif
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD::set_pin_modes() {
+
+	for (uint8_t i = 0; i < mux_cnt; i++) {
+		digitalWrite(mux_pins[i], LOW);
+		pinMode(mux_pins[i], OUTPUT);
+	}
+
+	digitalWrite(pin_DMD_SCLK, LOW);
+	pinMode(pin_DMD_SCLK, OUTPUT);
+#if defined(__STM32F1__) 
+	oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
+#elif defined(__STM32F4__) 
+	oe_channel = timer_map[pin_DMD_nOE].channel;
+#endif
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	pinMode(pin_DMD_nOE, PWM);  // setup the pin as PWM
 #elif defined(__AVR_ATmega328P__)
 	pinMode(pin_DMD_nOE, OUTPUT);
 	digitalWrite(pin_DMD_nOE, LOW);
 #endif
-    
-    bDMDByte = 0;
+
 }
-
-
-DMD::~DMD()
-{
-#if defined(DEBUG2)
-	free((uint16_t*)dd_ptr);
-#endif
-}
-
 /*--------------------------------------------------------------------------------------*/
 void DMD::init(uint16_t scan_interval) {
-	
-	
-#if defined(__STM32F1__)
+
+	this->set_pin_modes();
+	this->generate_muxmask();
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+	timer_init(OE_TIMER);
 	timer_pause(OE_TIMER);
 	uint32 period_cyc = OE_PWM_PERIOD * CYCLES_PER_MICROSECOND;
 	uint16 prescaler = (uint16)(period_cyc / TIM_MAX_RELOAD + 1);
 	uint16 overflow = (uint16)((period_cyc + (prescaler / 2)) / prescaler);
-	timer_set_prescaler(OE_TIMER, prescaler - 1 );
-	timer_set_reload(OE_TIMER, overflow);
+	timer_set_prescaler(OE_TIMER, prescaler - 1);
 	timer_oc_set_mode(OE_TIMER, oe_channel, TIMER_OC_MODE_PWM_1, 0);
+	timer_set_reload(OE_TIMER, overflow);
 	timer_cc_enable(OE_TIMER, oe_channel);
 	timer_generate_update(OE_TIMER);
 	timer_resume(OE_TIMER);
-
 	brightrange = overflow;
-	setBrightness(200);
+#endif
 
-	//oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
-	oe_CRL = portConfigRegister(pin_DMD_nOE);
-	uint8_t oe_pin = PIN_MAP[pin_DMD_nOE].gpio_bit;
-	uint32 shift = (oe_pin & 0x7) * 4;
-	oe_mode_clrmask = ~(0xF << shift);
-	oe_pwm_mode = GPIO_AF_OUTPUT_PP << shift;
-	oe_out_mode = GPIO_OUTPUT_PP << shift;
-	
+	setBrightness(200);
 	textcolor = 1;
 	textbgcolor = 0;
-	
-#endif
+
 #if defined(DEBUG2)
 	if (!dd_ptr) dd_ptr = (uint16_t*)malloc(200);
 #endif	
 }
-
 /*--------------------------------------------------------------------------------------*/
 void DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
+	timer_init(MAIN_TIMER);
 	timer_pause(MAIN_TIMER);
 	uint16 prescaler = (uint16)(cycles / TIM_MAX_RELOAD + 1);
 	uint16 overflow = (uint16)((cycles + (prescaler / 2)) / prescaler);
@@ -123,59 +126,102 @@ void DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
 	timer_generate_update(MAIN_TIMER);
 	timer_resume(MAIN_TIMER);
 }
+/*--------------------------------------------------------------------------------------*/
+void DMD::generate_muxmask() {
+#define set_mux_ch_by_mask(x)  ((uint32_t) x)
+#define clr_mux_ch_by_mask(x)  (((uint32_t)x) << 16)
 
+	for (uint8_t i = 0; i < nRows; i++)
+	{
+		mux_mask2[i] = 0;
+		if (mux_cnt == nRows)                // STRIGHT MUX
+		{
+			for (uint8_t j = 0; j < nRows; j++)
+			{
+				uint16_t mux_ch_mask = digitalPinToBitMask(mux_pins[j]);
+				if (i == j)
+				{
+					mux_mask2[i] |= clr_mux_ch_by_mask(mux_ch_mask);    //low
+				}
+				else
+				{
+					mux_mask2[i] |= set_mux_ch_by_mask(mux_ch_mask);    //high
+				}
+			}
+		}
+		else {                             // BINARY MUX
+			for (uint8_t j = 0; (1 << j) < nRows; j++)
+			{
+				uint16_t mux_ch_mask = digitalPinToBitMask(mux_pins[j]);
+				if (i & (1 << j))
+				{
+					mux_mask2[i] |= set_mux_ch_by_mask(mux_ch_mask);
+				}
+				else
+				{
+					mux_mask2[i] |= clr_mux_ch_by_mask(mux_ch_mask);
+				}
+			}
+		}
+	}
+	mux_mask2[nRows] = mux_mask2[0];
+
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD::set_mux(uint8_t curr_row) {
+
+	*muxsetreg = mux_mask2[curr_row];
+}
+/*--------------------------------------------------------------------------------------*/
 void DMD::switch_row() {
 	// switch all LED OFF
 	OE_DMD_ROWS_OFF();
 
-
-	//* latport |= latmask; // Latch data loaded during *prior* interrupt
-	
-	if (bDMDByte & 0x2) { *addrbport |= addrbmask; }
-	else { *addrbport &= ~addrbmask; }
-	if (bDMDByte & 0x1) { *addraport |= addramask; }
-	else { *addraport &= ~addramask; }
-	
+	this->set_mux(bDMDByte);
 
 	if (bDMDByte == 2) {
 		if (swapflag == true) {    // Swap front/back buffers if requested
 			backindex = 1 - backindex;
 			swapflag = false;
-			//bDMDByte = 0;
 			bDMDScreenRAM = matrixbuff[backindex]; // Back buffer
 			front_buff = matrixbuff[1 - backindex]; // -> front buffer
 		}
 	}
 	if (++bDMDByte > 3) bDMDByte = 0;
 
-
-	
-	*latport |= latmask; // Latch data loaded during *prior* interrupt
-	* latport &= ~latmask;
+	*latsetreg = latmask; // Latch data loaded during *prior* interrupt
+	*latsetreg = latmask << 16;// Latch down
 	// reenable LEDs
 	OE_DMD_ROWS_ON();
-
 }
-
 /*--------------------------------------------------------------------------------------*/
 
- #if defined(__STM32F1__)
-    void DMD::OE_DMD_ROWS_OFF()    { //pinMode( pin_DMD_nOE, INPUT  ); 
-		*oe_CRL &= oe_mode_clrmask;
-		*oe_CRL |= oe_out_mode;
-		*oeport &= ~oemask;
-	}
-	void DMD::OE_DMD_ROWS_ON()                 { //pinMode( pin_DMD_nOE, OUTPUT  ); 
-		*oe_CRL &= oe_mode_clrmask;
-		*oe_CRL |= oe_pwm_mode;
-		timer_set_compare(OE_TIMER, oe_channel, brightness);
-	}
-  #elif defined(__AVR_ATmega328P__)
-    void DMD::OE_DMD_ROWS_OFF()                 { digitalWrite( pin_DMD_nOE, LOW  ); }
-    void DMD::OE_DMD_ROWS_ON()                  { digitalWrite( pin_DMD_nOE, HIGH ); }
- #endif
- 
+#if defined(__STM32F1__) 
+void DMD::OE_DMD_ROWS_OFF() { //pinMode( pin_DMD_nOE, INPUT  ); 
+	gpio_set_mode(PIN_MAP[this->pin_DMD_nOE].gpio_device, PIN_MAP[this->pin_DMD_nOE].gpio_bit, GPIO_OUTPUT_PP);
+	*oesetreg = oemask << 16;
+}
+void DMD::OE_DMD_ROWS_ON() { //pinMode( pin_DMD_nOE, OUTPUT  ); 
 
+	gpio_set_mode(PIN_MAP[this->pin_DMD_nOE].gpio_device, PIN_MAP[this->pin_DMD_nOE].gpio_bit, GPIO_AF_OUTPUT_PP);
+	timer_set_compare(OE_TIMER, oe_channel, brightness);
+}
+/*--------------------------------------------------------------------------------------*/
+#elif defined(__STM32F4__)
+void DMD::OE_DMD_ROWS_OFF() { //pinMode( pin_DMD_nOE, INPUT  ); 
+	gpio_set_mode(this->pin_DMD_nOE, GPIO_OUTPUT_PP);
+	*oesetreg = oemask << 16;
+}
+void DMD::OE_DMD_ROWS_ON() { //pinMode( pin_DMD_nOE, OUTPUT  ); 
+	gpio_set_mode(this->pin_DMD_nOE, GPIO_AF_OUTPUT_PP);
+	timer_set_compare(OE_TIMER, oe_channel, brightness);
+}
+/*--------------------------------------------------------------------------------------*/
+#elif defined(__AVR_ATmega328P__)
+void DMD::OE_DMD_ROWS_OFF() { digitalWrite(pin_DMD_nOE, LOW); }
+void DMD::OE_DMD_ROWS_ON() { digitalWrite(pin_DMD_nOE, HIGH); }
+#endif
+/*--------------------------------------------------------------------------------------*/
 void DMD::transform_XY(int16_t& bX, int16_t& bY) {
 
 	switch (rotation) {
@@ -192,19 +238,19 @@ void DMD::transform_XY(int16_t& bX, int16_t& bY) {
 		bY = HEIGHT - 1 - bY;
 		break;
 	}
-	
+
 	byte row = bY / DMD_PIXELS_DOWN;
 
-		if ((connectScheme == CONNECT_ZIGZAG) && (row % 2))
-		{
-			bX = (WIDTH - 1) - bX;
+	if ((connectScheme == CONNECT_ZIGZAG) && (row % 2))
+	{
+		bX = (WIDTH - 1) - bX;
 
-			bY = bY % DMD_PIXELS_DOWN;
-			bY = (DMD_PIXELS_DOWN - 1) - bY;
-			bY = row * DMD_PIXELS_DOWN + bY;
+		bY = bY % DMD_PIXELS_DOWN;
+		bY = (DMD_PIXELS_DOWN - 1) - bY;
+		bY = row * DMD_PIXELS_DOWN + bY;
 
-		}
 	}
+}
 /*--------------------------------------------------------------------------------------
  Set or clear a pixel at the x and y location (0,0 is the top left corner)
  // Moved to child classes
@@ -213,55 +259,55 @@ void DMD::transform_XY(int16_t& bX, int16_t& bY) {
 
 
 /*--------------------------------------------------------------------------------------*/
- void DMD::drawStringX(int bX, int bY, const char *bChars,
-	 uint16_t color, byte orientation)
+void DMD::drawStringX(int bX, int bY, const char* bChars,
+	uint16_t color, byte orientation)
 {
-	int len =0;
-	while (bChars[len] && len < MAX_STRING_LEN) {len++;}
+	int len = 0;
+	while (bChars[len] && len < MAX_STRING_LEN) { len++; }
 	this->drawString(bX, bY, bChars, len, color, orientation);
 }
 /*--------------------------------------------------------------------------------------*/
- void DMD::drawString(int bX, int bY, const char* bChars, int length,
-	 uint16_t color, byte orientation)
- {
-	 int16_t miny = 0, maxy = 0, w;
-	 stringBounds(bChars, length, &w, &miny, &maxy, orientation);
-	 drawString(bX, bY, bChars, length, color, miny, maxy, orientation);
- }
- /*--------------------------------------------------------------------------------------*/
- void DMD::drawString(int bX, int bY, const char* bChars, int length,
-	 uint16_t color, int16_t miny, int16_t maxy, byte orientation)
- {
-	 if ((bX >= (WIDTH) || bY >= (HEIGHT)))
-		 return;
-	 uint8_t height = Font->get_height();
-	 if (bY + height < 0) return;
-
-	 int strWidth = 0;
-	 this->drawLine(bX - 1, bY + miny, bX - 1, bY + maxy, inverse_color(color));
-
-	 for (int i = 0; i < length; i++) {
-
-		 int charWide = this->drawChar(bX + strWidth, bY, bChars[i], color, marqueeMarginH, marqueeMarginL, orientation);
-
-
-		 if (charWide > 0) {
-			 strWidth += charWide;
-			 this->drawLine(bX + strWidth, bY + miny, bX + strWidth, bY + maxy, inverse_color(color));
-			 strWidth++;
-		 }
-		 else if (charWide < 0) {
-			 return;
-		 }
-		 if ((bX + strWidth) >= WIDTH || bY >= HEIGHT) return;
-	 }
-
- }
+void DMD::drawString(int bX, int bY, const char* bChars, int length,
+	uint16_t color, byte orientation)
+{
+	int16_t miny = 0, maxy = 0, w;
+	stringBounds(bChars, length, &w, &miny, &maxy, orientation);
+	drawString(bX, bY, bChars, length, color, miny, maxy, orientation);
+}
 /*--------------------------------------------------------------------------------------*/
-void DMD::drawMarqueeX(const char *bChars, int left, int top, byte orientation) 
-{   int len =0;
-	while (bChars[len] && len < MAX_STRING_LEN) {len++;}
-	this->drawMarquee(bChars, len, left, top, orientation) ;
+void DMD::drawString(int bX, int bY, const char* bChars, int length,
+	uint16_t color, int16_t miny, int16_t maxy, byte orientation)
+{
+	if ((bX >= (WIDTH) || bY >= (HEIGHT)))
+		return;
+	uint8_t height = Font->get_height();
+	if (bY + height < 0) return;
+
+	int strWidth = 0;
+	this->drawLine(bX - 1, bY + miny, bX - 1, bY + maxy, inverse_color(color));
+
+	for (int i = 0; i < length; i++) {
+
+		int charWide = this->drawChar(bX + strWidth, bY, bChars[i], color, marqueeMarginH, marqueeMarginL, orientation);
+
+		if (charWide > 0) {
+			strWidth += charWide;
+			this->drawLine(bX + strWidth, bY + miny, bX + strWidth, bY + maxy, inverse_color(color));
+			strWidth++;
+		}
+		else if (charWide < 0) {
+			return;
+		}
+		if ((bX + strWidth) >= WIDTH || bY >= HEIGHT) return;
+	}
+
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD::drawMarqueeX(const char* bChars, int left, int top, byte orientation)
+{
+	int len = 0;
+	while (bChars[len] && len < MAX_STRING_LEN) { len++; }
+	this->drawMarquee(bChars, len, left, top, orientation);
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte orientation)
@@ -271,8 +317,8 @@ void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte or
 
 	stringBounds(bChars, length, &marqueeWidth, &marqueeMarginH, &marqueeMarginL, orientation);
 	strcpy(marqueeText, bChars);
-	
-    if (orientation == 1) {
+
+	if (orientation == 1) {
 		marqueeHeight = matrix_h;
 	}
 	else {
@@ -287,39 +333,40 @@ void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte or
 		marqueeMarginH, marqueeMarginL, orientation);
 }
 
- /*--------------------------------------------------------------------------------------*/
-
-
+/*--------------------------------------------------------------------------------------*/
 uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 {
 	uint8_t ret = 0;
 	int16_t old_x = marqueeOffsetX;
 	int16_t old_y = marqueeOffsetY;
-    marqueeOffsetX += amountX;
-    marqueeOffsetY += amountY;
+	marqueeOffsetX += amountX;
+	marqueeOffsetY += amountY;
+
 
 	// check if marquee reached to the limits of matrix panel
 	// X axis
-    if (marqueeOffsetX < -marqueeWidth) {
-	    marqueeOffsetX = WIDTH;
-	    ret |= 1;
-    } else if (marqueeOffsetX > WIDTH) {
-	    marqueeOffsetX = -marqueeWidth;
+	if (marqueeOffsetX < -marqueeWidth) {
+		marqueeOffsetX = WIDTH;
 		ret |= 1;
-    }
-    // Y axis
-    if (marqueeOffsetY < -marqueeHeight) {
-	    marqueeOffsetY = HEIGHT;
-	    ret |= 1;
-    } else if (marqueeOffsetY > HEIGHT) {
-	    marqueeOffsetY = -marqueeHeight;
-	    ret |= 1;
-    }
+	}
+	else if (marqueeOffsetX > WIDTH) {
+		marqueeOffsetX = -marqueeWidth;
+		ret |= 1;
+	}
+	// Y axis
+	if (marqueeOffsetY < -marqueeHeight) {
+		marqueeOffsetY = HEIGHT;
+		ret |= 1;
+	}
+	else if (marqueeOffsetY > HEIGHT) {
+		marqueeOffsetY = -marqueeHeight;
+		ret |= 1;
+	}
 	if (ret) {
 		//clearScreen(true);
 		fillScreen(textbgcolor);
 	}
-// if text left justify at screen
+	// if text left justify at screen
 	if (marqueeOffsetX == 0) {
 		ret |= 2;
 	}
@@ -327,12 +374,12 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 	if ((marqueeOffsetX + marqueeWidth) == DMD_PIXELS_ACROSS * DisplaysWide) {
 		ret |= 4;
 	}
-    // Special case horizontal scrolling to improve speed
-    if (amountY==0 && use_shift &&
-		  ((amountX==-1) || (amountX == 1))) {
-        // Shift entire screen one pixel
+	// Special case horizontal scrolling to improve speed
+	if (amountY == 0 && use_shift &&
+		((amountX == -1) || (amountX == 1))) {
+		// Shift entire screen one pixel
 		shiftScreen(amountX);
-		
+
 		uint16_t limit_X = 0;                 // if (amountX == 1)
 		if (amountX == -1) {  // if (amountX == -1)
 			limit_X = WIDTH;
@@ -342,9 +389,9 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 			if (marqueeOffsetX > 0) return ret;
 		}
 		// Redraw last char on screen
-        int strWidth=marqueeOffsetX;
-        for (int i=0; i < marqueeLength; i++) {
-            int wide = charWidth(marqueeText[i], orientation);
+		int strWidth = marqueeOffsetX;
+		for (int i = 0; i < marqueeLength; i++) {
+			int wide = charWidth(marqueeText[i], orientation);
 			if (wide > 0) {
 				if (strWidth + wide >= limit_X) {
 					this->drawChar(strWidth, marqueeOffsetY, marqueeText[i], textcolor, marqueeMarginH, marqueeMarginL, orientation);
@@ -352,32 +399,32 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 				}
 				strWidth += wide + 1;
 			}
-        }
-   
-    } else {
-	
-		if		(amountY>0)	drawFilledBox(marqueeOffsetX, old_y + marqueeMarginH, 
-			          marqueeOffsetX + marqueeWidth, marqueeOffsetY + marqueeMarginH, 
-			          inverse_color(textcolor));
+		}
+
+	}
+	else {
+
+		if (amountY > 0)	drawFilledBox(marqueeOffsetX, old_y + marqueeMarginH,
+			marqueeOffsetX + marqueeWidth, marqueeOffsetY + marqueeMarginH,
+			textbgcolor);
 
 		else if (amountY < 0) drawFilledBox(marqueeOffsetX, marqueeOffsetY + marqueeMarginL,
-			          marqueeOffsetX + marqueeWidth, old_y + marqueeMarginL, inverse_color(textcolor));
-		
-		else if (amountX > 0) drawFilledBox(old_x, marqueeOffsetY + marqueeMarginH, 
-			           marqueeOffsetX, marqueeOffsetY + marqueeMarginL, inverse_color(textcolor));
-		
-		else if (amountX < 0) drawFilledBox(marqueeOffsetX + marqueeWidth, marqueeOffsetY + marqueeMarginH,
-			       old_x + marqueeWidth, marqueeOffsetY + marqueeMarginL, 
-			       inverse_color(textcolor));
+			marqueeOffsetX + marqueeWidth, old_y + marqueeMarginL, textbgcolor);
 
-		
+		else if (amountX > 0) drawFilledBox(old_x, marqueeOffsetY + marqueeMarginH,
+			marqueeOffsetX, marqueeOffsetY + marqueeMarginL, textbgcolor);
+
+		else if (amountX < 0) drawFilledBox(marqueeOffsetX + marqueeWidth, marqueeOffsetY + marqueeMarginH,
+			old_x + marqueeWidth, marqueeOffsetY + marqueeMarginL,
+			textbgcolor);
+
+
 		this->drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
 			textcolor, marqueeMarginH, marqueeMarginL, orientation);
-    }
+	}
 
-    return ret;
+	return ret;
 }
-
 
 /*--------------------------------------------------------------------------------------
  Clear the screen in DMD RAM
@@ -389,39 +436,36 @@ void DMD::fillScreen(uint16_t color)
 /*--------------------------------------------------------------------------------------*/
 void DMD::clearScreen(byte bNormal)
 {
-    if (bNormal^inverse_ALL_flag) // clear all pixels
-        memset(bDMDScreenRAM,0xFF, mem_Buffer_Size);
-    else // set all pixels
-        memset(bDMDScreenRAM,0x00, mem_Buffer_Size);
+	if (bNormal ^ inverse_ALL_flag) // clear all pixels
+		memset(bDMDScreenRAM, 0xFF, mem_Buffer_Size);
+	else // set all pixels
+		memset(bDMDScreenRAM, 0x00, mem_Buffer_Size);
 }
 
 /*--------------------------------------------------------------------------------------
  Draw or clear a filled box(rectangle) with a single pixel border
 --------------------------------------------------------------------------------------*/
 void DMD::drawFilledBox(int x1, int y1, int x2, int y2,
-			uint16_t color)
+	uint16_t color)
 {
 	if ((x2 < x1) || (y2 < y1)) return;
-	
-    for (int b = y1; b <= y2; b++) {
-		
+
+	for (int b = y1; b <= y2; b++) {
+
 		//if (use_FastHLine) drawFastHLine(x1, b, (x2 - x1), color);
 		//else writeLine(x1, b, x2, b, color);
-		drawFastHLine(x1, b, (x2 - x1) +1, color);
-
-		
-    }
+		drawFastHLine(x1, b, (x2 - x1) + 1, color);
+	}
 }
-
 
 /*--------------------------------------------------------------------------------------
-       Select current font
+	   Select current font
 --------------------------------------------------------------------------------------*/
-void DMD::selectFont(DMD_Font * font)
+void DMD::selectFont(DMD_Font* font)
 {
-    this->Font = font;
-	
+	this->Font = font;
 }
+
 /*--------------------------------------------------------------------------------------
   draw char with selected font at coordinates bX bY
 --------------------------------------------------------------------------------------*/
@@ -430,39 +474,36 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 	uint8_t height = Font->get_height();
 	return drawChar(bX, bY, letter, color, 0, height, orientation);
 }
- /*--------------------------------------------------------------------------------------*/
-int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16_t color, int16_t miny, int16_t maxy, byte orientation) 
-{
 
-	if (orientation) {
-		return drawCharV(bX, bY, letter, color);
-	}
-	if (bX >= (WIDTH) || bY >= (HEIGHT)) return -1;
+/*--------------------------------------------------------------------------------------*/
+int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16_t color, int16_t miny, int16_t maxy, byte orientation)
+{
 	
-	uint8_t fg_col_bytes[3];
-	uint8_t bg_col_bytes[3];
-	if (fast_Hbyte) {
-		getColorBytes(fg_col_bytes, color);
-		getColorBytes(bg_col_bytes, inverse_color(color));
-	}
+	if (bX >= (WIDTH) || bY >= (HEIGHT)) return -1;
+
 	unsigned char c = letter;
 	if (!Font->is_char_in(c)) return 0;
 
+	uint8_t fg_col_bytes[3];
+	uint8_t bg_col_bytes[3];
+	uint16_t bg_color = inverse_color(color);
 	uint8_t height = Font->get_height();
+	// temp parameter for beta version
+	uint8_t matrix_h = 16;
 
 	if (c == ' ') { //CHANGED FROM ' '
-		int charWide = Font->get_char_width(' ');
-		//this->drawFilledBox(bX, bY, bX + charWide, bY + height, inverse_color(color));
-		this->drawFilledBox(bX, bY + miny, bX + charWide, bY + maxy, inverse_color(color));
-		return charWide;
+		if (orientation) { // vertical scroll
+			this->drawFilledBox(bX, bY, bX + height, bY + matrix_h, bg_color);
+			return height;
+		}
+		else {   // normal scroll
+			int charWide = Font->get_char_width(' ');
+			this->drawFilledBox(bX, bY + miny, bX + charWide, bY + maxy, bg_color);
+			return charWide;
+		}
 	}
 
-
-
 	if (Font->is_gfx_font()) {
-
-
-
 
 		DMD_GFX_Font* ff = (DMD_GFX_Font*)Font;
 		GFXfont* gfxFont_p = ff->get_font_by_char(c);
@@ -475,47 +516,62 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 		GFXglyph* glyph = &(((GFXglyph*)pgm_read_pointer(&gfxFont_p->glyph))[c]);
 		uint8_t* bitmap = (uint8_t*)pgm_read_pointer(&gfxFont_p->bitmap);
 #endif		
-	//	GFXglyph* glyph = &(((GFXglyph*)pgm_read_pointer(&gfxFont_p->glyph))[c]);
-	//	uint8_t* bitmap = (uint8_t*)pgm_read_pointer(&gfxFont_p->bitmap);
-
+	
 		uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
 		uint8_t  w = pgm_read_byte(&glyph->width);
 		uint8_t	 h = pgm_read_byte(&glyph->height);
-		int8_t   xo = (int8_t)pgm_read_byte(&glyph->xOffset);
 		int8_t  yo = height + (int8_t)pgm_read_byte(&glyph->yOffset);
+		uint8_t  xx, yy, bits = 0, bit = 0, bsize, hh;
+		int8_t   xo = (int8_t)pgm_read_byte(&glyph->xOffset);
 		uint8_t  ww = pgm_read_byte(&glyph->xAdvance);
-		uint8_t  xx, yy, bits = 0, bit = 0, bsize;
-	
-		this->drawFilledBox(bX, bY + miny, bX + ww, bY + maxy, inverse_color(color));
-		
+		if (orientation) {   // vertical scroll
+			xo = yo;
+			yo = w + (matrix_h - w) / 2;
+			hh = xo + h;
+			ww = hh;
+			this->drawFilledBox(bX, bY, bX + hh, bY + matrix_h, bg_color);
+		}
+		else {
+			if (fast_Hbyte) {
+				getColorBytes(fg_col_bytes, color);
+				getColorBytes(bg_col_bytes, bg_color);
+			}
+			this->drawFilledBox(bX, bY + miny, bX + ww, bY + maxy, bg_color);
+		}
+
+
 
 		for (yy = 0; yy < h; yy++) {
 			for (xx = 0; xx < w; xx++) {
 				if (!(bit++ & 7)) {
 					bits = pgm_read_byte(&bitmap[bo++]);
 				}
-				if (fast_Hbyte) {
+
+				if ((!orientation) && (fast_Hbyte)) {
 					bsize = ((w - xx) > 8) ? 8 : (w - xx);
 					uint8_t bbit = (bit - 1) & 7;
 					if (bsize > (8 - bbit)) bsize = 8 - bbit;
 					drawHByte(bX + xo + xx, bY + yo + yy, bits, bsize, fg_col_bytes, bg_col_bytes);
-					bit += bsize-1;
-					xx += bsize-1;
+					bit += bsize - 1;
+					xx += bsize - 1;
 					bits <<= bsize;
 				}
 				else {
-					if (bits & 0x80) {
-						writePixel(bX + xo + xx, bY + yo + yy, color);
-						//writePixel(x+xo+xx, y+yo+yy, color);
+					uint16_t col;
+					if (bits & 0x80) { col = color; }
+					else { col = bg_color; }
+					if (orientation) { // vertical scroll
+						writePixel(bX + xo + yy, bY + yo - xx, col);
 					}
 					else {
-						writePixel(bX + xo + xx, bY + yo + yy, inverse_color(color));
-						//writeFillRect(x+(xo16+xx)*size, y+(yo16+yy)*size,size, size, color);
+						writePixel(bX + xo + xx, bY + yo + yy, col);
 					}
 					bits <<= 1;
 				}
+
 			}
 		}
+
 		return ww;
 	}
 	else {
@@ -545,7 +601,7 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 							writePixel(bX + j, bY + offset + k, color);
 						}
 						else {
-							writePixel(bX + j, bY + offset + k, inverse_color(color));
+							writePixel(bX + j, bY + offset + k, bg_color);
 						}
 					}
 				}
@@ -554,151 +610,36 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 		return width;
 	}
 }
+
 /*--------------------------------------------------------------------------------------
-  draw char vertically with selected font at coordinates bX bY
---------------------------------------------------------------------------------------*/
-int DMD::drawCharV(const int bX, const int bY, const unsigned char letter, uint16_t color)
-{
-	// temp parameter for beta version
-	uint8_t matrix_h =16;
-	
-	
-	if (bX > (WIDTH) || bY > (HEIGHT)) return -1;
-	
-	
-	unsigned char c = letter;
-	if (! Font->is_char_in(c)) return 0;
-
-	uint8_t height = Font->get_height();
-
-	if (c == ' ') { //CHANGED FROM ' '
-		//int charWide = Font->get_char_width(' ');
-		this->drawFilledBox(bX, bY, bX + height , bY + matrix_h, inverse_color(color));
-        return height;
-	}
-    
-
-	
-	if (Font->is_gfx_font()) {
-
-		
-
-		
-		DMD_GFX_Font* ff = (DMD_GFX_Font *)Font;
-		GFXfont * gfxFont_p = ff->get_font_by_char(c);
-		c -= ff->get_first_by_char(c);
-
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-		GFXglyph* glyph = &((gfxFont_p->glyph)[c]);
-		uint8_t* bitmap = gfxFont_p->bitmap;
-#else
-		GFXglyph* glyph = &(((GFXglyph*)pgm_read_pointer(&gfxFont_p->glyph))[c]);
-		uint8_t* bitmap = (uint8_t*)pgm_read_pointer(&gfxFont_p->bitmap);
-#endif				
-	//	GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont_p->glyph))[c]);
-	//	uint8_t  *bitmap = (uint8_t *)pgm_read_pointer(&gfxFont_p->bitmap);
-
-		uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
-		uint8_t  w = pgm_read_byte(&glyph->width),
-		h = pgm_read_byte(&glyph->height);
-		int8_t   yo = w + (matrix_h -w)/2,
-		xo = height + pgm_read_byte(&glyph->yOffset);
-		uint8_t  hh = xo + h;
-		uint8_t  xx, yy, bits = 0, bit = 0;
-	
-
-		this->drawFilledBox(bX, bY, bX + hh, bY + matrix_h, inverse_color(color));
-
-
-		for (xx = 0; xx<h; xx++) {
-			for (yy = 0; yy<w; yy++) {
-				if (!(bit++ & 7)) {
-					bits = pgm_read_byte(&bitmap[bo++]);
-				}
-				if (bits & 0x80) {
-					writePixel(bX + xo + xx, bY + yo - yy, color);
-					//writePixel(x+xo+xx, y+yo+yy, color);
-				}
-				else {
-					writePixel(bX + xo + xx, bY + yo - yy, inverse_color(color));
-					//writeFillRect(x+(xo16+xx)*size, y+(yo16+yy)*size,size, size, color);
-				}
-				bits <<= 1;
-			}
-		}
-		return hh;
-	}
-	else {
-	/*	
-		// *****  Standard font vertical chars not implemented  *****
-	
-	DMD_Standard_Font* ff = (DMD_Standard_Font *) Font;
-		uint8_t width = ff->get_char_width(c);
-		uint8_t bytes = (height + 7) / 8;
-		uint16_t index = ff->get_bitmap_index(c);
-		c -= ff->get_first();
-		
-		if (bX < -width || bY < -height) return width;
-
-		
-
-		// last but not least, draw the character
-		for (uint8_t j = 0; j < width; j++) { // Width
-			for (uint8_t i = bytes - 1; i < 254; i--) { // Vertical Bytes
-				uint8_t data = pgm_read_byte(ff->font_ptr + index + j + (i * width));
-				int offset = (i * 8);
-				if ((i == bytes - 1) && bytes > 1) {
-					offset = height - 8;
-				}
-				for (uint8_t k = 0; k < 8; k++) { // Vertical bits
-					if ((offset + k >= i * 8) && (offset + k <= height)) {
-						if (data & (1 << k)) {
-							writePixel(bX + j, bY + offset + k, bGraphicsMode, true);
-						}
-						else {
-							writePixel(bX + j, bY + offset + k, bGraphicsMode, false);
-						}
-					}
-				}
-			}
-		}
-		return width; */
-		return -1;
-	}
-} 
- 
-/*--------------------------------------------------------------------------------------
-  char width in pixels with selected font
-     routine moved to DMD_Font classes
+		  char width in pixels with selected font
+			 routine moved to DMD_Font classes
 --------------------------------------------------------------------------------------*/
 
 int DMD::charWidth(const unsigned char letter, byte orientation)
 {
-  return (uint8_t)Font->get_char_width(letter, orientation);
+	return (uint8_t)Font->get_char_width(letter, orientation);
 }
 
 /*--------------------------------------------------------------------------------------
    string bounds
 --------------------------------------------------------------------------------------*/
-void DMD::stringBounds(const char* bChars, uint8_t length, 
-	int16_t* w, int16_t* min_y, int16_t*  max_y, byte orientation) {
-	
+void DMD::stringBounds(const char* bChars, uint8_t length,
+	int16_t* w, int16_t* min_y, int16_t* max_y, byte orientation) {
+
 	uint8_t height = Font->get_height();
 
 	if (length == 0) {
-
 		while (bChars[length] && length < MAX_STRING_LEN) { length++; }
 	}
-	
+
 	if (Font->is_gfx_font()) {
-		
-		
+
 		DMD_GFX_Font* ff = (DMD_GFX_Font*)Font;
-		
 		uint16_t width = 0;
 		int16_t minx = _width, miny = _height, maxx = -1, maxy = -1;
 		for (int i = 0; i < length; i++) {
-			
+
 			char c = bChars[i];
 
 			if (ff->is_char_in(c)) {
@@ -712,8 +653,6 @@ void DMD::stringBounds(const char* bChars, uint8_t length,
 					miny = _height; maxy = -1;
 					charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy);
 					width += height + maxy + 2;
-					
-					
 				}
 				else {
 					charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy);
@@ -731,16 +670,12 @@ void DMD::stringBounds(const char* bChars, uint8_t length,
 			*min_y = miny + height;
 			*max_y = maxy + height + 1;
 		}
-
-		
 	}
 	else {
 		*w = stringWidth(bChars, length, orientation);
 		*min_y = 0;
-		*max_y = height-1;
+		*max_y = height - 1;
 	}
-	
-
 }
 
 /*--------------------------------------------------------------------------------------
@@ -751,22 +686,22 @@ uint16_t DMD::stringWidth(const char* bChars, uint8_t length, byte orientation)
 	// this->Font
 	uint16_t width = 0;
 	if (length == 0) {
-		
+
 		while (bChars[length] && length < MAX_STRING_LEN) { length++; }
 	}
 	// char c;
 	int idx;
-	
-	for(idx = 0; idx < length; idx++) {
-    int cwidth = charWidth(bChars[idx], orientation);
-    if(cwidth > 0)
-      width += cwidth + 1;
+
+	for (idx = 0; idx < length; idx++) {
+		int cwidth = charWidth(bChars[idx], orientation);
+		if (cwidth > 0)
+			width += cwidth + 1;
 	}
-	if(width) {
+	if (width) {
 		width--;
 	}
 	return width;
-	
+
 }
 
 #if defined(DEBUG2)
@@ -810,6 +745,7 @@ void DMD::dumpDDbuf(void) {
 }
 
 #endif	
+/*--------------------------------------------------------------------------------------*/
 void DMD::swapBuffers(boolean copy) {
 	if (matrixbuff[0] != matrixbuff[1]) {
 		// To avoid 'tearing' display, actual swap takes place in the interrupt
