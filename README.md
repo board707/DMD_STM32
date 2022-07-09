@@ -38,7 +38,7 @@ Other features
 
 Versions
 ---------
-(10 Jul 2022 - v0.8.0)  - Add support of STM32F4 blackpills - STM32F401CC & STM32F411CE  (**Custom patched STM32 repo required!** see below)
+(10 Jul 2022 - v0.8.0)  - Add support of STM32F4 blackpills - STM32F401CC & STM32F411CE  (**Custom STM32 repo required!** see below)
 
 (19 Feb 2022 - v0.7.0)  - Add support of "Outdoor" RGB panels with 1/2 1/4 1/8 scans
 
@@ -49,6 +49,7 @@ For full version history see [CHANGES.txt](CHANGES.txt)
 Compatible IDE and libraries
 ----------
 This library works with Arduino IDE 1.8, other versions are **not tested**. Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is required to support STM32 based boards on Arduino IDE.
+
 To support STM32F4 boards you need custom version of repo: https://github.com/board707/Arduino_STM32/tree/lto_for_c6
 
 DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
@@ -56,7 +57,8 @@ DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 
 Compatible boards
 -----------------
 
-* STM32 - only STM32F103C8TB (bluepill) board tested !
+* STM32F1 - STM32F103C8 (bluepill) and STM32F103C6 boards tested 
+* STM32F4 - STM32F401CC and STM32F411CE boards (**Custom STM32 repo required!**)
 
 Connection
 ----------
