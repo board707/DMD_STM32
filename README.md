@@ -62,9 +62,17 @@ Compatible boards
 
 Connection
 ----------
-Detailed info about matrix connection availiable at russian: 
-* [Wiki: Connections for Monochrome panels (rus)](https://github.com/board707/DMD_STM32/wiki/Connecting-for-Monochrome-(rus))
-* [Wiki: Connections for RGB (rus)](https://github.com/board707/DMD_STM32/wiki/Connecting-for-RGB(rus))
+For detailed info about matrix connection see Wiki: 
+
+Russian:
+* [Wiki: Подключение монохромных панелей](https://github.com/board707/DMD_STM32/wiki/Connecting-for-Monochrome-(rus))
+* [Wiki: Подключение RGB](https://github.com/board707/DMD_STM32/wiki/Connecting-for-RGB(rus))
+
+English translation:
+
+* [Wiki: Connections for Monochrome panels](https://github.com/board707/DMD_STM32/wiki/Connections---Monochrome)
+* [Wiki: Connections for RGB](https://github.com/board707/DMD_STM32/wiki/Connections---RGB)
+
 
 Documentation
 -----------
