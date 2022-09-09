@@ -338,7 +338,7 @@ public:
 		uint16_t base_addr = get_base_addr(x, y);
 		ptr = &matrixbuff[backindex][base_addr]; // Base addr
 
-		if (y % DMD_PIXELS_DOWN < nRows) {
+		if (y % DMD_PIXELS_DOWN < pol_displ) {
 
 			*ptr &= ~B00011100;            // Mask out R,G,B in one op
 			if (r & 1) *ptr |= B00000100; // Plane N R: bit 2

@@ -106,6 +106,7 @@ public:
 		mux_pins = (uint8_t*)malloc(2);
 		mux_pins[0] = _pin_A;
 		mux_pins[1] = _pin_B;
+		muxsetreg = portSetRegister(mux_pins[0]);
 	}
 
 	virtual ~DMD();

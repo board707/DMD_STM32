@@ -51,8 +51,9 @@ DMD::DMD(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, byte pa
 	if (mux_list != NULL) {
 		mux_pins = (uint8_t*)malloc(mux_cnt);
 		memcpy(mux_pins, mux_list, mux_cnt);
+		muxsetreg = portSetRegister(mux_pins[0]);
 	}
-	muxsetreg = portSetRegister(mux_pins[0]);
+	
 	mux_mask2 = (uint32_t*)malloc((nRows + 1) * 4);
 }
 /*--------------------------------------------------------------------------------------*/
