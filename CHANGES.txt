@@ -1,5 +1,9 @@
 # ChangeLog
 
+## [0.8.1] - 2022-09-15 
+ - Fix error with cycle_len for 4 and more RGB panels
+ - Fix wrong row counter in 1bit color mode for multirow panels
+
 ## [0.8.0] - 2022-07-09 
  - Add support of STM32F4 boards - blackpills STM32F401CC & STM32F411CE
  - Add support of cheap STM32F103C6 boards
