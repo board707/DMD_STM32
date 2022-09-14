@@ -175,7 +175,7 @@ void DMD_RGB_BASE::scan_dmd() {
 	timer_set_reload(MAIN_TIMER, duration - CALLOVERHEAD);
 
 	timer_pause(OE_TIMER);
-	timer_set_reload(OE_TIMER, duration * 2);
+	timer_set_reload(OE_TIMER, duration + this->scan_cycle_len);
 
 	if (this->plane > 0) timer_set_compare(OE_TIMER, oe_channel, ((uint32_t)duration * this->brightness) / 255);
 	else  timer_set_compare(OE_TIMER, oe_channel, (((uint32_t)duration * this->brightness) / 255) / 2);
