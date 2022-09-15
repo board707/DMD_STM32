@@ -1,4 +1,4 @@
-
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 #include "DMD_Monochrome_Parallel.h"
 static volatile DMD_Monochrome_Parallel* running_dmd;
 void inline __attribute__((always_inline)) scan_running_dmd()
@@ -268,7 +268,7 @@ void DMD_Monochrome_Parallel::shiftScreen(int8_t step) {
 		}
 	}
 }
-
+#endif
 
 
 

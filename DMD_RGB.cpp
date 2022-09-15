@@ -17,19 +17,28 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 {
 
 	fast_Hbyte = true;
-	oesetreg = portSetRegister(pin_DMD_nOE);
 	byte clk_pin = pinlist[0];
 	pin_DMD_CLK = clk_pin;
-	datasetreg = portSetRegister(clk_pin);
-	clk_clrmask = clkmask = digitalPinToBitMask(clk_pin);
 	memcpy(rgbpins, pinlist + 1, sizeof rgbpins);
 	running_dmd_R = this;
+
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+	//oesetreg = portSetRegister(pin_DMD_nOE);
+	datasetreg = portSetRegister(clk_pin);
+	clk_clrmask = clkmask = digitalPinToBitMask(clk_pin);
+#endif	
 
 	// Allocate and initialize matrix buffer:
 
 	// x3 = 3 bytes holds 4 planes "packed"
-	if (nPlanes == 4) mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * 3 / 2;
+	if (nPlanes == 3) {mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * 3 / 2;
+	                   col_bytes_cnt =3;
+					   nPlanes = 4;
+	}
 	else if (nPlanes == 1) mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN / 2;
+	else if (nPlanes == 4) {mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * 2;
+	                       
+	                       col_bytes_cnt =4;}
 	uint32_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2ul) : mem_Buffer_Size;
 	matrixbuff[0] = (uint8_t*)malloc(allocsize);
 	memset(matrixbuff[0], 0, allocsize);
@@ -47,7 +56,9 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 
 }
 /*--------------------------------------------------------------------------------------*/
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 void DMD_RGB_BASE::generate_rgbtable_default(uint8_t options) {
+
 	PortType rgbmask[6];
 	rgbmask_all = 0;
 
@@ -58,67 +69,180 @@ void DMD_RGB_BASE::generate_rgbtable_default(uint8_t options) {
 		rgbmask_all |= rgbmask[i];
 	}
 	clk_clrmask = clk_clrmask << 16;
-
+//#ifndef DIRECT_OUTPUT
 	for (int i = 0; i < 256; i++) {
 		expand[i] = 0;
-		if (i & 0x04) expand[i] |= rgbmask[0];
-		if (i & 0x08) expand[i] |= rgbmask[1];
-		if (i & 0x10) expand[i] |= rgbmask[2];
-		if (i & 0x20) expand[i] |= rgbmask[3];
-		if (i & 0x40) expand[i] |= rgbmask[4];
-		if (i & 0x80) expand[i] |= rgbmask[5];
+		if (i & 0x01) expand[i] |= rgbmask[0];
+		if (i & 0x02) expand[i] |= rgbmask[1];
+		if (i & 0x04) expand[i] |= rgbmask[2];
+		if (i & 0x08) expand[i] |= rgbmask[3];
+		if (i & 0x10) expand[i] |= rgbmask[4];
+		if (i & 0x20) expand[i] |= rgbmask[5];
 		if (options & CLK_WITH_DATA) expand[i] |= clkmask;
 	}
+
+
 }
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-#define CALLOVERHEAD 150 
-#define LOOPTIME     2800
+#endif	
+/*--------------------------------------------------------------------------------------*/
+#if (defined(ARDUINO_ARCH_RP2040))
+  void DMD_RGB_BASE::set_mux(uint8_t curr_row)  {
+    pio_sm_put_blocking(pio, sm_mux, curr_row);
+}
 #endif
 
 /*--------------------------------------------------------------------------------------*/
-void DMD_RGB_BASE::setCycleLen() {
-	this->scan_cycle_len = LOOPTIME;
-	if ((this->x_len) > 64) this->scan_cycle_len = ((this->x_len) / 64) * LOOPTIME * 3 / 4;
-}
+void DMD_RGB_BASE::setCycleLen()  {
+	this->scan_cycle_len = ((1000000ul / this->default_fps) / (this->nRows * (1 << (this->nPlanes - 1)))) * TICS_IN_uS;
+	uint32_t write_time = ((this->x_len) / 64) * this->transfer64bits_time * TICS_IN_uS;
+	if (this->scan_cycle_len < (write_time * this->transfer_duty) / this->transfer_duty2) this->scan_cycle_len = (write_time * this->transfer_duty) / this->transfer_duty2;
+#if (defined(__STM32F1__))
 
+#elif (defined(ARDUINO_ARCH_RP2040))
+	this->scan_cycle_len = this->scan_cycle_len / this->pwm_clk_div;
+#endif
+}
 /*--------------------------------------------------------------------------------------*/
+#if (defined(ARDUINO_ARCH_RP2040))
 void DMD_RGB_BASE::initialize_timers(uint16_t scan_interval) {
+	if (scan_interval) this->default_fps = scan_interval;
+	this->setCycleLen();
+
+//pio configs
+ sm_data = pio_claim_unused_sm(pio, true);
+ data_prog_offs = pio_add_program(pio, &dmd_out_program);
+ pio_config = dmd_out_program_init(pio, sm_data, data_prog_offs, pio_clkdiv, rgbpins[0], 6, pin_DMD_SCLK, pin_DMD_CLK);
+ sm_mux = pio_claim_unused_sm(pio, true);
+ uint8_t data_mux_offs = pio_add_program(pio, &dmd_mux_program);
+ dmd_mux_program_init(pio, sm_mux, data_mux_offs, this->mux_pins[0], this->mux_cnt);
+
+ //define timers numbers
+OE_slice_num = pwm_gpio_to_slice_num(pin_DMD_nOE);        // OE timer number from OE pin number
+if (OE_slice_num < 7) MAIN_slice_num = OE_slice_num + 1;  // set MAIN timer next to OE
+else MAIN_slice_num = 6;                                  // if OE timer is 7th - set MAIN to 6th
+
+// OE timer config
+pwm_config c_OE = pwm_get_default_config();
+pwm_config_set_clkdiv(&c_OE, pwm_clk_div);
+pwm_config_set_wrap(&c_OE, 0xFFEE);
+pwm_config_set_output_polarity(&c_OE, true, true);   // invert A & B outputs (similar to PWM2 mode in STM32)
+gpio_set_function(pin_DMD_nOE, GPIO_FUNC_PWM);
+pwm_set_gpio_level(pin_DMD_nOE, this->scan_cycle_len / 2);
+
+// MAIN timer config
+pwm_config c_MAIN = pwm_get_default_config();
+pwm_config_set_clkdiv(&c_MAIN, pwm_clk_div);
+pwm_config_set_wrap(&c_MAIN, this->scan_cycle_len );
+pwm_clear_irq(MAIN_slice_num);
+pwm_set_irq_enabled(MAIN_slice_num, true);             // enable timer overflow irq
+irq_set_exclusive_handler(PWM_IRQ_WRAP, scan_running_dmd_R);
+irq_set_enabled(PWM_IRQ_WRAP, true);
+
+
+// DMA config
+ dma_chan = dma_claim_unused_channel(true);
+ dma_channel_config dma_c = dma_channel_get_default_config(dma_chan);
+ channel_config_set_transfer_data_size(&dma_c, DMA_SIZE_8);     // read by one byte
+ channel_config_set_read_increment(&dma_c, true);             
+ channel_config_set_dreq(&dma_c, DREQ_PIO0_TX0);                 // requested by PIO
+
+    dma_channel_configure(
+        dma_chan,
+        &dma_c,
+        &pio0_hw->txf[0], // Write address (only need to set this once)
+        NULL,             // Don't provide a read address yet
+        x_len,            // Write x_len bytes than stop
+        false             // Don't start yet
+    );
+
+    pwm_init(MAIN_slice_num, &c_MAIN, true);         // start MAIN timer
+    pwm_init(OE_slice_num, &c_OE, true);         // start OE timer
+
+	this->setBrightness(255);
+}
+#endif
+/*--------------------------------------------------------------------------------------*/
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+void DMD_RGB_BASE::initialize_timers(uint16_t scan_interval) {
+	if (scan_interval) this->default_fps = scan_interval;
+	this->setCycleLen();
 
 	if (scan_interval) {
-		this->setCycleLen();
+
+		uint32_t max_cycle_len = ((this->scan_cycle_len) << (this->nPlanes - 1));
+		this->tim_prescaler = setup_main_timer(max_cycle_len, scan_running_dmd_R);
 		timer_init(OE_TIMER);
 		timer_pause(OE_TIMER);
-		timer_set_prescaler(OE_TIMER, 0);
+		timer_set_prescaler(OE_TIMER, tim_prescaler - 1);
 		timer_oc_set_mode(OE_TIMER, oe_channel, TIMER_OC_MODE_PWM_2, 0);
 		timer_cc_enable(OE_TIMER, oe_channel);
-		setup_main_timer(this->scan_cycle_len, scan_running_dmd_R);
+
+#if defined(RGB_DMA)
+		// DMA timer setup
+#define TIM_PERIOD 14
+		timer_init(DMA_TIMER);
+		timer_pause(DMA_TIMER);
+		DMA_TIMER_BASE->DIER |= (1 << 11) | (1 << 9);  //CH1 & CH3 DMA request enable
+		DMA_TIMER_BASE->PSC = 0;
+		DMA_TIMER_BASE->ARR = TIM_PERIOD - 1; //  9 MHz 
+		DMA_TIMER_BASE->CCR3 = TIM_PERIOD / 4;    // 1 dma request 
+		DMA_TIMER_BASE->CCR1 = TIM_PERIOD * 3 / 4;   // 2 dma request
+
+		// dma setup
+		dma_init(rgbDmaDev);
+#if defined(__STM32F4__)
+		uint8_t* ptr_t = matrixbuff[1 - backindex];
+		dma_disable(rgbDmaDev, clkTxDmaStream);
+		dma_disable(rgbDmaDev, datTxDmaStream);
+		dma_clear_isr_bits(rgbDmaDev, datTxDmaStream);
+		dma_clear_isr_bits(rgbDmaDev, clkTxDmaStream);
+		dma_setup_transfer(rgbDmaDev, datTxDmaStream, DmaDataChannel, DMA_SIZE_8BITS, (uint8_t*)datasetreg, (uint8_t*)ptr_t, NULL, (DMA_MINC_MODE | DMA_FROM_MEM));
+		dma_set_num_transfers(rgbDmaDev, datTxDmaStream, x_len);
+
+		// 2 nd dma stream
+
+		dma_setup_transfer(rgbDmaDev, clkTxDmaStream, DmaClkChannel, DMA_SIZE_32BITS, (uint32_t*)datasetreg, (uint32_t*)&clk_clrmask, NULL, (DMA_CIRC_MODE | DMA_FROM_MEM));
+		dma_set_num_transfers(rgbDmaDev, clkTxDmaStream, 1);
+
+		dma_enable(rgbDmaDev, datTxDmaStream);
+		dma_enable(rgbDmaDev, clkTxDmaStream);
+#endif
+#endif
 	}
+
+
 #if (defined(__STM32F1__))
 	gpio_set_mode(PIN_MAP[this->pin_DMD_nOE].gpio_device, PIN_MAP[this->pin_DMD_nOE].gpio_bit, GPIO_AF_OUTPUT_PP);
 #endif
 	this->setBrightness(255);
 }
-
+#endif
 /*--------------------------------------------------------------------------------------*/
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 void DMD_RGB_BASE::set_pin_modes() {
+
 	DMD::set_pin_modes();
 	pinMode(pin_DMD_CLK, OUTPUT);
 
 }
-
+#endif
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::init(uint16_t scan_interval) {
 
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	set_pin_modes();
 	generate_muxmask();
 	generate_rgbtable();
 	chip_init();
+#endif
 	initialize_timers(scan_interval);
 	clearScreen(true);
 
 }
 /*--------------------------------------------------------------------------------------*/
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 void DMD_RGB_BASE::send_to_allRGB(uint16_t data, uint16_t latches) {
+
 	uint8_t reg_bit = 0;
 	const uint16_t b_mask = 0b1000000000000000;
 
@@ -140,7 +264,9 @@ void DMD_RGB_BASE::send_to_allRGB(uint16_t data, uint16_t latches) {
 
 	*latsetreg = latmask << 16;// Latch down
 	*datasetreg = rgbmask_all << 16; // off all rgb channels
+
 }
+#endif
 /*--------------------------------------------------------------------------------------*/
 uint16_t DMD_RGB_BASE::get_base_addr(int16_t x, int16_t y) {
 	this->transform_XY(x, y);
@@ -156,10 +282,11 @@ uint16_t DMD_RGB_BASE::get_base_addr(int16_t x, int16_t y) {
 	return base_addr;
 }
 /*--------------------------------------------------------------------------------------*/
+	/*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::scan_dmd() {
 
-	uint16_t duration;
-	volatile uint8_t* ptr;
+	uint32_t duration;
+	volatile static uint8_t* ptr;
 
 	// Calculate time to next interrupt BEFORE incrementing plane #.
 	// This is because duration is the display time for the data loaded
@@ -167,19 +294,42 @@ void DMD_RGB_BASE::scan_dmd() {
 	// result because that time is implicit between the timer overflow
 	// (interrupt triggered) and the initial LEDs-off line at the start
 	// of this method.
+
 	if (this->plane > 0) duration = ((this->scan_cycle_len) << (this->plane - 1));
 	else  duration = this->scan_cycle_len;
 
+#if (defined(ARDUINO_ARCH_RP2040))
+	pwm_clear_irq(MAIN_slice_num);             // clear PWM irq
+	pwm_set_enabled(MAIN_slice_num, false);    // stop MAIN timer
+	//pwm_set_counter(MAIN_slice_num, 0);        // clear the counter
+	pwm_set_enabled(OE_slice_num, false);    // stop OE timer
+	//pwm_set_counter(OE_slice_num, 0);        // clear the counter
+
+	pwm_set_wrap(MAIN_slice_num, duration);     // set new TOP value
+														  // setup CC value for OE 
+	if (this->plane > 0) pwm_set_gpio_level(pin_DMD_nOE, ((uint32_t)duration * this->brightness) / 255);
+	else  pwm_set_gpio_level(pin_DMD_nOE, (((uint32_t)duration * this->brightness) / 255) / 2);
+	// pwm_set_gpio_level(pin_DMD_nOE, duration/2);
+#endif
+
 #if (defined(__STM32F1__) || defined(__STM32F4__))
+
 	timer_pause(MAIN_TIMER);
-	timer_set_reload(MAIN_TIMER, duration - CALLOVERHEAD);
+	timer_set_reload(MAIN_TIMER, (duration - this->callOverhead)/tim_prescaler);
 
 	timer_pause(OE_TIMER);
-	timer_set_reload(OE_TIMER, duration + this->scan_cycle_len);
+	timer_set_reload(OE_TIMER, (duration + this->callOverhead*10)/tim_prescaler);
 
-	if (this->plane > 0) timer_set_compare(OE_TIMER, oe_channel, ((uint32_t)duration * this->brightness) / 255);
-	else  timer_set_compare(OE_TIMER, oe_channel, (((uint32_t)duration * this->brightness) / 255) / 2);
+	uint32_t oe_duration;
+	if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
+	else oe_duration = ((duration * this->brightness) / 255)/2;
+	timer_set_compare(OE_TIMER, oe_channel, oe_duration / tim_prescaler);
 
+
+	//if ((this->plane > 0) || (nPlanes == 1)) timer_set_compare(OE_TIMER, oe_channel, ((uint32_t)duration * this->brightness) / 255);
+	//else  timer_set_compare(OE_TIMER, oe_channel, (((uint32_t)duration * this->brightness) / 255) / 2);
+	
+	
 #endif
 	// Borrowing a technique here from Ray's Logic:
   // www.rayslogic.com/propeller/Programming/AdafruitRGB/AdafruitRGB.htm
@@ -188,6 +338,12 @@ void DMD_RGB_BASE::scan_dmd() {
   // advance lines every time and interleave the planes to reduce
   // vertical scanning artifacts, in practice with this panel it causes
   // a green 'ghosting' effect on black pixels, a much worse artifact.
+
+	// For OneBitColor set mux BEFORE changing row
+	if (nPlanes == 1) {
+		this->set_mux(row);
+	}
+
 
 	if (++plane >= nPlanes) {      // Advance plane counter.  Maxed out?
 		plane = 0;                  // Yes, reset to plane 0, and
@@ -204,7 +360,7 @@ void DMD_RGB_BASE::scan_dmd() {
 
 	// For 4bit Color set mux at 1st Plane
 	else if (plane == 1) {
-
+		// pio_sm_put_blocking(pio, sm_mux, row);
 		set_mux(row);
 	}
 
@@ -212,8 +368,22 @@ void DMD_RGB_BASE::scan_dmd() {
 	// A local register copy can speed some things up:
 	ptr = buffptr;
 
+#if (defined(ARDUINO_ARCH_RP2040))
+	
+	dmd_out_program_reinit(pio, sm_data, data_prog_offs, &pio_config);
+	dma_channel_set_read_addr(dma_chan, ptr, true);
+	pwm_set_counter(MAIN_slice_num, 0);
+	pwm_set_counter(OE_slice_num, 0);
+	pwm_set_enabled(MAIN_slice_num, true);
+	pwm_set_enabled(OE_slice_num, true);
+
+#endif
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+
 	*latsetreg = latmask; // Latch data loaded during *prior* interrupt
 	*latsetreg = latmask << 16;// Latch down
+
+
 
 	timer_set_count(MAIN_TIMER, 0);
 	timer_set_count(OE_TIMER, 0);
@@ -222,60 +392,266 @@ void DMD_RGB_BASE::scan_dmd() {
 	timer_resume(OE_TIMER);
 	timer_resume(MAIN_TIMER);
 
-	if (plane > 0) {
-#if (defined(__STM32F1__) || defined(__STM32F4__))
+
+#if defined(RGB_DMA)
+	timer_pause(DMA_TIMER);
+#if defined(__STM32F1__) 
+
+	dma_disable(rgbDmaDev, DmaDataChannel);
+	dma_setup_transfer(rgbDmaDev, DmaDataChannel, (uint8_t*)datasetreg, DMA_SIZE_8BITS, (uint8_t*)ptr, DMA_SIZE_8BITS, (DMA_MINC_MODE | DMA_FROM_MEM | DMA_CCR_PL_HIGH));
+	dma_set_num_transfers(rgbDmaDev, DmaDataChannel, x_len);
+
+
+	dma_disable(rgbDmaDev, DmaClkChannel);
+	dma_setup_transfer(rgbDmaDev, DmaClkChannel, (uint32_t*)datasetreg, DMA_SIZE_32BITS, (uint32_t*)&clk_clrmask, DMA_SIZE_32BITS, (DMA_CIRC_MODE | DMA_FROM_MEM | DMA_CCR_PL_VERY_HIGH));
+	dma_set_num_transfers(rgbDmaDev, DmaClkChannel, x_len);
+
+	dma_enable(rgbDmaDev, DmaDataChannel);
+	dma_enable(rgbDmaDev, DmaClkChannel);
+
+
+
+#elif defined(__STM32F4__) 
+
+	//dma_disable(rgbDmaDev, clkTxDmaStream);
+	//dma_disable(rgbDmaDev, datTxDmaStream);
+	dma_set_mem_addr(rgbDmaDev, datTxDmaStream, ptr);
+	dma_clear_isr_bits(rgbDmaDev, datTxDmaStream);
+	//dma_clear_isr_bits(rgbDmaDev, clkTxDmaStream);
+	//dma_setup_transfer(rgbDmaDev, datTxDmaStream, DmaDataChannel, DMA_SIZE_8BITS, (uint8_t*)datasetreg, (uint8_t*)ptr, NULL, ( DMA_MINC_MODE | DMA_FROM_MEM));
+	dma_set_num_transfers(rgbDmaDev, datTxDmaStream, x_len);
+
+	// 2 nd dma stream
+
+	//dma_setup_transfer(rgbDmaDev, clkTxDmaStream, DmaClkChannel, DMA_SIZE_32BITS, (uint32_t*)datasetreg, (uint32_t*)&clk_clrmask, NULL, ( DMA_CIRC_MODE | DMA_FROM_MEM));
+	//dma_set_num_transfers(rgbDmaDev, clkTxDmaStream, 1);
+
+	dma_enable(rgbDmaDev, datTxDmaStream);
+	//dma_enable(rgbDmaDev, clkTxDmaStream);
+#endif
+	//timer_set_count(DMA_TIMER, 0);
+	//timer_generate_update(DMA_TIMER);
+	//timer_resume(DMA_TIMER);
+	DMA_TIMER_BASE->CNT = 0;
+	DMA_TIMER_BASE->CR1 = (1 << 0);
+
+#else
+#if defined (DIRECT_OUTPUT)
+#define pew                    \
+      *datasetreg = clk_clrmask;     \
+      *datasetreg = *ptr++;
+#else
 #define pew                    \
       *datasetreg = clk_clrmask;     \
       *datasetreg = expand[*ptr++];
+#endif
+	for (uint16_t uu = 0; uu < x_len; uu += 8)
+	{
+		// Loop is unrolled for speed:
+		pew pew pew pew pew pew pew pew
+
+	}
+
+	*datasetreg = clkmask << 16; // Set clock low
+
 
 #endif
-		for (uint16_t uu = 0; uu < x_len; uu += 8)
-		{
-			// Loop is unrolled for speed:
-			pew pew pew pew pew pew pew pew
-
-		}
-
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-		* datasetreg = clkmask << 16; // Set clock low
 #endif
 		//buffptr = ptr; //+= 32;
-		buffptr += displ_len;
-	}
-	else { // 920 ticks from TCNT1=0 (above) to end of function
+	buffptr += displ_len;
 
-		for (int i = 0; i < x_len; i++) {
-			byte b =
-				(ptr[i] << 6) |
-				((ptr[i + displ_len] << 4) & 0x30) |
-				((ptr[i + displ_len * 2] << 2) & 0x0C);
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-			* datasetreg = clk_clrmask; // Clear all data and clock bits together
-			*datasetreg = expand[b];  // Set new data bits
-
-		}
-		*datasetreg = clkmask << 16;      // Set clock low
-
-#endif
-
-	}
-
-#if defined(DEBUG3)
-	if (dd_cnt < 100) dd_ptr[dd_cnt++] = plane;
-	if (dd_cnt < 100) dd_ptr[dd_cnt++] = timer_get_count(MAIN_TIMER);
-#endif	
-}
 
 #undef pew
-#undef CALLOVERHEAD
-#undef LOOPTIME
+
+
+
+}
 /*--------------------------------------------------------------------------------------*/
-void DMD_RGB_BASE::fillScreen(uint16_t c) {
+void DMD_RGB_BASE::drawPixel(int16_t x, int16_t y, uint16_t c)  {
+	uint8_t r, g, b, bit, limit, * ptr;
+
+
+	DEBUG_TIME_MARK_333;
+	DEBUG_TIME_MARK;
+	if (graph_mode == GRAPHICS_NOR) {
+		if (c == textcolor) c = textbgcolor;
+		else return;
+	}
+	if ((x < 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
+
+	// transform X & Y for Rotate and connect scheme
+
+		// Adafruit_GFX uses 16-bit color in 5/6/5 format, while matrix needs
+		// 4/4/4.  Pluck out relevant bits while separating into R,G,B:
+	r = c >> 12;        // RRRRrggggggbbbbb
+	g = (c >> 7) & 0xF; // rrrrrGGGGggbbbbb
+	b = (c >> 1) & 0xF; // rrrrrggggggBBBBb
+
+	uint16_t base_addr = get_base_addr(x, y);
+	ptr = &matrixbuff[backindex][base_addr]; // Base addr
+	DEBUG_TIME_MARK;
+
+
+	bit = 1;
+	limit = 1 << nPlanes;
+	if (y % DMD_PIXELS_DOWN < pol_displ) {
+		// Data for the upper half of the display is stored in the lower
+		// bits of each byte.
+	
+		// Data is stored in the low 6 bits so it can be quickly
+		// copied to the DATAPORT register w/6 output lines.
+		for (; bit < limit; bit <<= 1) {
+
+			*ptr |= output_mask;
+
+			* ptr &= ~B000111;            // Mask out R,G,B in one op
+			if (r & bit) *ptr |= B000001; // Plane N R: bit 2
+			if (g & bit) *ptr |= B000010; // Plane N G: bit 3
+			if (b & bit) *ptr |= B000100; // Plane N B: bit 4
+			ptr += displ_len;                 // Advance to next bit plane
+		}
+	}
+	else {
+		// Data for the lower half of the display is stored in the upper
+		// bits
+
+		for (; bit < limit; bit <<= 1) {
+
+			*ptr |= output_mask;
+
+			* ptr &= ~B111000;            // Mask out R,G,B in one op
+			if (r & bit) *ptr |= B001000; // Plane N R: bit 5
+			if (g & bit) *ptr |= B010000; // Plane N G: bit 6
+			if (b & bit) *ptr |= B100000; // Plane N B: bit 7
+			ptr += displ_len;                 // Advance to next bit plane
+		}
+	}
+	DEBUG_TIME_MARK;
+
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD_RGB_BASE::drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+	uint8_t* bg_col_bytes) {
+
+	
+	static uint8_t ColorByteMask[] = { B000111 , B111000 };
+
+	//if whole line is outside - go out
+	if (((x + bsize) <= 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
+
+	//if start of line before 0 - draw portion of line from x=0
+	if (x < 0) {
+		bsize = bsize + x;
+		if (hbyte != 0xff) hbyte <<= (x * -1);
+		x = 0;
+	}
+
+	//if end of line after right edge of screen - draw until WIDTH-1
+	if ((x + bsize) > WIDTH) bsize = WIDTH - x;
+
+	// transform X & Y for Rotate and connect scheme
+
+	uint16_t base_addr = get_base_addr(x, y);
+	uint8_t* ptr_base = &matrixbuff[backindex][base_addr]; // Base addr
+
+	DEBUG_TIME_MARK;
+	uint8_t* mask_ptr, * mask;
+	uint8_t* col_bytes;
+	uint8_t* ptr = ptr_base;
+	if (y % DMD_PIXELS_DOWN < pol_displ) {
+		mask = ColorByteMask;
+	}
+	else {
+
+		mask = ColorByteMask + 1;
+	}
+	col_bytes = fg_col_bytes;
+	for (uint8_t j = 0; j < bsize; j++) {
+		if (hbyte != 0xff) {
+			if (hbyte & 0x80) {
+				col_bytes = fg_col_bytes;
+			}
+			else {
+				col_bytes = bg_col_bytes;
+			}
+			hbyte <<= 1;
+		}
+		ptr = ptr_base + j;
+		mask_ptr = mask;
+		for (uint8_t b = 0; b < col_bytes_cnt; b++)
+		{
+			*ptr &= ~(*mask_ptr);
+
+			*ptr |= output_mask | (col_bytes[b] & (*mask_ptr));
+
+
+			ptr += displ_len;
+		}
+
+	}
+	DEBUG_TIME_MARK;
+
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD_RGB_BASE::getColorBytes(uint8_t* cbytes, uint16_t color) {
+	uint8_t r, g, b, bit, limit;
+	uint8_t* ptr;
+
+	uint8_t empty_col = output_mask;
+
+	// special case color = 0
+	if (color == 0) {
+		memset(cbytes, empty_col, col_bytes_cnt);
+		
+		return;
+	}
+	// if color found in cash table
+	if ((colors[last_color] == color) || (colors[last_color = !last_color] == color)) {
+		ptr = col_cache + last_color * col_bytes_cnt;
+		memcpy(cbytes, ptr, col_bytes_cnt);
+		return;
+	}
+
+	// new color
+	ptr = col_cache + last_color * col_bytes_cnt;
+	colors[last_color] = color;
+	memset(ptr, empty_col, col_bytes_cnt);
+
+
+	// Adafruit_GFX uses 16-bit color in 5/6/5 format, while matrix needs
+		// 4/4/4.  Pluck out relevant bits while separating into R,G,B:
+
+	uint16_t c = color;
+	r = c >> 12;        // RRRRrggggggbbbbb
+	g = (c >> 7) & 0xF; // rrrrrGGGGggbbbbb
+	b = (c >> 1) & 0xF; // rrrrrggggggBBBBb
+
+
+	limit = 1 << nPlanes;
+	bit = 1;
+	for (; bit < limit; bit <<= 1) {
+		// Mask out R,G,B in one op
+		if (r & bit) *ptr |= B00001001; // Plane N R: bit 2
+		if (g & bit) *ptr |= B00010010; // Plane N G: bit 3
+		if (b & bit) *ptr |= B00100100; // Plane N B: bit 4
+
+		ptr++;                 // Advance to next bit plane
+	}
+	ptr -= col_bytes_cnt;
+	memcpy(cbytes, ptr, col_bytes_cnt); return;
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD_RGB_BASE::fillScreen(uint16_t c)  {
 	if ((c == 0x0000) || (c == 0xffff)) {
+		uint8_t b;
+
+if (output_mask) b = 0b01000000 | (c & 0b00111111);
+else b = c & 0xff;
+
 		// For black or white, all bits in frame buffer will be identically
 		// set or unset (regardless of weird bit packing), so it's OK to just
 		// quickly memset the whole thing:
-		memset(matrixbuff[backindex], c, this->mem_Buffer_Size);
+		memset(matrixbuff[backindex], b, this->mem_Buffer_Size);
 	}
 	else {
 		// Otherwise, need to handle it the long way:
@@ -283,14 +659,14 @@ void DMD_RGB_BASE::fillScreen(uint16_t c) {
 	}
 }
 /*--------------------------------------------------------------------------------------*/
-void DMD_RGB_BASE::clearScreen(byte bNormal) {
+void DMD_RGB_BASE::clearScreen(byte bNormal)  {
 	fillScreen(0x0000);
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::shiftScreen(int8_t step) {
 	uint8_t* ptr = matrixbuff[backindex];
-	uint8_t mm = 0;
-
+	uint8_t mm = output_mask;
+	
 	if (step < 0) {
 
 		for (uint16_t i = 0; i < mem_Buffer_Size;i++) {
@@ -350,7 +726,7 @@ void DMD_RGB_BASE::drawFastHLine(int16_t x, int16_t y,
 	if (w <= 0) return;
 
 	if (fast_Hbyte) {
-		uint8_t fg_col_bytes[3];
+		uint8_t fg_col_bytes[col_bytes_cnt];
 		getColorBytes(fg_col_bytes, color);
 		drawHByte(x, y, 255, w, fg_col_bytes, fg_col_bytes);
 
@@ -361,6 +737,7 @@ void DMD_RGB_BASE::drawFastHLine(int16_t x, int16_t y,
 		}
 	}
 }
+
 /*--------------------------------------------------------------------------------------*/
 // Promote 3/3/3 RGB to Adafruit_GFX 5/6/5
 uint16_t DMD_RGB_BASE::Color333(uint8_t r, uint8_t g, uint8_t b) {

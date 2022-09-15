@@ -1,4 +1,5 @@
 #pragma once
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 #include "DMD_STM32a.h"
 class DMD_Monochrome_Parallel :
 	public DMD
@@ -33,4 +34,5 @@ private:
 	volatile PortType* datasetreg; 
 
 };
+#endif
 

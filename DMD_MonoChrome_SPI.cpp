@@ -1,3 +1,4 @@
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 #include "DMD_MonoChrome_SPI.h"
 #include "SPI_DMA.h"
 
@@ -325,5 +326,5 @@ void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 	}
 }
 
-
+#endif
 

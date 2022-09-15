@@ -22,8 +22,9 @@
 #pragma once
 #include <Arduino.h>
 #include "gfxfont.h"
-#include "stm_int.h"
 
+#if (defined(__STM32F1__)|| defined(__STM32F4__)) 
+#include "stm_int.h"
 #ifndef pgm_read_byte
 #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
 #endif
@@ -33,7 +34,7 @@
 #ifndef pgm_read_dword
 #define pgm_read_dword(addr) (*(const unsigned long *)(addr))
 #endif
-
+#endif
 // Pointers are a peculiar case...typically 16-bit on AVR boards,
 // 32 bits elsewhere.  Try to accommodate both...
 

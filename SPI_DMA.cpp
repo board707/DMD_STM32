@@ -1,4 +1,5 @@
 #include "SPI_DMA.h"
+#if (defined(__STM32F1__)|| defined(__STM32F4__)) 
 #if defined(__STM32F1__)
 #define DMD_SPI_CNT 2
 #elif defined(__STM32F4__)
@@ -62,4 +63,5 @@ void SPI3_DMA_callback(uint32_t spi) {
 	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[2];
 	next->latchDMA();
 }
+#endif
 #endif

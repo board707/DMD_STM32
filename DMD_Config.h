@@ -16,8 +16,17 @@
 //
 // for alternative timers setup uncomment line below
 //#define ALTERNATIVE_DMD_TIMERS
-
 #endif
+
+//comment line below if you need free selections of RGB pins for 1bit color mode
+#define DIRECT_OUTPUT
+
+// with STM32F4 use DMA where available
+#if ((defined(__STM32F4__)) && ( defined(DIRECT_OUTPUT)))
+#define RGB_DMA
+#endif
+
+
 
 // OE PWM period in us (for Monochrome)
 #define OE_PWM_PERIOD  30

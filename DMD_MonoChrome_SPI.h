@@ -1,4 +1,5 @@
 #pragma once
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 #include "DMD_STM32a.h"
 #include <SPI.h>
 #define DMD_SPI_CLOCK_18MHZ     18000000
@@ -8,7 +9,7 @@
 #define DMD_SPI_CLOCK_2_2MHZ    2300000
 #define DMD_SPI_CLOCK_1MHZ     1000000
 
-#if (defined(__STM32F1__)|| defined(__STM32F4__)) 
+
 
 #if defined(__STM32F1__)
 #define DMD_SPI_CLOCK DMD_SPI_CLOCK_9MHZ
@@ -16,9 +17,7 @@
 #define DMD_SPI_CLOCK DMD_SPI_CLOCK_10_5MHZ
 #endif
 #define DMD_USE_DMA	1
-#elif defined(__AVR_ATmega328P__)
-#define DMD_SPI_CLOCK SPI_CLOCK_DIV4
-#endif
+
 
 
 class DMD_MonoChrome_SPI :
@@ -74,5 +73,6 @@ private:
 #endif
 
 };
+#endif
 
 

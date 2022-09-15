@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.8.0 ******
+ ****** VERSION 0.9.0 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library
 
@@ -47,7 +47,7 @@
 #include "DMD_Config.h"
 #include "DMD_Font.h"
 
-
+#define TICS_IN_uS (F_CPU / 1000000ul)
 #if defined(__AVR__)
 typedef uint8_t  PortType;
 #elif (defined(__STM32F1__) || defined(__STM32F4__))
@@ -106,7 +106,9 @@ public:
 		mux_pins = (uint8_t*)malloc(2);
 		mux_pins[0] = _pin_A;
 		mux_pins[1] = _pin_B;
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 		muxsetreg = portSetRegister(mux_pins[0]);
+#endif
 	}
 
 	virtual ~DMD();
@@ -164,7 +166,7 @@ public:
 		}
 		Adafruit_GFX::setRotation(rot);
 	};
-	virtual void setup_main_timer(uint32_t cycles, voidFuncPtr handler);
+	virtual uint16_t setup_main_timer(uint32_t cycles, voidFuncPtr handler);
 
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) {};
@@ -207,13 +209,14 @@ protected:
 
 	const byte pin_DMD_nOE;   // active low Output Enable, setting this low lights all the LEDs in the selected rows. Can pwm it at very high frequency for brightness control.
 	const byte pin_DMD_SCLK;  // LATCH PORT
-
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	// Pin bitmasks
 	PortType latmask, oemask; 
 	// PORT register pointers 
 	volatile PortType* muxsetreg, * oesetreg, * latsetreg;
 
 	uint8_t oe_channel;
+#endif
 	uint16_t brightness = 100;
 	uint16_t brightrange = 255;
 

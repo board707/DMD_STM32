@@ -38,10 +38,13 @@ DMD::DMD(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, byte pa
 {
 
 	DisplaysTotal = DisplaysWide * DisplaysHigh;
-
+	if (mux_list != NULL) {
+		mux_pins = (uint8_t*)malloc(mux_cnt);
+		memcpy(mux_pins, mux_list, mux_cnt);
+	}
 	// Look up port registers and pin masks ahead of time,
 	// avoids many slow digitalWrite() calls later.
-
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	latsetreg = portSetRegister(pin_DMD_SCLK);
 	latmask = digitalPinToBitMask(pin_DMD_SCLK);
 
@@ -49,24 +52,24 @@ DMD::DMD(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, byte pa
 	oesetreg = portSetRegister(pin_DMD_nOE);
 
 	if (mux_list != NULL) {
-		mux_pins = (uint8_t*)malloc(mux_cnt);
-		memcpy(mux_pins, mux_list, mux_cnt);
-		muxsetreg = portSetRegister(mux_pins[0]);
+	muxsetreg = portSetRegister(mux_pins[0]);
 	}
-	
 	mux_mask2 = (uint32_t*)malloc((nRows + 1) * 4);
+#endif
+	
 }
 /*--------------------------------------------------------------------------------------*/
 DMD::~DMD()
 {
 	free(mux_mask2);
+	free(mux_pins);
 #if defined(DEBUG2)
 	free((uint16_t*)dd_ptr);
 #endif
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD::set_pin_modes() {
-
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	for (uint8_t i = 0; i < mux_cnt; i++) {
 		digitalWrite(mux_pins[i], LOW);
 		pinMode(mux_pins[i], OUTPUT);
@@ -79,7 +82,7 @@ void DMD::set_pin_modes() {
 #elif defined(__STM32F4__) 
 	oe_channel = timer_map[pin_DMD_nOE].channel;
 #endif
-#if (defined(__STM32F1__) || defined(__STM32F4__))
+
 	pinMode(pin_DMD_nOE, PWM);  // setup the pin as PWM
 #elif defined(__AVR_ATmega328P__)
 	pinMode(pin_DMD_nOE, OUTPUT);
@@ -90,9 +93,9 @@ void DMD::set_pin_modes() {
 /*--------------------------------------------------------------------------------------*/
 void DMD::init(uint16_t scan_interval) {
 
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	this->set_pin_modes();
 	this->generate_muxmask();
-#if (defined(__STM32F1__) || defined(__STM32F4__))
 	timer_init(OE_TIMER);
 	timer_pause(OE_TIMER);
 	uint32 period_cyc = OE_PWM_PERIOD * CYCLES_PER_MICROSECOND;
@@ -116,7 +119,8 @@ void DMD::init(uint16_t scan_interval) {
 #endif	
 }
 /*--------------------------------------------------------------------------------------*/
-void DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
+uint16_t DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	timer_init(MAIN_TIMER);
 	timer_pause(MAIN_TIMER);
 	uint16 prescaler = (uint16)(cycles / TIM_MAX_RELOAD + 1);
@@ -126,9 +130,14 @@ void DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
 	timer_attach_interrupt(MAIN_TIMER, TIMER_UPDATE_INTERRUPT, handler);
 	timer_generate_update(MAIN_TIMER);
 	timer_resume(MAIN_TIMER);
+	return prescaler;
+#else 
+	return 1;
+#endif
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD::generate_muxmask() {
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 #define set_mux_ch_by_mask(x)  ((uint32_t) x)
 #define clr_mux_ch_by_mask(x)  (((uint32_t)x) << 16)
 
@@ -166,15 +175,19 @@ void DMD::generate_muxmask() {
 		}
 	}
 	mux_mask2[nRows] = mux_mask2[0];
-
+#endif
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD::set_mux(uint8_t curr_row) {
-
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	*muxsetreg = mux_mask2[curr_row];
+#endif
+
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD::switch_row() {
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+
 	// switch all LED OFF
 	OE_DMD_ROWS_OFF();
 
@@ -194,6 +207,7 @@ void DMD::switch_row() {
 	*latsetreg = latmask << 16;// Latch down
 	// reenable LEDs
 	OE_DMD_ROWS_ON();
+#endif
 }
 /*--------------------------------------------------------------------------------------*/
 
@@ -485,8 +499,8 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 	unsigned char c = letter;
 	if (!Font->is_char_in(c)) return 0;
 
-	uint8_t fg_col_bytes[3];
-	uint8_t bg_col_bytes[3];
+	uint8_t fg_col_bytes[4];
+	uint8_t bg_col_bytes[4];
 	uint16_t bg_color = inverse_color(color);
 	uint8_t height = Font->get_height();
 	// temp parameter for beta version
