@@ -50,11 +50,15 @@ For full version history see [CHANGES.txt](CHANGES.txt)
 
 Compatible IDE and libraries
 ----------
-This library works with Arduino IDE 1.8, other versions are **not tested**. Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is required to support STM32 based boards on Arduino IDE.
+This library works with Arduino IDE 1.6-1.9, other versions are **not tested**. DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
 
-To support STM32F4 boards you need custom version of repo: https://github.com/board707/Arduino_STM32/tree/lto_for_c6
+**STM32** 
 
-DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
+Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is required to support STM32 based boards on Arduino IDE.To support STM32F4 boards you need custom version of repo: https://github.com/board707/Arduino_STM32/tree/lto_for_c6
+
+**Raspberry Pi Pico** 
+
+This code requires Earle Philhower core https://github.com/earlephilhower/arduino-pico
 
 Compatible boards
 -----------------
