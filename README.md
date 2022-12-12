@@ -3,7 +3,7 @@
 # DMD_STM32a - LED Matrix library with Unicode fonts support 
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
-### The last version is alpha v.0.9.0. 
+### The last version is alpha v.0.9.2. 
 The main improvement of the new version is the **support of the Raspberry Pi Pico and another RP2040-based boards**. 
 ### For more stable beta [see 0.6.3](https://github.com/board707/DMD_STM32/releases/tag/v0.6.3)
 The library initially started out as STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD). Now it has grown into a separate project with support for different types of monochrome, two-color and RGB panels. One of the important features of the library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language.
@@ -40,6 +40,8 @@ Other features
 
 Versions
 ---------
+(12 Dec 2022 - v0.9.2)  - Monochrome panels support for RP2040-based boards (Parallel connection mode), bug fixes
+
 (16 Sep 2022 - v0.9.0)  - Add support of RP2040-based boards (RGB modes only) and using the DMA in the RGB modes for STM32F4 boards
 
 (10 Jul 2022 - v0.8.0)  - Add support of STM32F4 blackpills - STM32F401CC & STM32F411CE  (**Custom STM32 repo required!** see below)
@@ -65,7 +67,7 @@ Compatible boards
 
 * STM32F1 - STM32F103C8 (bluepill) and STM32F103C6 boards tested 
 * STM32F4 - STM32F401CC and STM32F411CE boards (**Custom STM32 repo required!**)
-* Raspberry Pi Pico and other RP2040-based boards (only RGB mode supported)
+* Raspberry Pi Pico and other RP2040-based boards 
 
 Connection
 ----------
@@ -109,8 +111,3 @@ Credits to open source community
 Notice
 ------
 This software is experimental and a work in progress. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
-
-
-Repo stats
-----------
-Downloads since Jan23, 2022:  ![GitHub all releases](https://img.shields.io/github/downloads/board707/DMD_STM32/total)
