@@ -19,8 +19,8 @@ static byte bPixelLookupTable[8] =
 DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK,
 	byte panelsWide, byte panelsHigh, SPIClass _spi,
 	bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
-	:DMD(_pin_A, _pin_B, _pin_nOE, _pin_SCLK, panelsWide, panelsHigh,
-		d_buf, dmd_pixel_x, dmd_pixel_y), SPI_DMD(_spi)
+	:DMD(new DMD_Pinlist(_pin_A, _pin_B), _pin_nOE, _pin_SCLK, panelsWide, panelsHigh,
+		DMD_MONO_SCAN, new DMD_Pinlist(_spi.sckPin(), _spi.mosiPin()), d_buf, dmd_pixel_x, dmd_pixel_y), SPI_DMD(_spi)
 {
 	mem_Buffer_Size = DisplaysTotal * ((DMD_PIXELS_ACROSS * DMD_BITSPERPIXEL / 8) * DMD_PIXELS_DOWN);
 	row1 = DisplaysTotal << 4;
@@ -38,7 +38,6 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	bDMDScreenRAM = matrixbuff[backindex]; // Back buffer
 	front_buff = matrixbuff[1 - backindex]; // -> front buffer
 
-#if (defined(__STM32F1__) || defined(__STM32F4__))
 
 #if ( DMD_USE_DMA )	
 	dmd_dma_buf = (byte*)malloc(mem_Buffer_Size / DMD_MONO_SCAN);
@@ -75,16 +74,6 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	}
 
 #endif
-#elif defined(__AVR_ATmega328P__)
-	pin_DMD_CLK = 13;
-	pin_DMD_R_DATA = 11;
-
-	// initialize the SPI port
-	SPI.begin();		// probably don't need this since it inits the port pins only, which we do just below with the appropriate DMD interface setup
-	SPI.setBitOrder(MSBFIRST);	//
-	SPI.setDataMode(SPI_MODE0);	// CPOL=0, CPHA=0
-	SPI.setClockDivider(DMD_SPI_CLOCK);
-#endif
 
 }
 /*--------------------------------------------------------------------------------------*/
@@ -99,13 +88,9 @@ DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
 void DMD_MonoChrome_SPI::set_pin_modes() {
 
 	DMD::set_pin_modes();
-	pin_DMD_CLK = SPI_DMD.sckPin();
 	pin_DMD_R_DATA = SPI_DMD.mosiPin();
-	//SPI_DMD.begin(); //Initialize the SPI port.
-	digitalWrite(pin_DMD_CLK, LOW);	// 
-	digitalWrite(pin_DMD_R_DATA, HIGH);	// 
-	pinMode(pin_DMD_CLK, OUTPUT);	//
-	pinMode(pin_DMD_R_DATA, OUTPUT);	//
+	digitalWrite(pin_DMD_R_DATA, HIGH);	
+	pinMode(pin_DMD_R_DATA, OUTPUT);
 
 }
 /*--------------------------------------------------------------------------------------*/
@@ -122,14 +107,10 @@ void DMD_MonoChrome_SPI::init(uint16_t scan_interval) {
 	SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
 	register_running_dmd(this, scan_interval);
 
+#elif  (defined(ARDUINO_ARCH_RP2040))
+#error "Monochrome SPI mode is not supported for RP2040 boards"
 #endif
-	// clean both buffers
-	if (matrixbuff[0] != matrixbuff[1]) {
-		bDMDScreenRAM = matrixbuff[1 - backindex];
-		clearScreen(true);
-	}
-	bDMDScreenRAM = matrixbuff[backindex];
-	clearScreen(true);
+	
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
@@ -212,13 +193,16 @@ void DMD_MonoChrome_SPI::latchDMA() {
 	dma_clear_isr_bits(spiDmaDev, spiTxDmaStream);
 #endif
 	DEBUG_TIME_MARK;
-	switch_row();
+	//switch_row();   // move to scanDisplay
 	DEBUG_TIME_MARK;
 }
 
 /*--------------------------------------------------------------------------------------*/
 void DMD_MonoChrome_SPI::scanDisplayByDMA()
 {
+
+	switch_row();
+
 	uint8_t* fr_buff = matrixbuff[1 - backindex]; // -> front buffer
 	//uint16_t offset = rowsize * bDMDByte;
 	uint8_t* offset_ptr = fr_buff + rowsize * bDMDByte;

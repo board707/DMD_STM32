@@ -36,6 +36,21 @@ static const struct pio_program dmd_out_program = {
     .origin = -1,
 };
 
+static inline uint pio_add_dmd_out_program(PIO pio, byte channels) {
+
+pio_program dmd_out = {
+    .instructions = NULL,
+    .length = dmd_out_wrap + 1,
+    .origin = -1,
+    };
+uint16_t dmd_out_instr[dmd_out_wrap + 1];
+memcpy(dmd_out_instr, dmd_out_program_instructions, sizeof(dmd_out_instr));
+dmd_out_instr[4] = pio_encode_out(pio_pins, channels);
+dmd_out_instr[5] = pio_encode_out(pio_null, 8-channels) | pio_encode_sideset(1,1);
+dmd_out.instructions = dmd_out_instr;
+return pio_add_program(pio, &dmd_out);
+}
+
 static inline pio_sm_config dmd_out_program_get_default_config(uint offset) {
     pio_sm_config c = pio_get_default_sm_config();
     sm_config_set_wrap(&c, offset + dmd_out_wrap_target, offset + dmd_out_wrap);
@@ -103,6 +118,22 @@ static const struct pio_program dmd_mux_program = {
     .length = 3,
     .origin = -1,
 };
+
+static inline uint pio_add_dmd_mux_program(PIO pio, byte channels) {
+
+    pio_program dmd_mux = {
+        .instructions = NULL,
+        .length = dmd_mux_wrap + 1,
+        .origin = -1,
+    };
+    uint16_t dmd_mux_instr[dmd_mux_wrap + 1];
+    memcpy(dmd_mux_instr, dmd_mux_program_instructions, sizeof(dmd_mux_instr));
+    dmd_mux_instr[1] = pio_encode_out(pio_pins, channels);
+    dmd_mux_instr[2] = pio_encode_out(pio_null, 32 - channels);
+    dmd_mux.instructions = dmd_mux_instr;
+    return pio_add_program(pio, &dmd_mux);
+}
+
 
 static inline pio_sm_config dmd_mux_program_get_default_config(uint offset) {
     pio_sm_config c = pio_get_default_sm_config();

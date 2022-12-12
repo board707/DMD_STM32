@@ -27,7 +27,7 @@
 #endif
 
 
-
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 // OE PWM period in us (for Monochrome)
 #define OE_PWM_PERIOD  30
 
@@ -44,3 +44,4 @@
   pins in the upper byte of the port.
   */
 //#define USE_UPPER_8BIT
+#endif

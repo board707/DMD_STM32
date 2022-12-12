@@ -4,14 +4,14 @@
 #if (defined(__STM32F1__))
 #include <dma_private.h>
 #endif
-#if (defined(ARDUINO_ARCH_RP2040))
+/*#if (defined(ARDUINO_ARCH_RP2040))
 #include <hardware/irq.h>
 #include <hardware/pwm.h>
 #include <hardware/dma.h>
 #include <hardware/gpio.h>
 #include <pico/stdlib.h> 
 #include "dmd_out.pio.h"
-#endif
+#endif*/
 
 /*--------------------------------------------------------------------------------------
  DMD_RGB.h  - part of the library DMD_STM32
@@ -69,41 +69,25 @@ public:
 
 	// set desired FPS as init() parameter
 	void init(uint16_t scan_interval = 200) override;
-	virtual void drawPixel(int16_t x, int16_t y, uint16_t color);
-	virtual void scan_dmd();
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-	virtual void generate_rgbtable() { generate_rgbtable_default(CLK_WITH_DATA); }
-	void generate_rgbtable_default(uint8_t options);
-	void send_to_allRGB(uint16_t data, uint16_t latches);
-	virtual void chip_init() {};
-	void set_pin_modes() override;
-#endif
-	virtual void initialize_timers(uint16_t scan_interval);
-	virtual void setCycleLen();
-	virtual uint16_t get_base_addr(int16_t x, int16_t y);
-	
-
-#if (defined(ARDUINO_ARCH_RP2040))
-  virtual void set_mux(uint8_t curr_row) override ;
-#endif
+	virtual void drawPixel(int16_t x, int16_t y, uint16_t color) override;
 	void clearScreen(byte bNormal) override;
 	void shiftScreen(int8_t step) override;
-
 	void fillScreen(uint16_t color) override;
+
+	virtual void scan_dmd();
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+	virtual void initialize_timers(voidFuncPtr handler) override;
+#endif
+	
+	
 	void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) override;
 	void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) override;
 
-	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
-		uint8_t* bg_col_bytes);
-	virtual void getColorBytes(uint8_t* cbytes, uint16_t color);
 	uint16_t
 		Color333(uint8_t r, uint8_t g, uint8_t b),
 		Color444(uint8_t r, uint8_t g, uint8_t b),
 		Color888(uint8_t r, uint8_t g, uint8_t b);
-
-	void setBrightness(uint8_t level) override {
-		this->brightness = level;
-	};
+	
 	
 
 #if defined(DEBUG2)
@@ -115,18 +99,27 @@ public:
 
 protected:
 
-	byte pin_DMD_CLK;
-	byte rgbpins[6];
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+	virtual void generate_rgbtable() { generate_rgbtable_default(CLK_WITH_DATA); }
+	void generate_rgbtable_default(uint8_t options);
+	void send_to_allRGB(uint16_t data, uint16_t latches);
+	virtual void chip_init() {};	
+#endif
+	virtual void setCycleLen();
+	virtual uint16_t get_base_addr(int16_t x, int16_t y);
+	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+		uint8_t* bg_col_bytes) override;
+	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) override;
+
+	byte* rgbpins;
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
 	// Pin bitmasks
-	PortType clk_clrmask, clkmask, rgbmask_all; 
-
+	PortType rgbmask_all;
 	// PORT register pointers 
-	volatile PortType* datasetreg;	
-//#ifndef DIRECT_OUTPUT
-	uint16_t           expand[256];           // 6-to-32 bit converter table
-//#endif
+
+uint16_t           expand[256];           // 6-to-32 bit converter table
+
 #if defined(RGB_DMA)
 
 #if defined(__STM32F1__) 
@@ -145,39 +138,23 @@ protected:
 	dma_stream  clkTxDmaStream = DMA_STREAM6; // TIM1 CH3 
 #endif
 #endif
-#elif (defined(ARDUINO_ARCH_RP2040))
-uint8_t OE_slice_num;
-uint8_t MAIN_slice_num;
-uint8_t dma_chan;
-// PIO config
-PIO pio = pio0;
-uint8_t sm_data = 0;
-uint8_t sm_mux = 1;
-uint8_t pwm_clk_div = 10;
-uint16_t data_prog_offs = 0;
-pio_sm_config pio_config;
-uint8_t pio_clkdiv = 3;
+
 #endif
 
 	// Counters/pointers for interrupt handler:
 	volatile uint8_t row, plane;
 	volatile uint8_t* buffptr;
-	uint16_t tim_prescaler = 1;
 	uint8_t nPlanes = 4;
 	const uint8_t pol_displ = DMD_PIXELS_DOWN / 2;
 	const uint8_t multiplex = pol_displ / nRows;
-	const uint16_t x_len = WIDTH * multiplex * DisplaysHigh;
 	const uint16_t displ_len = WIDTH * pol_displ * DisplaysHigh;
     uint8_t col_bytes_cnt = nPlanes;
 	uint16_t colors[2] = { 0, 0 };
 	uint8_t col_cache[8] = { 0 };
-
 	uint8_t last_color = 0;
 
 	// interrupt cycles length (in clock tics)
-	uint32_t scan_cycle_len = 0;
 	uint32_t callOverhead;
-	//uint32_t loopTime;
 	uint16_t transfer64bits_time =10;
 	uint16_t transfer_duty = 3;
 	uint16_t transfer_duty2 =1;
@@ -206,13 +183,9 @@ public:
 		DMD_RGB_BASE(mux_cnt, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COLOR_1BITS, n_Rows, dmd_pixel_x, dmd_pixel_y)
 	{
-		//this->fast_Hbyte = false;
-		//this->use_shift = false;
-		//this->default_fps = 200;
-
+	
 #if (defined(__STM32F1__)) 
 		this->callOverhead = 150;
-		//this->loopTime = 7200;
 		this->transfer64bits_time = 11;
 		this->transfer_duty = 2;
 		this->transfer_duty2 = 1;
@@ -230,7 +203,6 @@ public:
 
 #elif (defined(ARDUINO_ARCH_RP2040))
 		this->callOverhead = 100;
-		//this->loopTime = (TICS_IN_uS * 40);
 		this->transfer64bits_time = 6;
 		this->transfer_duty = 2;
 		this->transfer_duty2 = 1;
@@ -251,12 +223,9 @@ public:
 		DMD_RGB_BASE(mux_cnt, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COLOR_4BITS, n_Rows, dmd_pixel_x, dmd_pixel_y)
 	{
-		//this->fast_Hbyte = false;
-		//this->use_shift = false;
-		//this->default_fps = 400;
+
 #if (defined(__STM32F1__)) 
 		this->callOverhead = 150;
-		//this->loopTime = 2800;
 		this->transfer64bits_time = 10;
 		this->transfer_duty = 2;
 		this->transfer_duty2 = 1;
@@ -274,7 +243,6 @@ public:
 
 #elif (defined(ARDUINO_ARCH_RP2040))
 		this->callOverhead = 100;
-		//this->loopTime = (TICS_IN_uS * 40);
 		this->transfer64bits_time = 6;
 		this->transfer_duty = 6;
 		this->transfer_duty2 = 5;
@@ -283,7 +251,7 @@ public:
 
 	}
 
-
+protected:
 #if (defined(ARDUINO_ARCH_RP2040))
   void set_mux(uint8_t curr_row) override {
     pio_sm_put_blocking(pio, sm_mux, curr_row);
@@ -307,7 +275,6 @@ public:
 
 #if (defined(__STM32F1__)) 
 		this->callOverhead = 150;
-		//this->loopTime = 2800;
 		this->transfer64bits_time = 12;
 		this->transfer_duty = 2;
 		this->transfer_duty2 = 1;
@@ -340,15 +307,15 @@ public:
 
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 		timer_pause(MAIN_TIMER);
-		timer_set_reload(MAIN_TIMER, (duration - this->callOverhead) / tim_prescaler);
+		timer_set_reload(MAIN_TIMER, (duration - this->callOverhead) );
 
 		timer_pause(OE_TIMER);
-		timer_set_reload(OE_TIMER, (duration + this->callOverhead *10) / tim_prescaler);
+		timer_set_reload(OE_TIMER, (duration + this->callOverhead *10) );
 
 		uint32_t oe_duration;
 		if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
 		else oe_duration = ((duration * this->brightness) / 255) / 2;
-		timer_set_compare(OE_TIMER, oe_channel, oe_duration / tim_prescaler);
+		timer_set_compare(OE_TIMER, oe_channel, oe_duration );
 
 
 #endif
@@ -410,7 +377,6 @@ public:
 
 			*datasetreg = clkmask << 16; // Set clock low
 
-			//buffptr = ptr; //+= 32;
 			buffptr += displ_len;
 		}
 		else { // 920 ticks from TCNT1=0 (above) to end of function
@@ -688,6 +654,8 @@ public:
 		DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
 	{}
+
+protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
@@ -709,6 +677,8 @@ public:
 		DMD_RGB_BASE2<COL_DEPTH>(4, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
 	{}
+
+protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
@@ -737,6 +707,10 @@ public:
 		this->fast_Hbyte = false;
 		this->use_shift = false;
 	}
+	// Fast text shift is disabled for complex patterns, so we don't need the method
+	void disableFastTextShift(bool shift) override {}
+
+protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 
@@ -769,6 +743,9 @@ public:
 		this->fast_Hbyte = false;
 		this->use_shift = false;
 	}
+	// Fast text shift is disabled for complex patterns, so we don't need the method
+	void disableFastTextShift(bool shift) override {}
+
 protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
@@ -796,6 +773,7 @@ public:
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
 	{}
 
+protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
@@ -828,7 +806,10 @@ public:
 		this->fast_Hbyte = false;
 		this->use_shift = false;
 	}
+	// Fast text shift is disabled for complex patterns, so we don't need the method
+	void disableFastTextShift(bool shift) override {}
 
+protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
@@ -855,6 +836,10 @@ public:
 		this->fast_Hbyte = false;
 		this->use_shift = false;
 	}
+	// Fast text shift is disabled for complex patterns, so we don't need the method
+	void disableFastTextShift(bool shift) override {}
+
+protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 
@@ -904,6 +889,7 @@ public:
 			panelsWide, panelsHigh, false, COL_DEPTH, 32, 128, 64)
 	{}
 
+protected:
 	void set_mux(uint8_t curr_row) override {
 		// Just shift the row mux by one for incremental access
 		digitalWrite(this->pin_DMD_B, HIGH);

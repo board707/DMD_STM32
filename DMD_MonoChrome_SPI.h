@@ -30,13 +30,10 @@ public:
 
 	~DMD_MonoChrome_SPI();
 
-	void init(uint16_t scan_interval = 2000) override;
+	void init(uint16_t scan_interval = 1000) override;
 	void drawPixel(int16_t x, int16_t y, uint16_t color) override;
-	void set_pin_modes() override;
-	//void scanDisplayBySPI();
 	void shiftScreen(int8_t step) override;
-
-
+	
 #if (defined(__STM32F1__)|| defined(__STM32F4__)) 
 	uint8_t spi_num = 0;
 #endif
@@ -47,11 +44,10 @@ public:
 #else
 	void scanDisplayBySPI();
 #endif
-
-
+protected:
+	void set_pin_modes() override;
 private:
 	byte pin_DMD_R_DATA;   // is SPI Master Out 
-	byte pin_DMD_CLK;      // is SPI Clock 
 	uint16_t rowsize, row1, row2, row3;
 
 	SPIClass SPI_DMD;
@@ -68,11 +64,12 @@ private:
 #endif
 
 	uint8_t* dmd_dma_buf;
-	//uint8_t *rx_dma_buf;
 
 #endif
 
 };
+#elif (defined(ARDUINO_ARCH_RP2040))
+#error Monochrome_SPI mode unsupported for Rasberry Pico RP2040
 #endif
 
 

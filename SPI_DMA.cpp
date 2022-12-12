@@ -7,18 +7,19 @@
 #endif
 static volatile DMD_MonoChrome_SPI* running_dmds[DMD_SPI_CNT];
 static volatile uint8_t running_dmd_len = 0;
-//static uint16_t scan_int = 2000;
+
 /*--------------------------------------------------------------------------------------*/
 void register_running_dmd(DMD_MonoChrome_SPI* dmd, uint16_t scan_int)
 {
 	uint8_t spi_num = dmd->spi_num;
 	if (!spi_num) return;
+	
 	if (running_dmd_len == 0) {
 
-		uint32 period_cyc = scan_int * CYCLES_PER_MICROSECOND;
-		dmd->setup_main_timer(period_cyc, scan_running_dmds);
+			dmd->initialize_timers(scan_running_dmds);
 
 	}
+	else dmd->initialize_timers( NULL);
 	if (!running_dmds[spi_num - 1]) running_dmd_len++;
 
 	running_dmds[spi_num - 1] = dmd;
@@ -27,9 +28,18 @@ void register_running_dmd(DMD_MonoChrome_SPI* dmd, uint16_t scan_int)
 void inline __attribute__((always_inline)) scan_running_dmds()
 {
 	static volatile uint8_t i = 0;
+    
+	if (!running_dmd_len) return;
 
-	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[i % DMD_SPI_CNT];
-	i++;
+	
+	DMD_MonoChrome_SPI* next = NULL;
+
+	// search next valid DMD instance (for multi-SPI configuration)
+	while (!next) {
+		next = (DMD_MonoChrome_SPI*)running_dmds[i % DMD_SPI_CNT];
+		i++;
+	}
+
 	if (next) {
 #if defined( DMD_USE_DMA )
 		next->scanDisplayByDMA();

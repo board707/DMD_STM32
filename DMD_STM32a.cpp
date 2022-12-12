@@ -31,29 +31,30 @@
  careful of possible conflicts with other SPI port devices
 --------------------------------------------------------------------------------------*/
 
-DMD::DMD(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
-	uint8_t n_Rows, bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
-	:Adafruit_GFX(panelsWide* dmd_pixel_x, panelsHigh* dmd_pixel_y), mux_cnt(mux_cnt), nRows(n_Rows), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK),
-	DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), dbuf(d_buf), DMD_PIXELS_ACROSS(dmd_pixel_x), DMD_PIXELS_DOWN(dmd_pixel_y)
+
+DMD::DMD(DMD_Pinlist* _mux_pinlist, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
+	uint8_t n_Rows, DMD_Pinlist* _data_pinlist, bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
+	:Adafruit_GFX(panelsWide* dmd_pixel_x, panelsHigh* dmd_pixel_y), mux_cnt(_mux_pinlist->count), mux_pinlist(_mux_pinlist), nRows(n_Rows), 
+	data_pinlist(_data_pinlist), pin_DMD_CLK(_data_pinlist->list[0]), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK), DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), dbuf(d_buf),
+	DMD_PIXELS_ACROSS(dmd_pixel_x), DMD_PIXELS_DOWN(dmd_pixel_y)
 {
 
 	DisplaysTotal = DisplaysWide * DisplaysHigh;
-	if (mux_list != NULL) {
-		mux_pins = (uint8_t*)malloc(mux_cnt);
-		memcpy(mux_pins, mux_list, mux_cnt);
-	}
+	
+	mux_pins = mux_pinlist->list;
+	data_pins = &(data_pinlist->list[1]);
+	data_pins_cnt = data_pinlist->count-1;
+	
 	// Look up port registers and pin masks ahead of time,
 	// avoids many slow digitalWrite() calls later.
 #if (defined(__STM32F1__) || defined(__STM32F4__))
+	datasetreg = portSetRegister(pin_DMD_CLK);
+	clk_clrmask = clkmask = digitalPinToBitMask(pin_DMD_CLK);
 	latsetreg = portSetRegister(pin_DMD_SCLK);
 	latmask = digitalPinToBitMask(pin_DMD_SCLK);
-
 	oemask = digitalPinToBitMask(pin_DMD_nOE);
 	oesetreg = portSetRegister(pin_DMD_nOE);
-
-	if (mux_list != NULL) {
 	muxsetreg = portSetRegister(mux_pins[0]);
-	}
 	mux_mask2 = (uint32_t*)malloc((nRows + 1) * 4);
 #endif
 	
@@ -62,7 +63,8 @@ DMD::DMD(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, byte pa
 DMD::~DMD()
 {
 	free(mux_mask2);
-	free(mux_pins);
+	delete mux_pinlist;
+	delete data_pinlist;
 #if defined(DEBUG2)
 	free((uint16_t*)dd_ptr);
 #endif
@@ -70,10 +72,13 @@ DMD::~DMD()
 /*--------------------------------------------------------------------------------------*/
 void DMD::set_pin_modes() {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
+
 	for (uint8_t i = 0; i < mux_cnt; i++) {
 		digitalWrite(mux_pins[i], LOW);
 		pinMode(mux_pins[i], OUTPUT);
 	}
+	digitalWrite(pin_DMD_CLK, LOW);
+	pinMode(pin_DMD_CLK, OUTPUT);
 
 	digitalWrite(pin_DMD_SCLK, LOW);
 	pinMode(pin_DMD_SCLK, OUTPUT);
@@ -84,31 +89,29 @@ void DMD::set_pin_modes() {
 #endif
 
 	pinMode(pin_DMD_nOE, PWM);  // setup the pin as PWM
-#elif defined(__AVR_ATmega328P__)
-	pinMode(pin_DMD_nOE, OUTPUT);
-	digitalWrite(pin_DMD_nOE, LOW);
 #endif
-
 }
+
 /*--------------------------------------------------------------------------------------*/
 void DMD::init(uint16_t scan_interval) {
+	
+	this->set_pin_modes();
+
+	// calculate update interval
+	 scan_cycle_len = (uint32_t) scan_interval * CYCLES_PER_MICROSECOND;
+   
+   // here will be initialize_timers() call in child classes 
 
 #if (defined(__STM32F1__) || defined(__STM32F4__))
-	this->set_pin_modes();
-	this->generate_muxmask();
-	timer_init(OE_TIMER);
-	timer_pause(OE_TIMER);
-	uint32 period_cyc = OE_PWM_PERIOD * CYCLES_PER_MICROSECOND;
-	uint16 prescaler = (uint16)(period_cyc / TIM_MAX_RELOAD + 1);
-	uint16 overflow = (uint16)((period_cyc + (prescaler / 2)) / prescaler);
-	timer_set_prescaler(OE_TIMER, prescaler - 1);
-	timer_oc_set_mode(OE_TIMER, oe_channel, TIMER_OC_MODE_PWM_1, 0);
-	timer_set_reload(OE_TIMER, overflow);
-	timer_cc_enable(OE_TIMER, oe_channel);
-	timer_generate_update(OE_TIMER);
-	timer_resume(OE_TIMER);
-	brightrange = overflow;
+	 this->generate_muxmask();
 #endif
+    // clean both buffers
+	if (matrixbuff[0] != matrixbuff[1]) {
+		bDMDScreenRAM = matrixbuff[1 - backindex];
+		clearScreen(true);
+	}
+	bDMDScreenRAM = matrixbuff[backindex];
+	clearScreen(true);
 
 	setBrightness(200);
 	textcolor = 1;
@@ -119,25 +122,107 @@ void DMD::init(uint16_t scan_interval) {
 #endif	
 }
 /*--------------------------------------------------------------------------------------*/
-uint16_t DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
+void DMD::initialize_timers(voidFuncPtr handler) {
+
+	if (handler != NULL) this->setup_main_timer(this->scan_cycle_len, handler);
+	uint16 prescaler = timer_get_prescaler(MAIN_TIMER) + 1;
+	timer_init(OE_TIMER);
+	timer_pause(OE_TIMER);
+	timer_set_prescaler(OE_TIMER, prescaler - 1);
+	timer_oc_set_mode(OE_TIMER, oe_channel, (timer_oc_mode)this->OE_polarity, 0);
+	timer_set_reload(OE_TIMER, TIM_MAX_RELOAD);
+	timer_cc_enable(OE_TIMER, oe_channel);
+	timer_generate_update(OE_TIMER);
+	timer_resume(OE_TIMER);
+
+}
+#endif
+#if (defined(ARDUINO_ARCH_RP2040))
+/*--------------------------------------------------------------------------------------*/
+void DMD::initialize_timers(voidFuncPtr handler) {
+
+	
+	this->scan_cycle_len = this->scan_cycle_len / this->pwm_clk_div;
+
+	//pio configs
+	sm_data = pio_claim_unused_sm(pio, true);
+	//data_prog_offs = pio_add_program(pio, &dmd_out_program);
+	data_prog_offs = pio_add_dmd_out_program(pio, this->data_pins_cnt);
+	pio_config = dmd_out_program_init(pio, sm_data, data_prog_offs, pio_clkdiv, this->data_pins[0], this->data_pins_cnt, pin_DMD_SCLK, pin_DMD_CLK);
+
+	sm_mux = pio_claim_unused_sm(pio, true);
+	//uint8_t data_mux_offs = pio_add_program(pio, &dmd_mux_program);
+	uint8_t data_mux_offs = pio_add_dmd_mux_program(pio, this->mux_cnt);
+	dmd_mux_program_init(pio, sm_mux, data_mux_offs, this->mux_pins[0], this->mux_cnt);
+
+	//define timers numbers
+	OE_slice_num = pwm_gpio_to_slice_num(pin_DMD_nOE);        // OE timer number from OE pin number
+	if (OE_slice_num < 7) MAIN_slice_num = OE_slice_num + 1;  // set MAIN timer next to OE
+	else MAIN_slice_num = 6;                                  // if OE timer is 7th - set MAIN to 6th
+
+	// OE timer config
+	pwm_config c_OE = pwm_get_default_config();
+	pwm_config_set_clkdiv(&c_OE, pwm_clk_div);
+	pwm_config_set_wrap(&c_OE, 0xFFEE);
+	//pwm_config_set_output_polarity(&c_OE, false,false);   // non-invert A & B outputs (similar to PWM1 mode in STM32)
+	pwm_config_set_output_polarity(&c_OE, this->OE_polarity, this->OE_polarity);
+	gpio_set_function(pin_DMD_nOE, GPIO_FUNC_PWM);
+	pwm_set_gpio_level(pin_DMD_nOE, this->scan_cycle_len / 2);
+
+	// MAIN timer config
+	pwm_config c_MAIN = pwm_get_default_config();
+	pwm_config_set_clkdiv(&c_MAIN, pwm_clk_div);
+	pwm_config_set_wrap(&c_MAIN, this->scan_cycle_len);
+	pwm_clear_irq(MAIN_slice_num);
+	pwm_set_irq_enabled(MAIN_slice_num, true);             // enable timer overflow irq
+	irq_set_exclusive_handler(PWM_IRQ_WRAP, handler);
+	irq_set_enabled(PWM_IRQ_WRAP, true);
+
+	// DMA config
+	dma_chan = dma_claim_unused_channel(true);
+	dma_channel_config dma_c = dma_channel_get_default_config(dma_chan);
+	channel_config_set_transfer_data_size(&dma_c, DMA_SIZE_8);     // read by one byte
+	channel_config_set_read_increment(&dma_c, true);
+	channel_config_set_dreq(&dma_c, DREQ_PIO0_TX0);                 // requested by PIO
+
+	dma_channel_configure(
+		dma_chan,
+		&dma_c,
+		&pio0_hw->txf[0], // Write address (only need to set this once)
+		NULL,             // Don't provide a read address yet
+	   	this->x_len,      // Write x_len bytes than stop
+		false             // Don't start yet
+	);
+
+	pwm_init(MAIN_slice_num, &c_MAIN, true);         // start MAIN timer
+	pwm_init(OE_slice_num, &c_OE, true);         // start OE timer
+
+	
+}
+#endif
+/*--------------------------------------------------------------------------------------*/
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+uint16_t DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
+
 	timer_init(MAIN_TIMER);
 	timer_pause(MAIN_TIMER);
-	uint16 prescaler = (uint16)(cycles / TIM_MAX_RELOAD + 1);
-	uint16 overflow = (uint16)((cycles + (prescaler / 2)) / prescaler);
+	uint16 prescaler = (uint16)(cycles / TIM_MAX_RELOAD ) + 1;
+	if (prescaler > 1) this->scan_cycle_len /= prescaler;
+	
 	timer_set_prescaler(MAIN_TIMER, prescaler - 1);
-	timer_set_reload(MAIN_TIMER, overflow);
+	timer_set_reload(MAIN_TIMER, this->scan_cycle_len);
 	timer_attach_interrupt(MAIN_TIMER, TIMER_UPDATE_INTERRUPT, handler);
 	timer_generate_update(MAIN_TIMER);
 	timer_resume(MAIN_TIMER);
 	return prescaler;
-#else 
-	return 1;
-#endif
+
 }
+#endif
 /*--------------------------------------------------------------------------------------*/
-void DMD::generate_muxmask() {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
+void DMD::generate_muxmask() {
+
 #define set_mux_ch_by_mask(x)  ((uint32_t) x)
 #define clr_mux_ch_by_mask(x)  (((uint32_t)x) << 16)
 
@@ -175,22 +260,31 @@ void DMD::generate_muxmask() {
 		}
 	}
 	mux_mask2[nRows] = mux_mask2[0];
-#endif
+
 }
+#endif
 /*--------------------------------------------------------------------------------------*/
 void DMD::set_mux(uint8_t curr_row) {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 	*muxsetreg = mux_mask2[curr_row];
+#elif (defined(ARDUINO_ARCH_RP2040))
+    pio_sm_put_blocking(pio, sm_mux, curr_row);
 #endif
-
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD::switch_row() {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
 	// switch all LED OFF
-	OE_DMD_ROWS_OFF();
-
+	
+	timer_pause(MAIN_TIMER);
+	timer_pause(OE_TIMER);
+	
+	uint32_t overflow =  scan_cycle_len;
+	uint32_t oe_duration = ((overflow * this->brightness) / 255);
+	timer_set_compare(OE_TIMER, oe_channel, oe_duration);
+#endif
+	
 	this->set_mux(bDMDByte);
 
 	if (bDMDByte == 2) {
@@ -203,39 +297,26 @@ void DMD::switch_row() {
 	}
 	if (++bDMDByte > 3) bDMDByte = 0;
 
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	*latsetreg = latmask; // Latch data loaded during *prior* interrupt
 	*latsetreg = latmask << 16;// Latch down
-	// reenable LEDs
-	OE_DMD_ROWS_ON();
+#if (CYCLES_PER_MICROSECOND > 100)
+	delayMicroseconds(1);
+#endif
+	// reenable LEDs, restart timers
+	timer_set_count(MAIN_TIMER, 0);
+	timer_set_count(OE_TIMER, 0);
+	timer_generate_update(MAIN_TIMER);
+	timer_generate_update(OE_TIMER);
+	timer_resume(OE_TIMER);
+	timer_resume(MAIN_TIMER);
+
 #endif
 }
+
 /*--------------------------------------------------------------------------------------*/
 
-#if defined(__STM32F1__) 
-void DMD::OE_DMD_ROWS_OFF() { //pinMode( pin_DMD_nOE, INPUT  ); 
-	gpio_set_mode(PIN_MAP[this->pin_DMD_nOE].gpio_device, PIN_MAP[this->pin_DMD_nOE].gpio_bit, GPIO_OUTPUT_PP);
-	*oesetreg = oemask << 16;
-}
-void DMD::OE_DMD_ROWS_ON() { //pinMode( pin_DMD_nOE, OUTPUT  ); 
 
-	gpio_set_mode(PIN_MAP[this->pin_DMD_nOE].gpio_device, PIN_MAP[this->pin_DMD_nOE].gpio_bit, GPIO_AF_OUTPUT_PP);
-	timer_set_compare(OE_TIMER, oe_channel, brightness);
-}
-/*--------------------------------------------------------------------------------------*/
-#elif defined(__STM32F4__)
-void DMD::OE_DMD_ROWS_OFF() { //pinMode( pin_DMD_nOE, INPUT  ); 
-	gpio_set_mode(this->pin_DMD_nOE, GPIO_OUTPUT_PP);
-	*oesetreg = oemask << 16;
-}
-void DMD::OE_DMD_ROWS_ON() { //pinMode( pin_DMD_nOE, OUTPUT  ); 
-	gpio_set_mode(this->pin_DMD_nOE, GPIO_AF_OUTPUT_PP);
-	timer_set_compare(OE_TIMER, oe_channel, brightness);
-}
-/*--------------------------------------------------------------------------------------*/
-#elif defined(__AVR_ATmega328P__)
-void DMD::OE_DMD_ROWS_OFF() { digitalWrite(pin_DMD_nOE, LOW); }
-void DMD::OE_DMD_ROWS_ON() { digitalWrite(pin_DMD_nOE, HIGH); }
-#endif
 /*--------------------------------------------------------------------------------------*/
 void DMD::transform_XY(int16_t& bX, int16_t& bY) {
 
@@ -317,11 +398,15 @@ void DMD::drawString(int bX, int bY, const char* bChars, int length,
 	}
 
 }
+
+
 /*--------------------------------------------------------------------------------------*/
+// Drawing the text in the screen and prepare using it in the marquee (running text)
+// note: only one marquee can be used at the time
 void DMD::drawMarqueeX(const char* bChars, int left, int top, byte orientation)
 {
 	int len = 0;
-	while (bChars[len] && len < MAX_STRING_LEN) { len++; }
+	while (bChars[len] && len < MAX_STRING_LEN-1) { len++; }
 	this->drawMarquee(bChars, len, left, top, orientation);
 }
 /*--------------------------------------------------------------------------------------*/
@@ -330,9 +415,16 @@ void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte or
 	// temp parameter for beta version
 	uint8_t matrix_h = 16;
 
-	stringBounds(bChars, length, &marqueeWidth, &marqueeMarginH, &marqueeMarginL, orientation);
-	strcpy(marqueeText, bChars);
+	// exit if string is empty of length == 0 
+	if ((!bChars) || (!length)) return;
+	
+	if (length > MAX_STRING_LEN - 1) length = MAX_STRING_LEN - 1;
+	
+	strncpy(marqueeText, bChars, length);
+	marqueeText[length] = '\0';
 
+	stringBounds(marqueeText, length, &marqueeWidth, &marqueeMarginH, &marqueeMarginL, orientation);
+	
 	if (orientation == 1) {
 		marqueeHeight = matrix_h;
 	}
@@ -340,7 +432,6 @@ void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte or
 		marqueeHeight = Font->get_height();
 	}
 
-	marqueeText[length] = '\0';
 	marqueeOffsetY = top;
 	marqueeOffsetX = left;
 	marqueeLength = length;
@@ -349,6 +440,13 @@ void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte or
 }
 
 /*--------------------------------------------------------------------------------------*/
+// Moving marquee, prepared by drawMarquee() method, by one step. 
+// return values:
+//    MARQUEE_OUT_OF_SCREEN			- text has left the screen
+//    MARQUEE_JUSTIFY_ON_LEFT 		- leftmost pixel of the text is on screen position 0
+//    MARQUEE_JUSTIFY_ON_RIGHT		- rightmost pixel of the text is on the right end of screen
+//        or returns 0 in any other case
+
 uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 {
 	uint8_t ret = 0;
@@ -637,7 +735,10 @@ int DMD::charWidth(const unsigned char letter, byte orientation)
 }
 
 /*--------------------------------------------------------------------------------------
-   string bounds
+      String bounds in pixels with selected font.
+	  Set values of string width as w, 
+	  and it upmost and lowest points y-coordinates (min_y max_y)
+	  relative to base point (upper left corner) of the text.
 --------------------------------------------------------------------------------------*/
 void DMD::stringBounds(const char* bChars, uint8_t length,
 	int16_t* w, int16_t* min_y, int16_t* max_y, byte orientation) {
@@ -645,7 +746,7 @@ void DMD::stringBounds(const char* bChars, uint8_t length,
 	uint8_t height = Font->get_height();
 
 	if (length == 0) {
-		while (bChars[length] && length < MAX_STRING_LEN) { length++; }
+		while (bChars[length] && length < MAX_STRING_LEN-1) { length++; }
 	}
 
 	if (Font->is_gfx_font()) {
@@ -702,7 +803,7 @@ uint16_t DMD::stringWidth(const char* bChars, uint8_t length, byte orientation)
 	uint16_t width = 0;
 	if (length == 0) {
 
-		while (bChars[length] && length < MAX_STRING_LEN) { length++; }
+		while (bChars[length] && length < MAX_STRING_LEN-1) { length++; }
 	}
 	// char c;
 	int idx;

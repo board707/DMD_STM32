@@ -13,20 +13,14 @@ void inline __attribute__((always_inline)) scan_running_dmd_R()
 
 DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 	byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y)
-	: DMD(mux_cnt, mux_list, _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, n_Rows, d_buf, dmd_pixel_x, dmd_pixel_y), nPlanes(col_depth)
+	: DMD(new DMD_Pinlist(mux_cnt, mux_list), _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, n_Rows, 
+		new DMD_Pinlist(7, pinlist), d_buf, dmd_pixel_x, dmd_pixel_y), nPlanes(col_depth)
 {
 
 	fast_Hbyte = true;
-	byte clk_pin = pinlist[0];
-	pin_DMD_CLK = clk_pin;
-	memcpy(rgbpins, pinlist + 1, sizeof rgbpins);
+	rgbpins = data_pins;
 	running_dmd_R = this;
-
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-	//oesetreg = portSetRegister(pin_DMD_nOE);
-	datasetreg = portSetRegister(clk_pin);
-	clk_clrmask = clkmask = digitalPinToBitMask(clk_pin);
-#endif	
+	OE_polarity = OE_PWM_NEGATIVE;
 
 	// Allocate and initialize matrix buffer:
 
@@ -49,7 +43,7 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	swapflag = false;
 	backindex = 0;     // Array index of back buffer
 	buffptr = matrixbuff[1 - backindex]; // -> front buffer
-
+	x_len = WIDTH * multiplex * DisplaysHigh;
 	// default text colors - green on black
 	textcolor = Color888(0, 255, 0);
 	textbgcolor = 0;
@@ -80,102 +74,30 @@ void DMD_RGB_BASE::generate_rgbtable_default(uint8_t options) {
 		if (i & 0x20) expand[i] |= rgbmask[5];
 		if (options & CLK_WITH_DATA) expand[i] |= clkmask;
 	}
-
-
 }
 #endif	
-/*--------------------------------------------------------------------------------------*/
-#if (defined(ARDUINO_ARCH_RP2040))
-  void DMD_RGB_BASE::set_mux(uint8_t curr_row)  {
-    pio_sm_put_blocking(pio, sm_mux, curr_row);
-}
-#endif
+
 
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::setCycleLen()  {
-	this->scan_cycle_len = ((1000000ul / this->default_fps) / (this->nRows * (1 << (this->nPlanes - 1)))) * TICS_IN_uS;
-	uint32_t write_time = ((this->x_len) / 64) * this->transfer64bits_time * TICS_IN_uS;
+	this->scan_cycle_len = ((1000000ul / this->default_fps) / (this->nRows * (1 << (this->nPlanes - 1)))) * CYCLES_PER_MICROSECOND;
+	uint32_t write_time = ((this->x_len) / 64) * this->transfer64bits_time * CYCLES_PER_MICROSECOND;
 	if (this->scan_cycle_len < (write_time * this->transfer_duty) / this->transfer_duty2) this->scan_cycle_len = (write_time * this->transfer_duty) / this->transfer_duty2;
-#if (defined(__STM32F1__))
 
-#elif (defined(ARDUINO_ARCH_RP2040))
-	this->scan_cycle_len = this->scan_cycle_len / this->pwm_clk_div;
-#endif
 }
 /*--------------------------------------------------------------------------------------*/
 #if (defined(ARDUINO_ARCH_RP2040))
-void DMD_RGB_BASE::initialize_timers(uint16_t scan_interval) {
-	if (scan_interval) this->default_fps = scan_interval;
-	this->setCycleLen();
 
-//pio configs
- sm_data = pio_claim_unused_sm(pio, true);
- data_prog_offs = pio_add_program(pio, &dmd_out_program);
- pio_config = dmd_out_program_init(pio, sm_data, data_prog_offs, pio_clkdiv, rgbpins[0], 6, pin_DMD_SCLK, pin_DMD_CLK);
- sm_mux = pio_claim_unused_sm(pio, true);
- uint8_t data_mux_offs = pio_add_program(pio, &dmd_mux_program);
- dmd_mux_program_init(pio, sm_mux, data_mux_offs, this->mux_pins[0], this->mux_cnt);
-
- //define timers numbers
-OE_slice_num = pwm_gpio_to_slice_num(pin_DMD_nOE);        // OE timer number from OE pin number
-if (OE_slice_num < 7) MAIN_slice_num = OE_slice_num + 1;  // set MAIN timer next to OE
-else MAIN_slice_num = 6;                                  // if OE timer is 7th - set MAIN to 6th
-
-// OE timer config
-pwm_config c_OE = pwm_get_default_config();
-pwm_config_set_clkdiv(&c_OE, pwm_clk_div);
-pwm_config_set_wrap(&c_OE, 0xFFEE);
-pwm_config_set_output_polarity(&c_OE, true, true);   // invert A & B outputs (similar to PWM2 mode in STM32)
-gpio_set_function(pin_DMD_nOE, GPIO_FUNC_PWM);
-pwm_set_gpio_level(pin_DMD_nOE, this->scan_cycle_len / 2);
-
-// MAIN timer config
-pwm_config c_MAIN = pwm_get_default_config();
-pwm_config_set_clkdiv(&c_MAIN, pwm_clk_div);
-pwm_config_set_wrap(&c_MAIN, this->scan_cycle_len );
-pwm_clear_irq(MAIN_slice_num);
-pwm_set_irq_enabled(MAIN_slice_num, true);             // enable timer overflow irq
-irq_set_exclusive_handler(PWM_IRQ_WRAP, scan_running_dmd_R);
-irq_set_enabled(PWM_IRQ_WRAP, true);
-
-
-// DMA config
- dma_chan = dma_claim_unused_channel(true);
- dma_channel_config dma_c = dma_channel_get_default_config(dma_chan);
- channel_config_set_transfer_data_size(&dma_c, DMA_SIZE_8);     // read by one byte
- channel_config_set_read_increment(&dma_c, true);             
- channel_config_set_dreq(&dma_c, DREQ_PIO0_TX0);                 // requested by PIO
-
-    dma_channel_configure(
-        dma_chan,
-        &dma_c,
-        &pio0_hw->txf[0], // Write address (only need to set this once)
-        NULL,             // Don't provide a read address yet
-        x_len,            // Write x_len bytes than stop
-        false             // Don't start yet
-    );
-
-    pwm_init(MAIN_slice_num, &c_MAIN, true);         // start MAIN timer
-    pwm_init(OE_slice_num, &c_OE, true);         // start OE timer
-
-	this->setBrightness(255);
-}
 #endif
 /*--------------------------------------------------------------------------------------*/
 #if (defined(__STM32F1__) || defined(__STM32F4__))
-void DMD_RGB_BASE::initialize_timers(uint16_t scan_interval) {
-	if (scan_interval) this->default_fps = scan_interval;
-	this->setCycleLen();
+void DMD_RGB_BASE::initialize_timers(voidFuncPtr handler) {
 
-	if (scan_interval) {
 
 		uint32_t max_cycle_len = ((this->scan_cycle_len) << (this->nPlanes - 1));
-		this->tim_prescaler = setup_main_timer(max_cycle_len, scan_running_dmd_R);
-		timer_init(OE_TIMER);
-		timer_pause(OE_TIMER);
-		timer_set_prescaler(OE_TIMER, tim_prescaler - 1);
-		timer_oc_set_mode(OE_TIMER, oe_channel, TIMER_OC_MODE_PWM_2, 0);
-		timer_cc_enable(OE_TIMER, oe_channel);
+		setup_main_timer(max_cycle_len, handler);
+		DMD::initialize_timers(NULL);
+		
 
 #if defined(RGB_DMA)
 		// DMA timer setup
@@ -208,34 +130,30 @@ void DMD_RGB_BASE::initialize_timers(uint16_t scan_interval) {
 		dma_enable(rgbDmaDev, clkTxDmaStream);
 #endif
 #endif
-	}
 
-
-#if (defined(__STM32F1__))
-	gpio_set_mode(PIN_MAP[this->pin_DMD_nOE].gpio_device, PIN_MAP[this->pin_DMD_nOE].gpio_bit, GPIO_AF_OUTPUT_PP);
-#endif
-	this->setBrightness(255);
 }
 #endif
 /*--------------------------------------------------------------------------------------*/
 #if (defined(__STM32F1__) || defined(__STM32F4__))
-void DMD_RGB_BASE::set_pin_modes() {
+/*void DMD_RGB_BASE::set_pin_modes() {
 
 	DMD::set_pin_modes();
-	pinMode(pin_DMD_CLK, OUTPUT);
 
-}
+}*/
 #endif
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::init(uint16_t scan_interval) {
 
+	if (scan_interval) this->default_fps = scan_interval;
+	this->setCycleLen();
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 	set_pin_modes();
 	generate_muxmask();
 	generate_rgbtable();
 	chip_init();
 #endif
-	initialize_timers(scan_interval);
+	initialize_timers(scan_running_dmd_R);
+	setBrightness(200);
 	clearScreen(true);
 
 }
@@ -301,34 +219,26 @@ void DMD_RGB_BASE::scan_dmd() {
 #if (defined(ARDUINO_ARCH_RP2040))
 	pwm_clear_irq(MAIN_slice_num);             // clear PWM irq
 	pwm_set_enabled(MAIN_slice_num, false);    // stop MAIN timer
-	//pwm_set_counter(MAIN_slice_num, 0);        // clear the counter
 	pwm_set_enabled(OE_slice_num, false);    // stop OE timer
-	//pwm_set_counter(OE_slice_num, 0);        // clear the counter
 
 	pwm_set_wrap(MAIN_slice_num, duration);     // set new TOP value
 														  // setup CC value for OE 
 	if (this->plane > 0) pwm_set_gpio_level(pin_DMD_nOE, ((uint32_t)duration * this->brightness) / 255);
 	else  pwm_set_gpio_level(pin_DMD_nOE, (((uint32_t)duration * this->brightness) / 255) / 2);
-	// pwm_set_gpio_level(pin_DMD_nOE, duration/2);
 #endif
 
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
 	timer_pause(MAIN_TIMER);
-	timer_set_reload(MAIN_TIMER, (duration - this->callOverhead)/tim_prescaler);
+	timer_set_reload(MAIN_TIMER, (duration - this->callOverhead));
 
 	timer_pause(OE_TIMER);
-	timer_set_reload(OE_TIMER, (duration + this->callOverhead*10)/tim_prescaler);
+	timer_set_reload(OE_TIMER, (duration + this->callOverhead*10));
 
 	uint32_t oe_duration;
 	if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
 	else oe_duration = ((duration * this->brightness) / 255)/2;
-	timer_set_compare(OE_TIMER, oe_channel, oe_duration / tim_prescaler);
-
-
-	//if ((this->plane > 0) || (nPlanes == 1)) timer_set_compare(OE_TIMER, oe_channel, ((uint32_t)duration * this->brightness) / 255);
-	//else  timer_set_compare(OE_TIMER, oe_channel, (((uint32_t)duration * this->brightness) / 255) / 2);
-	
+	timer_set_compare(OE_TIMER, oe_channel, oe_duration );
 	
 #endif
 	// Borrowing a technique here from Ray's Logic:
@@ -360,7 +270,7 @@ void DMD_RGB_BASE::scan_dmd() {
 
 	// For 4bit Color set mux at 1st Plane
 	else if (plane == 1) {
-		// pio_sm_put_blocking(pio, sm_mux, row);
+	
 		set_mux(row);
 	}
 
@@ -413,25 +323,16 @@ void DMD_RGB_BASE::scan_dmd() {
 
 #elif defined(__STM32F4__) 
 
-	//dma_disable(rgbDmaDev, clkTxDmaStream);
-	//dma_disable(rgbDmaDev, datTxDmaStream);
 	dma_set_mem_addr(rgbDmaDev, datTxDmaStream, ptr);
 	dma_clear_isr_bits(rgbDmaDev, datTxDmaStream);
-	//dma_clear_isr_bits(rgbDmaDev, clkTxDmaStream);
-	//dma_setup_transfer(rgbDmaDev, datTxDmaStream, DmaDataChannel, DMA_SIZE_8BITS, (uint8_t*)datasetreg, (uint8_t*)ptr, NULL, ( DMA_MINC_MODE | DMA_FROM_MEM));
 	dma_set_num_transfers(rgbDmaDev, datTxDmaStream, x_len);
 
 	// 2 nd dma stream
 
-	//dma_setup_transfer(rgbDmaDev, clkTxDmaStream, DmaClkChannel, DMA_SIZE_32BITS, (uint32_t*)datasetreg, (uint32_t*)&clk_clrmask, NULL, ( DMA_CIRC_MODE | DMA_FROM_MEM));
-	//dma_set_num_transfers(rgbDmaDev, clkTxDmaStream, 1);
-
 	dma_enable(rgbDmaDev, datTxDmaStream);
-	//dma_enable(rgbDmaDev, clkTxDmaStream);
+	
 #endif
-	//timer_set_count(DMA_TIMER, 0);
-	//timer_generate_update(DMA_TIMER);
-	//timer_resume(DMA_TIMER);
+	
 	DMA_TIMER_BASE->CNT = 0;
 	DMA_TIMER_BASE->CR1 = (1 << 0);
 
@@ -457,13 +358,10 @@ void DMD_RGB_BASE::scan_dmd() {
 
 #endif
 #endif
-		//buffptr = ptr; //+= 32;
+
 	buffptr += displ_len;
 
-
 #undef pew
-
-
 
 }
 /*--------------------------------------------------------------------------------------*/
