@@ -32,17 +32,19 @@
  */
 
  // == MATRIX TYPES ==
- // = indoor matrices with plain pattern =
+ // = matrices with plain pattern =
 #define RGB64x64plainS32 1			// 64x64 1/32
 #define RGB80x40plainS20 2			// 80x40 1/20
 #define RGB64x32plainS16 3			// 64x32 1/16
+#define RGB32x32plainS16 20			// 32x32 1/16
+#define RGB32x32plainS8 21			// 32x32 1/8   near plain pattern
 #define RGB32x16plainS8 4			// 32x16 1/8
 #define RGB32x16plainS4 5			// 32x16 1/4
 #define RGB32x16plainS2 6			// 32x16 1/2
 #define RGB32x16plainS4_DIRECT 17	// 32x16 1/4 DIRECT mux
 #define RGB128x64plainS32 16		// 128x64 1/32
 
-// = outdoor matrices =
+// = complex pattern matrices =
 #define RGB32x16_S4 7               // 32x16 1/4 ZIGGII pattern matrix, BINARY mux
 #define RGB32x16_S4_bilalibrir 10   // 32x16 1/4 ZAGGIZ pattern, DIRECT mux
 #define RGB32x16_S2 8               // 32x16 1/2 complex pattern, DIRECT mux
@@ -155,10 +157,13 @@ uint16_t           expand[256];           // 6-to-32 bit converter table
 
 	// interrupt cycles length (in clock tics)
 	uint32_t callOverhead;
-	uint16_t transfer64bits_time =10;
+	uint16_t transfer64bits_time =10;   // in uS
 	uint16_t transfer_duty = 3;
 	uint16_t transfer_duty2 =1;
 	uint16_t default_fps = 200;
+#if (defined(ARDUINO_ARCH_RP2040))
+	uint16_t min_scan_len = 15;        // in uS
+#endif
 #if defined (DIRECT_OUTPUT)
 	uint8_t output_mask = 0b01000000;
 #else
@@ -252,11 +257,6 @@ public:
 	}
 
 protected:
-#if (defined(ARDUINO_ARCH_RP2040))
-  void set_mux(uint8_t curr_row) override {
-    pio_sm_put_blocking(pio, sm_mux, curr_row);
-}
-#endif
 	
 };
 /*--------------------------------------------------------------------------------------*/
@@ -294,6 +294,7 @@ public:
 	void scan_dmd() {
 
 		uint16_t duration;
+		uint32_t oe_duration;
 		volatile uint8_t* ptr;
 
 		// Calculate time to next interrupt BEFORE incrementing plane #.
@@ -305,18 +306,16 @@ public:
 		if (this->plane > 0) duration = ((this->scan_cycle_len) << (this->plane - 1));
 		else  duration = this->scan_cycle_len;
 
+		if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
+		else oe_duration = ((duration * this->brightness) / 255) / 2;
+
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 		timer_pause(MAIN_TIMER);
 		timer_set_reload(MAIN_TIMER, (duration - this->callOverhead) );
 
 		timer_pause(OE_TIMER);
 		timer_set_reload(OE_TIMER, (duration + this->callOverhead *10) );
-
-		uint32_t oe_duration;
-		if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
-		else oe_duration = ((duration * this->brightness) / 255) / 2;
-		timer_set_compare(OE_TIMER, oe_channel, oe_duration );
-
+		
 
 #endif
 		// Borrowing a technique here from Ray's Logic:
@@ -353,6 +352,7 @@ public:
 		* latsetreg = latmask; // Latch data loaded during *prior* interrupt
 		*latsetreg = latmask << 16;// Latch down
 
+		timer_set_compare(OE_TIMER, oe_channel, oe_duration);
 		timer_set_count(MAIN_TIMER, 0);
 		timer_set_count(OE_TIMER, 0);
 		timer_generate_update(MAIN_TIMER);
@@ -631,6 +631,45 @@ public:
 };
 /*--------------------------------------------------------------------------------------*/
 template<int COL_DEPTH>
+class DMD_RGB<RGB32x32plainS16, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(4, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 16, 32, 32)
+	{}
+
+};
+
+/*--------------------------------------------------------------------------------------*/
+// p6 32x32 scan 8 matrix from @maxmurugan 
+// plain pattern with consecutive bytes in horizontal lines
+// lower row first
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x32plainS8, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(3, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 8, 32, 32)
+	{}
+protected:
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+		uint16_t base_addr = (pol_y % this->nRows) * this->x_len + 
+			(x / this->DMD_PIXELS_ACROSS) * this->multiplex * this->DMD_PIXELS_ACROSS;
+		if (pol_y / this->nRows)  base_addr += x % this->DMD_PIXELS_ACROSS;
+		else   base_addr += x % this->DMD_PIXELS_ACROSS + this->DMD_PIXELS_ACROSS;
+		return base_addr;
+	}
+
+};
+/*--------------------------------------------------------------------------------------*/
+template<int COL_DEPTH>
 class DMD_RGB<RGB32x16plainS8, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
 public:
@@ -659,8 +698,10 @@ protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
 		uint16_t base_addr = (pol_y / this->multiplex) * this->x_len +
-			(pol_y % this->multiplex) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH + x;
+			(x / this->DMD_PIXELS_ACROSS) * this->multiplex * this->DMD_PIXELS_ACROSS +
+			(pol_y % this->multiplex) *  this->DMD_PIXELS_ACROSS + x % this->DMD_PIXELS_ACROSS;
 		return base_addr;
 	}
 };
@@ -682,8 +723,10 @@ protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
 		uint16_t base_addr = (pol_y / this->multiplex) * this->x_len +
-			(pol_y % this->multiplex) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH + x;
+			(x / this->DMD_PIXELS_ACROSS) * this->multiplex * this->DMD_PIXELS_ACROSS +
+			(pol_y % this->multiplex) * this->DMD_PIXELS_ACROSS + x % this->DMD_PIXELS_ACROSS;
 		return base_addr;
 	}
 };
@@ -713,8 +756,6 @@ public:
 protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
-
-
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
 		uint16_t base_addr = (pol_y % this->nRows) * this->x_len + (x / 8) * this->multiplex * 8;
@@ -777,8 +818,10 @@ protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
 		uint16_t base_addr = (pol_y / this->multiplex) * this->x_len +
-			(pol_y % this->multiplex) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH + x;
+			(x / this->DMD_PIXELS_ACROSS) * this->multiplex * this->DMD_PIXELS_ACROSS +
+			(pol_y % this->multiplex) * this->DMD_PIXELS_ACROSS + x % this->DMD_PIXELS_ACROSS;
 		return base_addr;
 	}
 };

@@ -23,16 +23,11 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	OE_polarity = OE_PWM_NEGATIVE;
 
 	// Allocate and initialize matrix buffer:
-
+	mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * nPlanes / 2;
+	col_bytes_cnt = nPlanes;
 	// x3 = 3 bytes holds 4 planes "packed"
-	if (nPlanes == 3) {mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * 3 / 2;
-	                   col_bytes_cnt =3;
-					   nPlanes = 4;
-	}
-	else if (nPlanes == 1) mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN / 2;
-	else if (nPlanes == 4) {mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * 2;
-	                       
-	                       col_bytes_cnt =4;}
+	if (nPlanes == 3) nPlanes = 4;
+	
 	uint32_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2ul) : mem_Buffer_Size;
 	matrixbuff[0] = (uint8_t*)malloc(allocsize);
 	memset(matrixbuff[0], 0, allocsize);
@@ -82,7 +77,11 @@ void DMD_RGB_BASE::generate_rgbtable_default(uint8_t options) {
 void DMD_RGB_BASE::setCycleLen()  {
 	this->scan_cycle_len = ((1000000ul / this->default_fps) / (this->nRows * (1 << (this->nPlanes - 1)))) * CYCLES_PER_MICROSECOND;
 	uint32_t write_time = ((this->x_len) / 64) * this->transfer64bits_time * CYCLES_PER_MICROSECOND;
-	if (this->scan_cycle_len < (write_time * this->transfer_duty) / this->transfer_duty2) this->scan_cycle_len = (write_time * this->transfer_duty) / this->transfer_duty2;
+	write_time = (write_time * this->transfer_duty) / this->transfer_duty2;
+#if (defined(ARDUINO_ARCH_RP2040))
+	if (write_time < (min_scan_len * CYCLES_PER_MICROSECOND)) write_time = min_scan_len * CYCLES_PER_MICROSECOND;
+#endif
+	if (this->scan_cycle_len < write_time) this->scan_cycle_len = write_time;
 
 }
 /*--------------------------------------------------------------------------------------*/
@@ -94,7 +93,8 @@ void DMD_RGB_BASE::setCycleLen()  {
 void DMD_RGB_BASE::initialize_timers(voidFuncPtr handler) {
 
 
-		uint32_t max_cycle_len = ((this->scan_cycle_len) << (this->nPlanes - 1));
+		uint32_t max_cycle_len = this->scan_cycle_len;
+		if (nPlanes == 4)  max_cycle_len = 4 * this->scan_cycle_len;
 		setup_main_timer(max_cycle_len, handler);
 		DMD::initialize_timers(NULL);
 		
@@ -204,6 +204,7 @@ uint16_t DMD_RGB_BASE::get_base_addr(int16_t x, int16_t y) {
 void DMD_RGB_BASE::scan_dmd() {
 
 	uint32_t duration;
+	uint32_t oe_duration;
 	volatile static uint8_t* ptr;
 
 	// Calculate time to next interrupt BEFORE incrementing plane #.
@@ -215,6 +216,9 @@ void DMD_RGB_BASE::scan_dmd() {
 
 	if (this->plane > 0) duration = ((this->scan_cycle_len) << (this->plane - 1));
 	else  duration = this->scan_cycle_len;
+	
+	if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
+	else oe_duration = ((duration * this->brightness) / 255) / 2;
 
 #if (defined(ARDUINO_ARCH_RP2040))
 	pwm_clear_irq(MAIN_slice_num);             // clear PWM irq
@@ -222,9 +226,8 @@ void DMD_RGB_BASE::scan_dmd() {
 	pwm_set_enabled(OE_slice_num, false);    // stop OE timer
 
 	pwm_set_wrap(MAIN_slice_num, duration);     // set new TOP value
-														  // setup CC value for OE 
-	if (this->plane > 0) pwm_set_gpio_level(pin_DMD_nOE, ((uint32_t)duration * this->brightness) / 255);
-	else  pwm_set_gpio_level(pin_DMD_nOE, (((uint32_t)duration * this->brightness) / 255) / 2);
+	pwm_set_gpio_level(pin_DMD_nOE, oe_duration);  // setup CC value for OE 
+	
 #endif
 
 #if (defined(__STM32F1__) || defined(__STM32F4__))
@@ -234,11 +237,6 @@ void DMD_RGB_BASE::scan_dmd() {
 
 	timer_pause(OE_TIMER);
 	timer_set_reload(OE_TIMER, (duration + this->callOverhead*10));
-
-	uint32_t oe_duration;
-	if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
-	else oe_duration = ((duration * this->brightness) / 255)/2;
-	timer_set_compare(OE_TIMER, oe_channel, oe_duration );
 	
 #endif
 	// Borrowing a technique here from Ray's Logic:
@@ -294,7 +292,7 @@ void DMD_RGB_BASE::scan_dmd() {
 	*latsetreg = latmask << 16;// Latch down
 
 
-
+	timer_set_compare(OE_TIMER, oe_channel, oe_duration);
 	timer_set_count(MAIN_TIMER, 0);
 	timer_set_count(OE_TIMER, 0);
 	timer_generate_update(MAIN_TIMER);

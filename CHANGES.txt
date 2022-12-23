@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [0.9.3] - 2022-12-24 
+ - Add new RGB 32x32 matrices
+ - Replace incorrect get_base_addr() function for plain pattern
+ - Fix some other bugs
+
 ## [0.9.2] - 2022-12-12 
  - Parallel monochrome mode for RP2040-based boards
  - Fix [issue#19](https://github.com/board707/DMD_STM32/issues/19)
