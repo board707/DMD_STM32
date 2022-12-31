@@ -43,6 +43,8 @@ Other features
 
 Versions
 ---------
+(31 Dec 2022 - v0.9.4)  - Fix drawHbyte bug with bsize > 255, add Turkish fonts and examples
+
 (24 Dec 2022 - v0.9.3)  - Bug fixes for v0.9.2, new RGB panels added - 32x32 s16 and 32x32 s8
 
 (12 Dec 2022 - v0.9.2)  - Monochrome panels support for RP2040-based boards (Parallel connection mode), bug fixes
