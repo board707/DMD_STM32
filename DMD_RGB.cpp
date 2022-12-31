@@ -426,13 +426,14 @@ void DMD_RGB_BASE::drawPixel(int16_t x, int16_t y, uint16_t c)  {
 
 }
 /*--------------------------------------------------------------------------------------*/
-void DMD_RGB_BASE::drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+void DMD_RGB_BASE::drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 	uint8_t* bg_col_bytes) {
 
 	
 	static uint8_t ColorByteMask[] = { B000111 , B111000 };
-
-	//if whole line is outside - go out
+	if ((hbyte != 0xff)&& (bsize > 8)) bsize = 8;
+	
+		//if whole line is outside - go out
 	if (((x + bsize) <= 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
 
 	//if start of line before 0 - draw portion of line from x=0

@@ -109,7 +109,7 @@ protected:
 #endif
 	virtual void setCycleLen();
 	virtual uint16_t get_base_addr(int16_t x, int16_t y);
-	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) override;
 	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) override;
 
@@ -455,11 +455,14 @@ public:
 		memcpy(cbytes, ptr, 3); return;
 	}
 	/*--------------------------------------------------------------------------------------*/
-	void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+	void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) override {
 
 		static uint8_t ColorByteMask[] = { B00000111 , B01000111 , B11000111 ,
 											  B11111000 , B10111000 , B00111000 };
+		
+		if ((hbyte != 0xff) && (bsize > 8)) bsize = 8;
+
 		//if whole line is outside - go out
 		if (((x + bsize) <= 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
 

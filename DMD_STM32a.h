@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.9.3 ******
+ ****** VERSION 0.9.4 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library
 
@@ -33,6 +33,7 @@
 #define DMD_STM32a_H_
 #include "stm_int.h"
 //#define DEBUG2		1
+#define DEBUG_PRINT( x )   Serial1.print( #x );Serial1.print(" = ");Serial1.println( x )
 
 //Arduino toolchain header, version dependent
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -240,7 +241,7 @@ protected:
 		virtual uint16_t setup_main_timer(uint32_t cycles, voidFuncPtr handler);
 #endif
 	virtual void set_mux(uint8_t curr_row);
-	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint8_t bsize, uint8_t* fg_col_bytes,
+	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) {};
 	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) {};
 	
