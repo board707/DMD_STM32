@@ -3,11 +3,11 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.9.4 ******
+ ****** VERSION 0.9.5 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library
 
- adapted by Dmitry Dmitriev (c) 2019-2022
+ adapted by Dmitry Dmitriev (c) 2019-2023
 
  =======  based on =========
 
@@ -242,8 +242,8 @@ protected:
 #endif
 	virtual void set_mux(uint8_t curr_row);
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
-		uint8_t* bg_col_bytes) {};
-	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) {};
+		uint8_t* bg_col_bytes)  =0 ;
+	virtual void getColorBytes(uint8_t* cbytes, uint16_t color)  =0 ;
 	
 	// pins
 	const uint8_t mux_cnt = 2;

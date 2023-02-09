@@ -55,6 +55,8 @@ bool DMD_Standard_Font::is_mono_font() {
 }
 /*--------------------------------------------------------------------------------------*/
 uint8_t DMD_Standard_Font::get_char_width(unsigned char c, byte orientation) {
+	//ToDo: check orientation flag
+	if (orientation)   {}
 	uint8_t width = 0;
 
 	if (this->is_char_in(c)) {

@@ -76,6 +76,7 @@ void DMD_RGB_BASE::generate_rgbtable_default(uint8_t options) {
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::setCycleLen()  {
 	this->scan_cycle_len = ((1000000ul / this->default_fps) / (this->nRows * (1 << (this->nPlanes - 1)))) * CYCLES_PER_MICROSECOND;
+	
 	uint32_t write_time = ((this->x_len) / 64) * this->transfer64bits_time * CYCLES_PER_MICROSECOND;
 	write_time = (write_time * this->transfer_duty) / this->transfer_duty2;
 #if (defined(ARDUINO_ARCH_RP2040))
@@ -557,6 +558,11 @@ else b = c & 0xff;
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::clearScreen(byte bNormal)  {
+	// ToDo: bNornal flag should affect screen filling with background color
+	if (bNormal)  {
+
+	}
+
 	fillScreen(0x0000);
 }
 /*--------------------------------------------------------------------------------------*/

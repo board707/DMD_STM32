@@ -49,6 +49,7 @@
 #define RGB32x16_S4_bilalibrir 10   // 32x16 1/4 ZAGGIZ pattern, DIRECT mux
 #define RGB32x16_S2 8               // 32x16 1/2 complex pattern, DIRECT mux
 #define RGB32x16_S2_quangli 9       // 32x16 1/2 complex pattern, DIRECT mux
+#define RGB32x16_S2_horro	22		// 32x16 1/2 complex pattern, BINARY mux
 
 // COLOR DEPTH
 #if (defined(__STM32F1__)|| defined(__STM32F4__)) 
@@ -186,7 +187,7 @@ public:
 	DMD_RGB_BASE2(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y) :
 		DMD_RGB_BASE(mux_cnt, mux_list, _pin_nOE, _pin_SCLK, pinlist,
-			panelsWide, panelsHigh, d_buf, COLOR_1BITS, n_Rows, dmd_pixel_x, dmd_pixel_y)
+			panelsWide, panelsHigh, d_buf, col_depth, n_Rows, dmd_pixel_x, dmd_pixel_y)
 	{
 	
 #if (defined(__STM32F1__)) 
@@ -226,7 +227,7 @@ public:
 	DMD_RGB_BASE2(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y) :
 		DMD_RGB_BASE(mux_cnt, mux_list, _pin_nOE, _pin_SCLK, pinlist,
-			panelsWide, panelsHigh, d_buf, COLOR_4BITS, n_Rows, dmd_pixel_x, dmd_pixel_y)
+			panelsWide, panelsHigh, d_buf, col_depth, n_Rows, dmd_pixel_x, dmd_pixel_y)
 	{
 
 #if (defined(__STM32F1__)) 
@@ -269,7 +270,7 @@ public:
 	DMD_RGB_BASE2(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y) :
 		DMD_RGB_BASE(mux_cnt, mux_list, _pin_nOE, _pin_SCLK, pinlist,
-			panelsWide, panelsHigh, d_buf, COLOR_4BITS_Packed, n_Rows, dmd_pixel_x, dmd_pixel_y)
+			panelsWide, panelsHigh, d_buf, col_depth, n_Rows, dmd_pixel_x, dmd_pixel_y)
 	{
 		output_mask = 0;
 
@@ -906,6 +907,45 @@ protected:
 
 };
 /*--------------------------------------------------------------------------------------*/
+// 32x16 1/2 matrix from horro
+// Binary mux
+//
+
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_S2_horro, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(1, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
+	{
+		this->fast_Hbyte = false;
+		this->use_shift = false;
+	}
+	// Fast text shift is disabled for complex patterns, so we don't need the method
+	void disableFastTextShift(bool shift) override {}
+
+protected:
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+		uint8_t e_nRows = this->nRows * 2;
+		uint16_t e_x_len = this->x_len / 2;
+		
+		if (pol_y < e_nRows) { pol_y = pol_y * 2 + 1; }
+		else { pol_y = (pol_y - e_nRows) * 2; }
+
+		uint16_t base_addr = (pol_y % e_nRows) * e_x_len + (x / 8) * this->multiplex * 4 + (pol_y / e_nRows) * 8;
+		if (!(pol_y / e_nRows)) { base_addr += (7 - x % 8); }
+		else base_addr += x % 8;
+
+		return base_addr;
+	}
+
+};
+/*--------------------------------------------------------------------------------------*/
 template<int COL_DEPTH>
 class DMD_RGB<RGB128x64plainS32, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 {
@@ -937,12 +977,15 @@ public:
 
 protected:
 	void set_mux(uint8_t curr_row) override {
+		byte pin_DMD_A = this->mux_pins[0];
+		byte pin_DMD_B = this->mux_pins[1];
+		byte pin_DMD_C = this->mux_pins[2];
 		// Just shift the row mux by one for incremental access
-		digitalWrite(this->pin_DMD_B, HIGH);
-		digitalWrite(this->pin_DMD_C, (curr_row == 0)); // Shift out 1 for line 0, 0 otherwise
-		digitalWrite(this->pin_DMD_A, HIGH); // Clock out this bit
-		digitalWrite(this->pin_DMD_A, LOW);
-		digitalWrite(this->pin_DMD_B, LOW);
+		digitalWrite(pin_DMD_B, HIGH);
+		digitalWrite(pin_DMD_C, (curr_row == 0)); // Shift out 1 for line 0, 0 otherwise
+		digitalWrite(pin_DMD_A, HIGH); // Clock out this bit
+		digitalWrite(pin_DMD_A, LOW);
+		digitalWrite(pin_DMD_B, LOW);
 	}
 
 };
