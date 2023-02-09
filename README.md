@@ -3,7 +3,7 @@
 # DMD_STM32a - LED Matrix library with Unicode fonts support 
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
-### The last version is beta v.0.9.4. 
+### The last version is beta v.0.9.5. 
 The main improvement of the 0.9.x versions is the **support of the Raspberry Pi Pico and another RP2040-based boards**. Version 0.9.4 added Turkish font examples and some bugfixes.
 ### For more stable beta [see 0.6.3](https://github.com/board707/DMD_STM32/releases/tag/v0.6.3)
 The library initially started out as STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD). Now it has grown into a separate project with support for different types of monochrome, two-color and RGB panels. 
@@ -43,6 +43,8 @@ Other features
 
 Versions
 ---------
+(09 Feb 2023 - v0.9.5)  - Add new template for 32x16 s2 panel for user @xorro. Some minor errors and warnings fixed.
+
 (31 Dec 2022 - v0.9.4)  - Fix drawHbyte bug with bsize > 255, add Turkish fonts and examples
 
 (24 Dec 2022 - v0.9.3)  - Bug fixes for v0.9.2, new RGB panels added - 32x32 s16 and 32x32 s8
