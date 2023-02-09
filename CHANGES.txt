@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [0.9.5] - 2023-02-09 
+ - Add new RGB 32x16 s2 matrix template
+ - Fix some other bugs
+
+## [0.9.4] - 2022-12-31 
+ - Add Turkish fonts and examples
+ - Fix drawHbyte bug with bsize > 255
+ - Fix some other bugs
+
 ## [0.9.3] - 2022-12-24 
  - Add new RGB 32x32 matrices
  - Replace incorrect get_base_addr() function for plain pattern
