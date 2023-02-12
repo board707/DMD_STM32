@@ -42,18 +42,18 @@
 // multirow outdoor, plain pattern
 #define RGB32x16plainS4			2,32,16,4,1		// 32x16 1/4 BINARY Mux pattern 1
 #define RGB32x16plainS4_pt2		2,32,16,4,2		// 32x16 1/4 BINARY Mux pattern 2
-#define RGB32x16plainS4_DIRECT	4,32,16,4,1		// 32x16 1/4 DIRECT Mux pattern 1
+#define RGB32x16plainS4_DIRECT		4,32,16,4,1		// 32x16 1/4 DIRECT Mux pattern 1
 #define RGB32x16plainS2			1,32,16,2,1		// 32x16 1/2 BINARY
-#define RGB32x16plainS2_DIRECT	2,32,16,2,1		// 32x16 1/2 DIRECT
-#define RGB32x32_S8_maxmurugan	3,32,32,8,33	// 32x32 1/8 matrix from @maxmurugan
+#define RGB32x16plainS2_DIRECT		2,32,16,2,1		// 32x16 1/2 DIRECT
+#define RGB32x32_S8_maxmurugan		3,32,32,8,33	// 32x32 1/8 matrix from @maxmurugan
 
 // multirow outdoor, complex pattern
-#define RGB32x16_S4_variable	2,32,16,4,32	// 32x16 1/4 variable pattern for 3216_s4 example
+#define RGB32x16_S4_variable		2,32,16,4,32	// 32x16 1/4 variable pattern for 3216_s4 example
 
 //  *** User panels ***
-#define RGB32x16_S4				2,32,16,4,50	// 32x16 1/4 ZIGGII pattern matrix, BINARY mux								
-#define RGB32x16_S4_bilalibrir	4,32,16,4,51	// 32x16 1/4 ZAGGIZ pattern, DIRECT mux
-#define RGB32x16_S2				2,32,16,2,52    // 32x16 1/2 complex pattern, DIRECT mux
+#define RGB32x16_S4			2,32,16,4,50	// 32x16 1/4 ZIGGII pattern matrix, BINARY mux								
+#define RGB32x16_S4_bilalibrir		4,32,16,4,51	// 32x16 1/4 ZAGGIZ pattern, DIRECT mux
+#define RGB32x16_S2			2,32,16,2,52    // 32x16 1/2 complex pattern, DIRECT mux
 #define RGB32x16_S2_quangli		2,32,16,2,53	// 32x16 1/2 complex pattern, DIRECT mux
 #define RGB32x16_S2_horro		1,32,16,2,54	// 32x16 1/2 complex pattern, BINARY mux from @horro
 
