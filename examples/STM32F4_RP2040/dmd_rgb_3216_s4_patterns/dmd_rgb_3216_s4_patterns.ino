@@ -6,15 +6,17 @@
 #include "DMD_RGB.h"
 
 /* Pattern types for 32x16 s4 panels.
+  
+  This example demonstrates the construction of a pattern based on three simple features.  
+  See detailed explanation on the thread:
+  https://community.pixelmatix.com/t/coordinate-transformations-for-4scan-panels/1236
+  
   Pattern name contructed with 3 letters:
   U/L - ether the first oktet (8 pixs) is lighten Upper than second or vise versa
   P/N - ether the first octet goes to Positive X direction ( left to right) or Negative
   S/D - ether the second octet goes to the Same direction as first or not
 
   example Lower, Positive, Different  - select the PATTERN_LPD
-
-  See detailed explanation on the thread:
-  https://community.pixelmatix.com/t/coordinate-transformations-for-4scan-panels/1236
 */
 
 #define PATTERN_UPS   0b0111
