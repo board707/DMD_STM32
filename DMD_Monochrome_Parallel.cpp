@@ -1,3 +1,12 @@
+/*--------------------------------------------------------------------------------------
+ This file is a part of the library DMD_STM32
+
+ DMD_STM32.h  - STM32 port of DMD.h library
+
+ https://github.com/board707/DMD_STM32
+ Dmitry Dmitriev (c) 2019-2023
+ /--------------------------------------------------------------------------------------*/
+
 #include "DMD_Monochrome_Parallel.h"
 static volatile DMD_Monochrome_Parallel* running_dmd;
 void inline __attribute__((always_inline)) scan_running_dmd()

@@ -53,7 +53,7 @@ DMD_RGB <RGB64x32plainS16, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK,
 // <RGB32x16plainS8> -  32x16 matrix with 8scans
 // <RGB80x40plainS20> - 80x40 matrix with 20scans
 // <RGB64x64plainS32> - 64x64 matrix with 32scans
-// Color depth - <COLOR_4BITS> or <COLOR_1BITS>
+// Color depth - <COLOR_4BITS_Packed>, <COLOR_4BITS> or <COLOR_1BITS>
 
 
 // --- Define fonts ----

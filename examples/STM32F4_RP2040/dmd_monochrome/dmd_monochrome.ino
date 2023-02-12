@@ -27,11 +27,12 @@
 #define ENABLE_DUAL_BUFFER true
 
 // ----- Select pins for P10 matrix connection ------------
-// pins A, B, SCLK may be any digital I/O, pin nOE should be Timer3 PWM pin as PB0,PB1
-// if connect as SPI, do not use corresponding MiSO pin - PA6 for SPI1 and PB14 for SPI2
 /* =================== *
 *     STM32F4 pins     *
 *  =================== */
+// pins A, B, SCLK may be any digital I/O, pin nOE should be Timer3 PWM pin as PB0,PB1
+// if connect as SPI, do not use corresponding MiSO pin - PA6 for SPI1 and PB14 for SPI2
+
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 #define DMD_PIN_A PA1
 #define DMD_PIN_B PA3
@@ -62,7 +63,6 @@ uint8_t pins[] = { PA5, PA7, PA6 };  // CLK , row1, row 2
 /* =================== *
 *     RP2040 pins     *
 *  =================== */
-
 #if defined(ARDUINO_ARCH_RP2040)
 #if defined(DMD_PARA)
 #define DMD_PIN_A 1
@@ -70,6 +70,7 @@ uint8_t pins[] = { PA5, PA7, PA6 };  // CLK , row1, row 2
 #define DMD_PIN_nOE 14
 #define DMD_PIN_SCLK 15
 
+// These pins must be consecutive in ascending order
 uint8_t pins[] = { 6, 7, 8 };  // CLK , row1, row 2
 #else
 #error Monochrome_SPI mode unsupported for Rasberry Pico RP2040

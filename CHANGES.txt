@@ -1,5 +1,12 @@
 # ChangeLog
 
+## [1.0.0] - 2023-02-12 
+ - *** Uncompatible changes! ***
+ - New panel template model with multiparameter specialization
+ - Move all templates to separate file DMD_Panel_Templates.h
+ - New example for 32x16 s4 panels with variable pattern template
+ - Fix some other bugs
+
 ## [0.9.5] - 2023-02-09 
  - Add new RGB 32x16 s2 matrix template
  - Fix some other bugs

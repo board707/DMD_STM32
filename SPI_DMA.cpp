@@ -1,3 +1,12 @@
+/*--------------------------------------------------------------------------------------
+ This file is a part of the library DMD_STM32
+
+ DMD_STM32.h  - STM32 port of DMD.h library
+
+ https://github.com/board707/DMD_STM32
+ Dmitry Dmitriev (c) 2019-2023
+ /--------------------------------------------------------------------------------------*/
+
 #include "SPI_DMA.h"
 #if (defined(__STM32F1__)|| defined(__STM32F4__)) 
 #if defined(__STM32F1__)

@@ -29,6 +29,9 @@
 // and swapBuffers(true) cimmand do nothing
 #define ENABLE_DUAL_BUFFER false
 
+/* =================== *
+*     STM32F4 pins     *
+*  =================== */
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 // ==== DMD_RGB pins ====
 // mux pins - A, B, C... all mux pins must be selected from same port!
@@ -50,10 +53,13 @@ uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E
 // All this pins also must be selected from same port!
 uint8_t custom_rgbpins[] = {PA6, PA0,PA1,PA2,PA3,PA4,PA5 }; // CLK, R0, G0, B0, R1, G1, B1
 
+/* =================== *
+*     RP2040 pins     *
+*  =================== */
 #elif (defined(ARDUINO_ARCH_RP2040))
 
 // ==== DMD_RGB pins ====
-// mux pins - A, B, C... all mux pins must be selected from same port!
+// mux pins - A, B, C... mux pins must be consecutive in ascending order
 #define DMD_PIN_A 6
 #define DMD_PIN_B 7
 #define DMD_PIN_C 8
@@ -69,7 +75,7 @@ uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E
 // Pins for R0, G0, B0, R1, G1, B1 channels and for clock.
 // By default the library uses RGB color order.2
 // If you need to change this - reorder the R0, G0, B0, R1, G1, B1 pins.
-// All this pins also must be selected from same port!
+// All this pins also must be consecutive in ascending order
 uint8_t custom_rgbpins[] = { 11, 0,1,2,3,4,5 }; // CLK, R0, G0, B0, R1, G1, B1
 #endif
 // Fire up the DMD object as dmd<MATRIX_TYPE, COLOR_DEPTH>
@@ -79,8 +85,7 @@ DMD_RGB <RGB64x32plainS16, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK,
 // <RGB32x16plainS8> -  32x16 matrix with 8scans
 // <RGB80x40plainS20> - 80x40 matrix with 20scans
 // <RGB64x64plainS32> - 64x64 matrix with 32scans
-// Color depth - <COLOR_4BITS> or <COLOR_1BITS>
-
+// Color depth - <COLOR_4BITS_Packed>(STM32 only), <COLOR_4BITS> or <COLOR_1BITS> 
 
 // --- Define fonts ----
 // Turkish standard font

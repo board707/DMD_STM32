@@ -522,7 +522,7 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 			textbgcolor);
 
 		else if (amountY < 0) drawFilledBox(marqueeOffsetX, marqueeOffsetY + marqueeMarginL,
-			marqueeOffsetX + marqueeWidth, old_y + marqueeMarginL, textbgcolor);
+				marqueeOffsetX + marqueeWidth, old_y + marqueeMarginL, textbgcolor);
 
 		else if (amountX > 0) drawFilledBox(old_x, marqueeOffsetY + marqueeMarginH,
 			marqueeOffsetX, marqueeOffsetY + marqueeMarginL, textbgcolor);
