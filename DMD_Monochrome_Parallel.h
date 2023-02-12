@@ -17,7 +17,7 @@ public:
 	void shiftScreen(int8_t step)  override;
 
 	// changing connect scheme not allowed for Parallel
-	virtual void setConnectScheme(uint8_t sch) override  = 0;
+	virtual void setConnectScheme(uint8_t sch) override {} ;
 
 protected:
 
