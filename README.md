@@ -3,14 +3,23 @@
 # DMD_STM32a - LED Matrix library with Unicode fonts support 
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
-### The last version is beta v.0.9.5. 
+### Attention! The repository was recently updated to v1.0.0
+The main difference from 0.x.x versions is a new panel template format. The documentation will coming. You can get a brief explanation of the new templates from the comments of the [DMD_Panel_Templates.h](https://github.com/board707/DMD_STM32/blob/dev-V2/DMD_Panel_Templates.h) file.
+### For last version with old panel templates [see v0.9.5](https://github.com/board707/DMD_STM32/releases/tag/v0.9.5)
 The main improvement of the 0.9.x versions is the **support of the Raspberry Pi Pico and another RP2040-based boards**. Version 0.9.4 added Turkish font examples and some bugfixes.
-### For more stable beta [see 0.6.3](https://github.com/board707/DMD_STM32/releases/tag/v0.6.3)
+
+About the library
+-----------------
+
 The library initially started out as STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD). Now it has grown into a separate project with support for different types of monochrome, two-color and RGB panels. 
 
 One of the important features of the library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language. The library includes **Cyrillic** and **Turkish** fonts. For using of national fonts, see the examples `dmd_rg.ino` and `dmd_rgb_turk.ino` (Turkish)
 
-This code branch is further development of [DMD_STM32 library](https://github.com/board707/DMD_STM32/tree/old-V1). The code was totally rewritten, the library received a modular structure with a DMD_STM32a base class and several child classes for various matrices and connection types. At the moment the library has been tested with the following types of matrices:
+This code branch is further development of [DMD_STM32 library](https://github.com/board707/DMD_STM32/tree/old-V1). The code was totally rewritten, the library received a modular structure with a DMD_STM32a base class and several child classes for various matrices and connection types. 
+
+LED panels supported
+-----------------
+
 
 | **Description**                 | **Interface** | **Pixels** |   **Scan**  | **Code module**                              |
 |---------------------------------|:-------------:|:----------:|:-----------:|----------------------------------------------|
@@ -43,13 +52,11 @@ Other features
 
 Versions
 ---------
-(09 Feb 2023 - v0.9.5)  - Add new template for 32x16 s2 panel for user @xorro. Some minor errors and warnings fixed.
+(12 Feb 2023 - v1.0.0)  - New panel template model with multiparameter specialization
+ 
+(09 Feb 2023 - v0.9.5)  - Add new template for 32x16 s2 panel. Some minor errors and warnings fixed.
 
-(31 Dec 2022 - v0.9.4)  - Fix drawHbyte bug with bsize > 255, add Turkish fonts and examples
-
-(24 Dec 2022 - v0.9.3)  - Bug fixes for v0.9.2, new RGB panels added - 32x32 s16 and 32x32 s8
-
-(12 Dec 2022 - v0.9.2)  - Monochrome panels support for RP2040-based boards (Parallel connection mode), bug fixes
+(12 Dec 2022 - v0.9.2)  - Monochrome panels support for RP2040-based boards (Parallel connection mode)
 
 (16 Sep 2022 - v0.9.0)  - Add support of RP2040-based boards (RGB modes only) and using the DMA in the RGB modes for STM32F4 boards
 
