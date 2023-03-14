@@ -740,7 +740,7 @@ int DMD::charWidth(const unsigned char letter, byte orientation)
 	  and it upmost and lowest points y-coordinates (min_y max_y)
 	  relative to base point (upper left corner) of the text.
 --------------------------------------------------------------------------------------*/
-void DMD::stringBounds(const char* bChars, uint8_t length,
+void DMD::stringBounds(const char* bChars, uint16_t length,
 	int16_t* w, int16_t* min_y, int16_t* max_y, byte orientation) {
 
 	uint8_t height = Font->get_height();
@@ -797,7 +797,7 @@ void DMD::stringBounds(const char* bChars, uint8_t length,
 /*--------------------------------------------------------------------------------------
    string width in pixels
 --------------------------------------------------------------------------------------*/
-uint16_t DMD::stringWidth(const char* bChars, uint8_t length, byte orientation)
+uint16_t DMD::stringWidth(const char* bChars, uint16_t length, byte orientation)
 {
 	// this->Font
 	uint16_t width = 0;

@@ -3,11 +3,11 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 0.9.3 ******
+ ****** VERSION 1.0.1 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library
 
- adapted by Dmitry Dmitriev (c) 2019-2022
+ adapted by Dmitry Dmitriev (c) 2019-2023
 
  =======  based on =========
 
@@ -178,13 +178,13 @@ public:
 	uint8_t  stepMarquee(int amountX, int amountY, byte orientation = 0);
 
 	// return string width in pixels
-	uint16_t stringWidth(const char* bChars, uint8_t length = 0, byte orientation = 0);
-	uint16_t stringWidthV(const char* bChars, uint8_t length = 0)
+	uint16_t stringWidth(const char* bChars, uint16_t length = 0, byte orientation = 0);
+	uint16_t stringWidthV(const char* bChars, uint16_t length = 0)
 	{
 		return stringWidth(bChars, length, 1);
 	}
 
-	void stringBounds(const char* bChars, uint8_t length,
+	void stringBounds(const char* bChars, uint16_t length,
 		int16_t* w, int16_t* min_y, int16_t* max_y, byte orientation = 0);
 	
 	// Disable moving of marquee by pixel shift of whole screen.

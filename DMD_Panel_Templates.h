@@ -45,7 +45,8 @@
 #define RGB32x16plainS4_DIRECT		4,32,16,4,1		// 32x16 1/4 DIRECT Mux pattern 1
 #define RGB32x16plainS2			1,32,16,2,1		// 32x16 1/2 BINARY
 #define RGB32x16plainS2_DIRECT		2,32,16,2,1		// 32x16 1/2 DIRECT
-#define RGB32x32_S8_maxmurugan		3,32,32,8,33	// 32x32 1/8 matrix from @maxmurugan
+#define RGB32x32_S8_maxmurugan		3,32,32,8,33	// 32x32 1/8 BINARY from @maxmurugan
+#define RGB64x32_S8_OKSingra 		3,64,32,8,3 	// 64x32 1/8 BINARY from @OKSingra
 
 // multirow outdoor, complex pattern
 #define RGB32x16_S4_variable		2,32,16,4,32	// 32x16 1/4 variable pattern for 3216_s4 example
@@ -146,6 +147,35 @@ protected:
 	}
 };
 
+//--------------------------------------------------------------------------------------
+// "plain" type outdoor matrix, BINARY/DIRECT mux
+// with consecutive bytes in horizontal lines 
+// separated by nRows lines
+// scan quarter of height (i.e 64x32 1/8), start scan from nRows line
+// (nRows, 0) (nRows+1, 1)...
+//--------------------------------------------------------------------------------------/
+template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int COL_DEPTH>
+class DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, 3, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(MUX_CNT, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, SCAN, P_Width, P_Height)
+	{}
+
+protected:
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+		uint16_t base_addr = (pol_y % this->nRows) * this->x_len +
+            (x / this->DMD_PIXELS_ACROSS) * this->multiplex * this->DMD_PIXELS_ACROSS +
+            x % this->DMD_PIXELS_ACROSS;
+            if (pol_y < this->nRows)  base_addr += this->DMD_PIXELS_ACROSS;
+		return base_addr;
+	}
+};
 //--------------------------------------------------------------------------------------
 // Non-plain outdoor matrices
 // Each such matrix is not like the others, so each needs an individual template.
