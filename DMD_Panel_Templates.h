@@ -52,12 +52,12 @@
 #define RGB32x16_S4_variable		2,32,16,4,32	// 32x16 1/4 variable pattern for 3216_s4 example
 
 //  *** User panels ***
-#define RGB32x16_S4			2,32,16,4,50	// 32x16 1/4 ZIGGII pattern matrix, BINARY mux								
+#define RGB32x16_S4				2,32,16,4,50	// 32x16 1/4 ZIGGII pattern matrix, BINARY mux								
 #define RGB32x16_S4_bilalibrir		4,32,16,4,51	// 32x16 1/4 ZAGGIZ pattern, DIRECT mux
-#define RGB32x16_S2			2,32,16,2,52    // 32x16 1/2 complex pattern, DIRECT mux
+#define RGB32x16_S2					2,32,16,2,52    // 32x16 1/2 complex pattern, DIRECT mux
 #define RGB32x16_S2_quangli		2,32,16,2,53	// 32x16 1/2 complex pattern, DIRECT mux
 #define RGB32x16_S2_horro		1,32,16,2,54	// 32x16 1/2 complex pattern, BINARY mux from @horro
-
+#define RGB32x16_S2_OKSingra	1,32,16,2,55	// 32x16 1/2 complex pattern, BINARY mux from @OKSingra
 
 
 
@@ -153,6 +153,8 @@ protected:
 // separated by nRows lines
 // scan quarter of height (i.e 64x32 1/8), start scan from nRows line
 // (nRows, 0) (nRows+1, 1)...
+//
+// s/n GKGD-P5-6432-2727-8S-v3.4
 //--------------------------------------------------------------------------------------/
 template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int COL_DEPTH>
 class DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, 3, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
@@ -222,6 +224,8 @@ protected:
 //                   |   *   |             
 //                [0L|0H] [2L|2H]   
 // and BINARY mux
+//
+// s/n S10-(3535)-4S-3216-A3
 //--------------------------------------------------------------------------------------/
 
 template<int COL_DEPTH>
@@ -300,6 +304,8 @@ protected:
 //                   |   /       |   /           
 //                [3L|3H]     [7L|7H]   
 // and DIRECT mux
+//
+// s/n P10(3535)16X32-2S-V1.3
 //--------------------------------------------------------------------------------------/
 
 template<int COL_DEPTH>
@@ -333,6 +339,8 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // 32x16 1/2 matrix from horro
 // Binary mux
+//
+// s/n P10(3535)16X32-2S-M1
 //--------------------------------------------------------------------------------------/
 template<int COL_DEPTH>
 class DMD_RGB<RGB32x16_S2_horro, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
@@ -367,33 +375,62 @@ protected:
 		uint16_t base_addr = this->x_len * A_tbl[pol_y] + (x / this->DMD_PIXELS_ACROSS) * this->DMD_PIXELS_ACROSS * this->multiplex + C_tbl[Oktet_m] * 8;
 		if (!(B_tbl[pol_y] % 2)) { base_addr += (7 - x % 8); }
 		else base_addr += x % 8;
-		/*
-		uint8_t e_nRows = this->nRows * 2;
-		uint16_t e_x_len = this->x_len / 2;
-		//uint8_t e_multiplex = this->multiplex / 2;
-
-		if (pol_y < e_nRows) { pol_y = pol_y * 2 + 1; }
-		else { pol_y = (pol_y - e_nRows) * 2; }
-
-		uint16_t base_addr = (pol_y % e_nRows) * e_x_len + (x / 8) * this->multiplex * 4 + (pol_y / e_nRows) * 8;
-		if (!(pol_y / e_nRows)) { base_addr += (7 - x % 8); }
-		else base_addr += x % 8;
-		*/
-		/*uint16_t base_addr = (pol_y / e_multiplex) * e_x_len + (x / 8) * this->multiplex * 4 + (pol_y % e_multiplex) * 8;
-		if (!(pol_y % e_multiplex)) { base_addr += (7 - x % 8); }
-		else base_addr += x % 8;*/
-
-
-		//base_addr += x % 8;
-
+		
 		return base_addr;
 	}
 
 };
 
+/*--------------------------------------------------------------------------------------*/
+// 32x16 1/2 matrix from OKSingra
+// Binary mux
+// !! Non-standard !!  3rd quarter pattern is different from 1st, 2nd and 4th
+//
+// s/n GKGD-P10-3216-2727-2S-v1.4
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_S2_OKSingra, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+	DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+		byte panelsWide, byte panelsHigh, bool d_buf = false) :
+		DMD_RGB_BASE2<COL_DEPTH>(1, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
+	{
+		this->fast_Hbyte = false;
+		this->use_shift = false;
+	}
+	// Fast text shift is disabled for complex patterns, so we don't need the method
+	void disableFastTextShift(bool shift) override {}
+
+protected:
+	uint16_t get_base_addr(int16_t x, int16_t y) override {
+		this->transform_XY(x, y);
+		uint8_t pol_y = y % this->pol_displ;
+		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+
+		static const uint8_t A_tbl[8] = { 0,1,0,1,0,1,0,1 };
+		static const uint8_t B_tbl[8] = { 3,3,2,2,1,1,0,0 };
+		static const uint8_t C_tbl[16] = { 0,4,10,12,
+								           1,5,11,13,
+								           2,6,8,14,
+								           3,7,9,15 };
+		static const uint8_t Pan_Okt_cnt = this->DMD_PIXELS_ACROSS / 8;
+		uint8_t Oktet_m = B_tbl[pol_y] * Pan_Okt_cnt + (x / 8) % Pan_Okt_cnt;
+
+		uint16_t base_addr = this->x_len * A_tbl[pol_y] + (x / this->DMD_PIXELS_ACROSS) * this->DMD_PIXELS_ACROSS * this->multiplex + C_tbl[Oktet_m] * 8;
+		if ((B_tbl[pol_y] % 2)) { base_addr += (7 - x % 8); }
+		else base_addr += x % 8;
+		
+		return base_addr;
+	}
+
+};
 //--------------------------------------------------------------------------------------
 // 1/2 matrix from quangli with two-byte pattern
 // DIRECT mux
+//
+// Qiang li Q10C2V5.2H BQWZ-ZP
 //--------------------------------------------------------------------------------------/
 template<int COL_DEPTH>
 class DMD_RGB<RGB32x16_S2_quangli, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
