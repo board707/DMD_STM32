@@ -162,7 +162,12 @@ public:
 		byte panelsWide, byte panelsHigh, bool d_buf = false) :
 		DMD_RGB_BASE2<COL_DEPTH>(MUX_CNT, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, SCAN, P_Width, P_Height)
-	{}
+	{
+        this->fast_Hbyte = false;
+        this->use_shift = false;
+        }
+    // Fast text shift is disabled for complex patterns, so we don't need the method
+        void disableFastTextShift(bool shift) override {}
 
 protected:
 	uint16_t get_base_addr(int16_t x, int16_t y) override {
