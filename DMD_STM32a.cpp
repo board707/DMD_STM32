@@ -55,8 +55,9 @@ DMD::DMD(DMD_Pinlist* _mux_pinlist, byte _pin_nOE, byte _pin_SCLK, byte panelsWi
 	oemask = digitalPinToBitMask(pin_DMD_nOE);
 	oesetreg = portSetRegister(pin_DMD_nOE);
 	muxsetreg = portSetRegister(mux_pins[0]);
-	mux_mask2 = (uint32_t*)malloc((nRows + 1) * 4);
+	
 #endif
+	mux_mask2 = (uint32_t*)malloc((nRows + 1) * 4);
 	
 }
 /*--------------------------------------------------------------------------------------*/
@@ -102,9 +103,9 @@ void DMD::init(uint16_t scan_interval) {
    
    // here will be initialize_timers() call in child classes 
 
-#if (defined(__STM32F1__) || defined(__STM32F4__))
+
 	 this->generate_muxmask();
-#endif
+
     // clean both buffers
 	if (matrixbuff[0] != matrixbuff[1]) {
 		bDMDScreenRAM = matrixbuff[1 - backindex];
@@ -229,11 +230,12 @@ void DMD::generate_muxmask() {
 	for (uint8_t i = 0; i < nRows; i++)
 	{
 		mux_mask2[i] = 0;
-		if (mux_cnt == nRows)                // STRIGHT MUX
+		if (mux_cnt == nRows)                // DIRECT MUX
 		{
 			for (uint8_t j = 0; j < nRows; j++)
 			{
 				uint16_t mux_ch_mask = digitalPinToBitMask(mux_pins[j]);
+				// set selected channel to LOW, all other to HIGH
 				if (i == j)
 				{
 					mux_mask2[i] |= clr_mux_ch_by_mask(mux_ch_mask);    //low
@@ -262,13 +264,30 @@ void DMD::generate_muxmask() {
 	mux_mask2[nRows] = mux_mask2[0];
 
 }
+/*--------------------------------------------------------------------------------------*/
+#elif (defined(ARDUINO_ARCH_RP2040))
+void DMD::generate_muxmask() {
+
+	for (uint8_t i = 0; i < nRows; i++)
+		{		
+		if (mux_cnt == nRows)                // DIRECT MUX
+			// set selected channel to LOW, all other to HIGH
+			{
+			mux_mask2[i] = ((1 << nRows) - 1) & (~(1 << i));
+			}
+		else {                             // BINARY MUX
+			mux_mask2[i] = i;
+			}
+		}
+	mux_mask2[nRows] = mux_mask2[0];
+}
 #endif
 /*--------------------------------------------------------------------------------------*/
 void DMD::set_mux(uint8_t curr_row) {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 	*muxsetreg = mux_mask2[curr_row];
 #elif (defined(ARDUINO_ARCH_RP2040))
-    pio_sm_put_blocking(pio, sm_mux, curr_row);
+    pio_sm_put_blocking(pio, sm_mux, mux_mask2[curr_row]);
 #endif
 }
 /*--------------------------------------------------------------------------------------*/

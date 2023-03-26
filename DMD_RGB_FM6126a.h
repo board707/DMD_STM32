@@ -1,6 +1,10 @@
 #pragma once
 #ifndef DMD_RGB_FM6126_H
 #define DMD_RGB_FM6126_H
+
+// FM6126a class is supported for STM32 boards only
+
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 #include "DMD_RGB.h"
 
 // Moment of set CLK signal (0 - CLK immediately with DATA, 1 - CLK one step after DATA)
@@ -192,4 +196,5 @@ class DMD_RGB_FM6126 <MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COLOR_4BITS_P
 	};
 
 #undef pew
+#endif
 #endif

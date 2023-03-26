@@ -240,6 +240,7 @@ protected:
 		virtual void generate_muxmask();
 		virtual uint16_t setup_main_timer(uint32_t cycles, voidFuncPtr handler);
 #endif
+	virtual void generate_muxmask();
 	virtual void set_mux(uint8_t curr_row);
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) {} ;

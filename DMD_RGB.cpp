@@ -161,6 +161,8 @@ void DMD_RGB_BASE::init(uint16_t scan_interval) {
 	generate_muxmask();
 	generate_rgbtable();
 	chip_init();
+#elif (defined(ARDUINO_ARCH_RP2040))
+	generate_muxmask();
 #endif
 	initialize_timers(scan_running_dmd_R);
 	setBrightness(200);
