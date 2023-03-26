@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 1.0.1 ******
+ ****** VERSION 1.0.4 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library
 
@@ -326,7 +326,7 @@ protected:
 	}
 	
 	uint16_t inverse_color(uint16_t col) {
-		if (col == textcolor) return textbgcolor; else return textcolor;
+		if (col == textbgcolor) return textcolor; else return textbgcolor;
 
 	}
 

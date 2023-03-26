@@ -210,12 +210,20 @@ uint16_t DMD_RGB_BASE::get_base_addr(int16_t x, int16_t y) {
 	return base_addr;
 }
 /*--------------------------------------------------------------------------------------*/
-	/*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::scan_dmd() {
+	
+	scan_dmd_p1();
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+	scan_dmd_p2();
+	scan_dmd_p3();
+#endif
+}
+/*--------------------------------------------------------------------------------------*/
+void DMD_RGB_BASE::scan_dmd_p1() {
 
 	uint32_t duration;
 	uint32_t oe_duration;
-	volatile static uint8_t* ptr;
+	//volatile static uint8_t* ptr;
 
 	// Calculate time to next interrupt BEFORE incrementing plane #.
 	// This is because duration is the display time for the data loaded
@@ -226,7 +234,7 @@ void DMD_RGB_BASE::scan_dmd() {
 
 	if (this->plane > 0) duration = ((this->scan_cycle_len) << (this->plane - 1));
 	else  duration = this->scan_cycle_len;
-	
+
 	if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
 	else oe_duration = ((duration * this->brightness) / 255) / 2;
 
@@ -237,7 +245,7 @@ void DMD_RGB_BASE::scan_dmd() {
 
 	pwm_set_wrap(MAIN_slice_num, duration);     // set new TOP value
 	pwm_set_gpio_level(pin_DMD_nOE, oe_duration);  // setup CC value for OE 
-	
+
 #endif
 
 #if (defined(__STM32F1__) || defined(__STM32F4__))
@@ -246,8 +254,9 @@ void DMD_RGB_BASE::scan_dmd() {
 	timer_set_reload(MAIN_TIMER, (duration - this->callOverhead));
 
 	timer_pause(OE_TIMER);
-	timer_set_reload(OE_TIMER, (duration + this->callOverhead*10));
-	
+	timer_set_reload(OE_TIMER, (duration + this->callOverhead * 10));
+	timer_set_compare(OE_TIMER, oe_channel, oe_duration);
+
 #endif
 	// Borrowing a technique here from Ray's Logic:
   // www.rayslogic.com/propeller/Programming/AdafruitRGB/AdafruitRGB.htm
@@ -260,7 +269,7 @@ void DMD_RGB_BASE::scan_dmd() {
 	// For OneBitColor set mux BEFORE changing row
 	if (nPlanes == 1) {
 		this->set_mux(row);
-	}
+		}
 
 
 	if (++plane >= nPlanes) {      // Advance plane counter.  Maxed out?
@@ -270,39 +279,39 @@ void DMD_RGB_BASE::scan_dmd() {
 			if (swapflag == true) {    // Swap front/back buffers if requested
 				backindex = 1 - backindex;
 				swapflag = false;
+				}
 			}
-		}
 		buffptr = matrixbuff[1 - backindex]; // Reset into front buffer
 		buffptr += row * x_len;
-	}
+		}
 
 	// For 4bit Color set mux at 1st Plane
 	else if (plane == 1) {
-	
-		set_mux(row);
-	}
 
-	// buffptr, being 'volatile' type, doesn't take well to optimization.
-	// A local register copy can speed some things up:
-	ptr = buffptr;
+		set_mux(row);
+		}
+
+
 
 #if (defined(ARDUINO_ARCH_RP2040))
-	
+
 	dmd_out_program_reinit(pio, sm_data, data_prog_offs, &pio_config);
-	dma_channel_set_read_addr(dma_chan, ptr, true);
+	dma_channel_set_read_addr(dma_chan, buffptr, true);
 	pwm_set_counter(MAIN_slice_num, 0);
 	pwm_set_counter(OE_slice_num, 0);
 	pwm_set_enabled(MAIN_slice_num, true);
 	pwm_set_enabled(OE_slice_num, true);
-
+	buffptr += displ_len;
 #endif
+}
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
+void DMD_RGB_BASE::scan_dmd_p2() {
 	*latsetreg = latmask; // Latch data loaded during *prior* interrupt
 	*latsetreg = latmask << 16;// Latch down
 
 
-	timer_set_compare(OE_TIMER, oe_channel, oe_duration);
+	//timer_set_compare(OE_TIMER, oe_channel, oe_duration);
 	timer_set_count(MAIN_TIMER, 0);
 	timer_set_count(OE_TIMER, 0);
 	timer_generate_update(MAIN_TIMER);
@@ -310,7 +319,20 @@ void DMD_RGB_BASE::scan_dmd() {
 	timer_resume(OE_TIMER);
 	timer_resume(MAIN_TIMER);
 
+}
+#endif
 
+/*--------------------------------------------------------------------------------------*/
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+void DMD_RGB_BASE::scan_dmd_p3() {
+
+	// buffptr, being 'volatile' type, doesn't take well to optimization.
+	// A local register copy can speed some things up:
+	volatile static uint8_t* ptr;
+
+
+
+		ptr = buffptr;
 #if defined(RGB_DMA)
 	timer_pause(DMA_TIMER);
 #if defined(__STM32F1__) 
@@ -344,7 +366,7 @@ void DMD_RGB_BASE::scan_dmd() {
 	DMA_TIMER_BASE->CNT = 0;
 	DMA_TIMER_BASE->CR1 = (1 << 0);
 
-#else
+#else   // end of if defined(RGB_DMA), start of non-DMA code
 #if defined (DIRECT_OUTPUT)
 #define pew                    \
       *datasetreg = clk_clrmask;     \
@@ -365,13 +387,14 @@ void DMD_RGB_BASE::scan_dmd() {
 
 
 #endif
-#endif
+
 
 	buffptr += displ_len;
 
 #undef pew
 
 }
+#endif
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::drawPixel(int16_t x, int16_t y, uint16_t c)  {
 	uint8_t r, g, b, bit, limit, * ptr;
