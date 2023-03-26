@@ -1,5 +1,7 @@
 # ChangeLog
-
+## [1.0.4] - 2023-03-25 
+ - Add support of RGB panels with FM6126a chip
+ 
 ## [1.0.1] - 2023-03-14 
  - Remove marquee text length 255 chars limit [issue #29](https://github.com/board707/DMD_STM32/issues/29#issuecomment-1435955321)
  - Add new RGB 64x32 s8 template
