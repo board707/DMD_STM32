@@ -3,6 +3,7 @@
 # DMD_STM32a - LED Matrix library with Unicode fonts support 
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
+### Last version is v1.0.4 - support of panles with FM6126a chip added
 ### Attention! The repository was recently updated to v1.0.0
 The main difference from 0.x.x versions is a new panel template format. The documentation will coming. You can get a brief explanation of the new templates from the comments of the [DMD_Panel_Templates.h](https://github.com/board707/DMD_STM32/blob/dev-V2/DMD_Panel_Templates.h) file.
 ### For last version with old panel templates [see v0.9.5](https://github.com/board707/DMD_STM32/releases/tag/v0.9.5)
@@ -36,7 +37,7 @@ LED panels supported
 | | | | | |
 | Two-color indoor                |     HUB08    |    64x32   |     1/16    | DMD_RGB.h <br />  (work as RGB)          |
 | | | | | |
-| RGB with FM6216a driver         |     HUB75    |    64x32   |     1/16    | experimental, contact author                               |
+| RGB with FM6126a driver         |     HUB75    |    64x32   |     1/16    | DMD_RGB_6126a.h                               |
 | RGB with FM6353 s-pwm type driver |     HUB75    |   128x64   |     1/32    | experimental, contact author                               |
 
 The set of supported matrices is constantly updated.
@@ -50,11 +51,11 @@ Other features
  - For monochrome display - a new "Parallel" connection scheme, in which each horizontal row of panels is connected to a separate R_DATA pin
 
 
-Versions
+Most important versions
 ---------
+(25 Mar 2023 - v1.0.4)  - Add support of panles with FM6126a chip
+
 (12 Feb 2023 - v1.0.0)  - New panel template model with multiparameter specialization
- 
-(09 Feb 2023 - v0.9.5)  - Add new template for 32x16 s2 panel. Some minor errors and warnings fixed.
 
 (12 Dec 2022 - v0.9.2)  - Monochrome panels support for RP2040-based boards (Parallel connection mode)
 
