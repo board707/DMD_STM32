@@ -237,7 +237,7 @@ public:
 protected:
 	virtual void set_pin_modes();
 #if (defined(__STM32F1__) || defined(__STM32F4__))
-		virtual void generate_muxmask();
+		//virtual void generate_muxmask();
 		virtual uint16_t setup_main_timer(uint32_t cycles, voidFuncPtr handler);
 #endif
 	virtual void generate_muxmask();
