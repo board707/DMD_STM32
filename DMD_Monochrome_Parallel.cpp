@@ -81,7 +81,7 @@ void DMD_Monochrome_Parallel::drawPixel(int16_t x, int16_t y, uint16_t color) {
 	uint8_t bPixel = color;
 	int16_t bX = x;
 	int16_t bY = y;
-	if (bX >= (WIDTH) || bY >= (HEIGHT)) {
+	if (bX >= (_width) || bY >= (_height)) {
 		return;
 	}
 

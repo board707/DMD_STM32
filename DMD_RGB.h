@@ -90,7 +90,7 @@ protected:
 	virtual void chip_init() {};	
 #endif
 	virtual void setCycleLen();
-	virtual uint16_t get_base_addr(int16_t x, int16_t y);
+	virtual uint16_t get_base_addr(int16_t& x, int16_t& y);
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) override;
 	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) override;
@@ -434,7 +434,7 @@ void drawPixel(int16_t x, int16_t y, uint16_t c) override {
 		if (c == textcolor) c = textbgcolor;
 		else return;
 		}
-	if ((x < 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
+	if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
 
 	// transform X & Y for Rotate and connect scheme
 

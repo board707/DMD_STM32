@@ -1,4 +1,8 @@
 # ChangeLog
+## [1.0.5] - 2023-05-06 
+ - Fix incorrect manage rotation flag
+ - Fix bug that text spaces doesn't covered by bg color
+
 ## [1.0.4] - 2023-03-25 
  - Add support of RGB panels with FM6126a chip
  

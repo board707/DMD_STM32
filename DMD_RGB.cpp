@@ -198,7 +198,7 @@ void DMD_RGB_BASE::send_to_allRGB(uint16_t data, uint16_t latches) {
 }
 #endif
 /*--------------------------------------------------------------------------------------*/
-uint16_t DMD_RGB_BASE::get_base_addr(int16_t x, int16_t y) {
+uint16_t DMD_RGB_BASE::get_base_addr(int16_t& x, int16_t& y) {
 	this->transform_XY(x, y);
 	uint16_t base_addr = 0;
 	if (multiplex == 1) {
@@ -408,7 +408,7 @@ void DMD_RGB_BASE::drawPixel(int16_t x, int16_t y, uint16_t c)  {
 		if (c == textcolor) c = textbgcolor;
 		else return;
 	}
-	if ((x < 0) || (x >= WIDTH) || (y < 0) || (y >= HEIGHT)) return;
+	if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
 
 	// transform X & Y for Rotate and connect scheme
 

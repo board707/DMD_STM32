@@ -106,7 +106,7 @@ public:
 	{}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -136,7 +136,7 @@ public:
 	{}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -172,7 +172,7 @@ public:
         void disableFastTextShift(bool shift) override {}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -203,7 +203,7 @@ public:
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 8, 32, 32)
 	{}
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -244,7 +244,7 @@ public:
 	void disableFastTextShift(bool shift) override {}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -280,7 +280,7 @@ public:
 	void disableFastTextShift(bool shift) override {}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 
 		uint8_t pol_y = y % this->pol_displ;
@@ -324,7 +324,7 @@ public:
 	void disableFastTextShift(bool shift) override {}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -358,7 +358,7 @@ public:
 	void disableFastTextShift(bool shift) override {}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -404,7 +404,7 @@ public:
 	void disableFastTextShift(bool shift) override {}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -448,7 +448,7 @@ public:
 	void disableFastTextShift(bool shift) override {}
 
 protected:
-	uint16_t get_base_addr(int16_t x, int16_t y) override {
+	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
 		this->transform_XY(x, y);
 
 		uint8_t pol_y = y % this->pol_displ;

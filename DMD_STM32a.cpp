@@ -34,7 +34,7 @@
 
 DMD::DMD(DMD_Pinlist* _mux_pinlist, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
 	uint8_t n_Rows, DMD_Pinlist* _data_pinlist, bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
-	:Adafruit_GFX(panelsWide* dmd_pixel_x, panelsHigh* dmd_pixel_y), mux_cnt(_mux_pinlist->count), mux_pinlist(_mux_pinlist), nRows(n_Rows), 
+	:Adafruit_GFX(panelsWide * dmd_pixel_x, panelsHigh * dmd_pixel_y), mux_cnt(_mux_pinlist->count), mux_pinlist(_mux_pinlist), nRows(n_Rows), 
 	data_pinlist(_data_pinlist), pin_DMD_CLK(_data_pinlist->list[0]), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK), DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), dbuf(d_buf),
 	DMD_PIXELS_ACROSS(dmd_pixel_x), DMD_PIXELS_DOWN(dmd_pixel_y)
 {
@@ -393,7 +393,7 @@ void DMD::drawString(int bX, int bY, const char* bChars, int length,
 void DMD::drawString(int bX, int bY, const char* bChars, int length,
 	uint16_t color, int16_t miny, int16_t maxy, byte orientation)
 {
-	if ((bX >= (WIDTH) || bY >= (HEIGHT)))
+	if ((bX >= _width) || (bY >= _height))
 		return;
 	uint8_t height = Font->get_height();
 	if (bY + height < 0) return;
@@ -403,7 +403,7 @@ void DMD::drawString(int bX, int bY, const char* bChars, int length,
 
 	for (int i = 0; i < length; i++) {
 
-		int charWide = this->drawChar(bX + strWidth, bY, bChars[i], color, marqueeMarginH, marqueeMarginL, orientation);
+		int charWide = this->drawChar(bX + strWidth, bY, bChars[i], color, miny, maxy, orientation);
 
 		if (charWide > 0) {
 			strWidth += charWide;
@@ -413,7 +413,7 @@ void DMD::drawString(int bX, int bY, const char* bChars, int length,
 		else if (charWide < 0) {
 			return;
 		}
-		if ((bX + strWidth) >= WIDTH || bY >= HEIGHT) return;
+		if ((bX + strWidth) >= _width || bY >= _height) return;
 	}
 
 }
@@ -478,19 +478,19 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 	// check if marquee reached to the limits of matrix panel
 	// X axis
 	if (marqueeOffsetX < -marqueeWidth) {
-		marqueeOffsetX = WIDTH;
+		marqueeOffsetX = _width;
 		ret |= 1;
 	}
-	else if (marqueeOffsetX > WIDTH) {
+	else if (marqueeOffsetX > _width) {
 		marqueeOffsetX = -marqueeWidth;
 		ret |= 1;
 	}
 	// Y axis
 	if (marqueeOffsetY < -marqueeHeight) {
-		marqueeOffsetY = HEIGHT;
+		marqueeOffsetY = _height;
 		ret |= 1;
 	}
-	else if (marqueeOffsetY > HEIGHT) {
+	else if (marqueeOffsetY > _height) {
 		marqueeOffsetY = -marqueeHeight;
 		ret |= 1;
 	}
@@ -514,8 +514,8 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 
 		uint16_t limit_X = 0;                 // if (amountX == 1)
 		if (amountX == -1) {  // if (amountX == -1)
-			limit_X = WIDTH;
-			if (marqueeOffsetX < (WIDTH - marqueeWidth)) return ret;
+			limit_X = _width;
+			if (marqueeOffsetX < (_width - marqueeWidth)) return ret;
 		}
 		else {
 			if (marqueeOffsetX > 0) return ret;
@@ -611,7 +611,7 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16_t color, int16_t miny, int16_t maxy, byte orientation)
 {
 	
-	if (bX >= (WIDTH) || bY >= (HEIGHT)) return -1;
+	if ((bX >= _width) || (bY >= _height)) return -1;
 
 	unsigned char c = letter;
 	if (!Font->is_char_in(c)) return 0;
@@ -622,7 +622,7 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 	uint8_t height = Font->get_height();
 	// temp parameter for beta version
 	uint8_t matrix_h = 16;
-
+	
 	if (c == ' ') { //CHANGED FROM ' '
 		if (orientation) { // vertical scroll
 			this->drawFilledBox(bX, bY, bX + height, bY + matrix_h, bg_color);
