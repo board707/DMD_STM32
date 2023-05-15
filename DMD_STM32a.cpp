@@ -146,16 +146,17 @@ void DMD::initialize_timers(voidFuncPtr handler) {
 	
 	this->scan_cycle_len = this->scan_cycle_len / this->pwm_clk_div;
 
+	
+
+	
+
+
 	//pio configs
 	sm_data = pio_claim_unused_sm(pio, true);
 	//data_prog_offs = pio_add_program(pio, &dmd_out_program);
 	data_prog_offs = pio_add_dmd_out_program(pio, this->data_pins_cnt);
 	pio_config = dmd_out_program_init(pio, sm_data, data_prog_offs, pio_clkdiv, this->data_pins[0], this->data_pins_cnt, pin_DMD_SCLK, pin_DMD_CLK);
-
-	sm_mux = pio_claim_unused_sm(pio, true);
-	//uint8_t data_mux_offs = pio_add_program(pio, &dmd_mux_program);
-	uint8_t data_mux_offs = pio_add_dmd_mux_program(pio, this->mux_cnt);
-	dmd_mux_program_init(pio, sm_mux, data_mux_offs, this->mux_pins[0], this->mux_cnt);
+	
 
 	//define timers numbers
 	OE_slice_num = pwm_gpio_to_slice_num(pin_DMD_nOE);        // OE timer number from OE pin number
@@ -185,12 +186,12 @@ void DMD::initialize_timers(voidFuncPtr handler) {
 	dma_channel_config dma_c = dma_channel_get_default_config(dma_chan);
 	channel_config_set_transfer_data_size(&dma_c, DMA_SIZE_8);     // read by one byte
 	channel_config_set_read_increment(&dma_c, true);
-	channel_config_set_dreq(&dma_c, DREQ_PIO0_TX0);                 // requested by PIO
+	channel_config_set_dreq(&dma_c, sm_data - DREQ_PIO0_TX0);                 // requested by PIO
 
 	dma_channel_configure(
 		dma_chan,
 		&dma_c,
-		&pio0_hw->txf[0], // Write address (only need to set this once)
+		&pio0_hw->txf[sm_data], // Write address (only need to set this once)
 		NULL,             // Don't provide a read address yet
 	   	this->x_len,      // Write x_len bytes than stop
 		false             // Don't start yet
@@ -280,6 +281,11 @@ void DMD::generate_muxmask() {
 			}
 		}
 	mux_mask2[nRows] = mux_mask2[0];
+
+	sm_mux = pio_claim_unused_sm(pio, true);
+	//uint8_t data_mux_offs = pio_add_program(pio, &dmd_mux_program);
+	uint8_t data_mux_offs = pio_add_dmd_mux_program(pio, this->mux_cnt);
+	dmd_mux_program_init(pio, sm_mux, data_mux_offs, this->mux_pins[0], this->mux_cnt);
 }
 #endif
 /*--------------------------------------------------------------------------------------*/

@@ -201,18 +201,32 @@ public:
 		byte panelsWide, byte panelsHigh, bool d_buf = false) :
 		DMD_RGB_BASE2<COL_DEPTH>(3, mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf, COL_DEPTH, 8, 32, 32)
-	{}
+		{
+		this->fast_Hbyte = false;
+		this->use_shift = false;
+		}
+	
+	// Fast text shift is disabled for complex patterns, so we don't need the method
+	void disableFastTextShift(bool shift) override {}
+
 protected:
-	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+	uint16_t get_base_addr(int16_t &x, int16_t &y) override {
 		this->transform_XY(x, y);
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
-		uint16_t base_addr = (pol_y % this->nRows) * this->x_len +
-			(x / this->DMD_PIXELS_ACROSS) * this->multiplex * this->DMD_PIXELS_ACROSS;
-		if (pol_y / this->nRows)  base_addr += x % this->DMD_PIXELS_ACROSS;
-		else   base_addr += x % this->DMD_PIXELS_ACROSS + this->DMD_PIXELS_ACROSS;
+
+		static const uint8_t A_tbl[16] = { 0,1,2,3,4,5,6,7,
+												   0,1,2,3,4,5,6,7 };
+		static const uint8_t B_tbl[16] = { 1,1,1,1,1,1,1,1,
+													0,0,0,0,0,0,0,0 };
+		static const uint8_t C_tbl[8] = { 0,1,2,3,4,5,6,7 };
+		static const uint8_t Pan_Okt_cnt = this->DMD_PIXELS_ACROSS / 8;
+		uint8_t Oktet_m = B_tbl[pol_y] * Pan_Okt_cnt + (x / 8) % Pan_Okt_cnt;
+
+		uint16_t base_addr = this->x_len * A_tbl[pol_y] + (x / this->DMD_PIXELS_ACROSS) * this->DMD_PIXELS_ACROSS * this->multiplex + C_tbl[Oktet_m] * 8;
+		base_addr += x % 8;
 		return base_addr;
-	}
+		}
 
 };
 
@@ -483,24 +497,32 @@ protected:
 
 
 //--------------------------------------------------------------------------------------
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-class DMD_RGB_SHIFTREG_ABC : public DMD_RGB_BASE2<COL_DEPTH>
+/*template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
+class DMD_RGB_SHIFTREG_ABC : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE,  COL_DEPTH>
 {
 public:
 	DMD_RGB_SHIFTREG_ABC() = 0;
-};
+};*/
 //--------------------------------------------------------------------------------------
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int COL_DEPTH>
-class DMD_RGB_SHIFTREG_ABC<MUX_CNT, P_Width, P_Height, SCAN, 0, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
+class DMD_RGB_SHIFTREG_ABC : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+	
 {
 public:
 	DMD_RGB_SHIFTREG_ABC(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf = false) :
-		DMD_RGB_BASE2<COL_DEPTH>(3, mux_list, _pin_nOE, _pin_SCLK, pinlist,
-			panelsWide, panelsHigh, false, COL_DEPTH, SCAN, P_Width, P_Height)
+		DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>(mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf)
 	{}
 
 protected:
+	void generate_muxmask() override
+		{
+		pinMode(this->mux_pins[0], OUTPUT);
+	    pinMode(this->mux_pins[1], OUTPUT);
+	    pinMode(this->mux_pins[2], OUTPUT);
+		}
+
 	void set_mux(uint8_t curr_row) override {
 		byte pin_DMD_A = this->mux_pins[0];
 		byte pin_DMD_B = this->mux_pins[1];

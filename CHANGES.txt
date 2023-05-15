@@ -1,4 +1,8 @@
 # ChangeLog
+## [1.0.6] - 2023-05-15 
+ - Add support of SHIFT_REG mux for RP2040 boards
+ - Change base class of RGB_SHIFTREG_ABC to DMD_RGB rather than DMD_RGB_BASE2
+
 ## [1.0.5] - 2023-05-06 
  - Fix incorrect manage rotation flag
  - Fix bug that text spaces doesn't covered by bg color
