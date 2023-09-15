@@ -53,14 +53,15 @@
 #define RGB32x16_S4_variable		2,32,16,4,32	// 32x16 1/4 variable pattern for 3216_s4 example
 
 //  *** User panels ***
-#define RGB32x16_S4				2,32,16,4,50	// 32x16 1/4 ZIGGII pattern matrix, BINARY mux								
+#define RGB32x16_S4			2,32,16,4,50	// 32x16 1/4 ZIGGII pattern matrix, BINARY mux								
 #define RGB32x16_S4_bilalibrir		4,32,16,4,51	// 32x16 1/4 ZAGGIZ pattern, DIRECT mux
-#define RGB32x16_S2					2,32,16,2,52    // 32x16 1/2 complex pattern, DIRECT mux
+#define RGB32x16_S2			2,32,16,2,52    // 32x16 1/2 complex pattern, DIRECT mux
 #define RGB32x16_S2_quangli		2,32,16,2,53	// 32x16 1/2 complex pattern, DIRECT mux
 #define RGB32x16_S2_horro		1,32,16,2,54	// 32x16 1/2 complex pattern, BINARY mux from @horro
-#define RGB32x16_S2_OKSingra	1,32,16,2,55	// 32x16 1/2 complex pattern, BINARY mux from @OKSingra
+#define RGB32x16_S2_OKSingra		1,32,16,2,55	// 32x16 1/2 complex pattern, BINARY mux from @OKSingra
 #define RGB40x20_S5_LNikon		3,40,20,5,56	// 40x20 1/5 4pixels pattern, BINARY mux from @LNikon
-#define RGB80x40_S10_LNikon     4,80,40,10,57	// 80x40 1/10 4pixels pattern, BINARY mux from @LNikon
+#define RGB80x40_S10_LNikon     	4,80,40,10,57	// 80x40 1/10 4pixels pattern, BINARY mux from @LNikon
+#define RGB64x32_S8_Eu057 		3,64,32,8,58 	// 64x32 1/8 32pix pattern, SHIFT_REG mux from Eugene057
 
 
 
@@ -566,8 +567,42 @@ protected:
 	}
 
 };
+//--------------------------------------------------------------------------------------
+// 64x32 1/8 matrix from Eugene057
+// 595 (SHIFT_REG) mux
+// DP32020A mux, SM16208SJ driver
+//
+// 32-pixel pattern, lower line first 
+// Emulator tables:
+// A = {8,0,9,1,10,2,11,3,12,4,13,5,14,6,15,7};
+// B = {0, 2, 1, 3};
+// Qiangli Q5H19B8V1-64x32
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB64x32_S8_Eu057, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+	{
+	public:
+		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+			byte panelsWide, byte panelsHigh, bool d_buf = false) :
+			DMD_RGB_BASE2<COL_DEPTH>(3, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 8, 64, 32)
+			{
+			this->fast_Hbyte = false;
+			this->use_shift = false;
+			}
+		// Fast text shift is disabled for complex patterns, so we don't need the method
+		void disableFastTextShift(bool shift) override {}
 
-
+	protected:
+		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+			this->transform_XY(x, y);
+			uint8_t pol_y = y % this->pol_displ;
+			x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+			uint16_t base_addr = (pol_y % this->nRows) * this->x_len + (x / 32) * this->multiplex * 32 + x % 32;
+                        if (pol_y < this->nRows) base_addr+= 32;
+			return base_addr;
+			}
+	};
 
 //--------------------------------------------------------------------------------------
 /*template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
