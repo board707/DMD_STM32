@@ -1,6 +1,6 @@
 ---
 name: Add a new panel template
-about: Request for addition a new LED panel support
+about: New LED panel support request
 title: Add a new panel
 labels: ''
 assignees: ''
