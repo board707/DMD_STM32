@@ -42,6 +42,10 @@ LED panels supported
 
 The set of supported matrices is constantly updated.
 
+**Adding a new panels to the library**
+
+If your panel is not supported by the library yet, please feel free to open an issue using [template](https://github.com/board707/DMD_STM32/issues/new?assignees=&labels=&projects=&template=add-a-new-panel-template.md&title=Add+a+new+panel)
+
 Other features
 ------------
  - The graphics subsystem is inherited from Adafruit GFX library https://github.com/adafruit/Adafruit-GFX-Library
