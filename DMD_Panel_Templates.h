@@ -62,6 +62,7 @@
 #define RGB40x20_S5_LNikon		3,40,20,5,56	// 40x20 1/5 4pixels pattern, BINARY mux from @LNikon
 #define RGB80x40_S10_LNikon     	4,80,40,10,57	// 80x40 1/10 4pixels pattern, BINARY mux from @LNikon
 #define RGB64x32_S8_Eu057 		3,64,32,8,58 	// 64x32 1/8 32pix pattern, SHIFT_REG mux from Eugene057
+#define RGB104x52_S13_Craftish	 4,104,52,13,59   //104x52 s13 from Craftish, arduino.ru
 
 
 
@@ -603,7 +604,95 @@ class DMD_RGB<RGB64x32_S8_Eu057, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 			return base_addr;
 			}
 	};
+//--------------------------------------------------------------------------------------
+// 104x52 S13 panel from Craftish
+// icn2013 (138) mux
+// sm16306 driver
+//
+// Very weird panel. Each row has a 7 x 16bit drivers, which gives 112 pixels.
+// Since the panel is only 104 pixels wide, the 8 pins in the middle of the driver chain 
+// are not connected to anything. When loading data, you have to insert zeros into each row.
+// 
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB104x52_S13_Craftish, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+  public:
+    DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+            byte panelsWide, byte panelsHigh, bool d_buf = false) :
+      DMD_RGB_BASE2<COL_DEPTH>(4, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+                               panelsWide, panelsHigh, d_buf, COL_DEPTH, 13, 104, 52)
+    {
+      this->fast_Hbyte = false;
+      this->use_shift = false;
+    }
+    // Fast text shift is disabled for complex patterns, so we don't need the method
+    void disableFastTextShift(bool shift) override {}
 
+  protected:
+    uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+      this->transform_XY(x, y);
+      uint8_t pol_y = y % this->pol_displ;
+      x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+      uint16_t base_addr = (pol_y % this->nRows) * this->x_len +
+                           (x / this->DMD_PIXELS_ACROSS) * this->multiplex * this->DMD_PIXELS_ACROSS +
+                           x % this->DMD_PIXELS_ACROSS;
+      if (pol_y < this->nRows)  base_addr += this->DMD_PIXELS_ACROSS;
+      return base_addr;
+    }
+
+    void scan_dmd_p3() {
+
+      volatile static uint8_t* ptr;
+      ptr = this->buffptr;
+
+#define PEE                    \
+    *this->datasetreg = this->clkmask << 16;     \
+    *this->datasetreg = this->clkmask;
+
+#if defined (DIRECT_OUTPUT)
+#define pew                    \
+    *this->datasetreg = this->clk_clrmask;     \
+    *this->datasetreg = *ptr++;
+#else
+#define pew                    \
+    *this->datasetreg = this->clk_clrmask;     \
+    *this->datasetreg = expand[*ptr++];
+#endif
+
+      for (uint16_t uu = 0; uu < this->x_len; uu += 104)
+      {
+
+        pew pew pew pew pew pew pew pew
+        pew pew pew pew pew pew pew pew
+
+        pew pew pew pew pew pew pew pew
+        pew pew pew pew pew pew pew pew
+
+        pew pew pew pew pew pew pew pew
+        pew pew pew pew pew pew pew pew
+
+        PEE PEE PEE PEE pew pew pew pew
+        pew pew pew pew PEE PEE PEE PEE
+
+        pew pew pew pew pew pew pew pew
+        pew pew pew pew pew pew pew pew
+
+        pew pew pew pew pew pew pew pew
+        pew pew pew pew pew pew pew pew
+
+        pew pew pew pew pew pew pew pew
+        pew pew pew pew pew pew pew pew
+
+      }
+
+      *this->datasetreg = this->clkmask << 16; // Set clock low
+      this->buffptr += this->displ_len;
+
+#undef pew
+
+    }
+};
 //--------------------------------------------------------------------------------------
 /*template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
 class DMD_RGB_SHIFTREG_ABC : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE,  COL_DEPTH>
