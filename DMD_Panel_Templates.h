@@ -63,6 +63,8 @@
 #define RGB80x40_S10_LNikon     	4,80,40,10,57	// 80x40 1/10 4pixels pattern, BINARY mux from @LNikon
 #define RGB64x32_S8_Eu057 		3,64,32,8,58 	// 64x32 1/8 32pix pattern, SHIFT_REG mux from Eugene057
 #define RGB104x52_S13_Craftish	 4,104,52,13,59   //104x52 s13 from Craftish, arduino.ru
+#define RGB32x16_S4_VitaliyDKZ    	2,32,16,4,60	// 32x16 1/4, BINARY mux
+
 
 
 
@@ -381,7 +383,39 @@ protected:
 	}
 
 };
+//--------------------------------------------------------------------------------------
+// 32x16 1/4 matrix from VitaliyDKZ  (issue #57)
+//
+// with pattern   [1] [3] 
+//                   |   /   |   /           
+//                [0] [2]   
+// Pixbase 1, BINARY mux
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_S4_VitaliyDKZ, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+	{
+	public:
+		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+			byte panelsWide, byte panelsHigh, bool d_buf = false) :
+			DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
+			{
+			this->fast_Hbyte = false;
+			this->use_shift = false;
+			}
+		// Fast text shift is disabled for complex patterns, so we don't need the method
+		void disableFastTextShift(bool shift) override {}
 
+	protected:
+		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+			this->transform_XY(x, y);
+			uint8_t pol_y = y % this->pol_displ;
+			x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+			uint16_t base_addr = (pol_y % this->nRows) * this->x_len + x * this->multiplex ;
+                        if (pol_y < this->nRows) base_addr+= 1;
+			return base_addr;
+			}
+	};
 //--------------------------------------------------------------------------------------
 // 1/2 matrix I have
 //
