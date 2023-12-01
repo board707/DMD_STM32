@@ -1,9 +1,19 @@
 #pragma once
 #ifndef DMD_RGB_FM6126_H
 #define DMD_RGB_FM6126_H
+/*--------------------------------------------------------------------------------------
+ This file is a part of the DMD_STM32 library
 
-// FM6126a class is supported for STM32 boards only
+ DMD_STM32.h  - STM32 port of DMD.h library
 
+ https://github.com/board707/DMD_STM32
+ Dmitry Dmitriev (c) 2019-2023
+/--------------------------------------------------------------------------------------*/
+
+// FM6126a driver class 
+
+// (supported for STM32 boards only)
+/*--------------------------------------------------------------------------------------*/
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 #include "DMD_RGB.h"
 

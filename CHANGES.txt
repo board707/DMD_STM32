@@ -1,4 +1,10 @@
 # ChangeLog
+## [1.1.0] - 2023-11-30 
+ - FM6353/FM6363 S-PWM drivers support
+
+## [1.0.7] - 2023-11-21 
+ - Add new templates, minor bugs fix
+
 ## [1.0.6] - 2023-05-15 
  - Add support of SHIFT_REG mux for RP2040 boards
  - Change base class of RGB_SHIFTREG_ABC to DMD_RGB rather than DMD_RGB_BASE2

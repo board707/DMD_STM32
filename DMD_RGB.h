@@ -27,8 +27,12 @@
 #endif
 
 
+
 // COLOR DEPTH
 #if (defined(__STM32F1__)|| defined(__STM32F4__)) 
+
+void inline __attribute__((always_inline)) scan_running_dmd_R();
+
 #define COLOR_4BITS_Packed		3
 #endif
 #define COLOR_4BITS		4

@@ -4,7 +4,7 @@
 #ifndef DMD_PANEL_TEMPLATES_H
 #define DMD_PANEL_TEMPLATES_H
 /*--------------------------------------------------------------------------------------
- This file is a part of the library DMD_STM32
+ This file is a part of the DMD_STM32 library
 
  DMD_STM32.h  - STM32 port of DMD.h library
 
@@ -647,6 +647,8 @@ class DMD_RGB<RGB64x32_S8_Eu057, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 // Since the panel is only 104 pixels wide, the 8 pins in the middle of the driver chain 
 // are not connected to anything. When loading data, you have to insert zeros into each row.
 // 
+// STM32 only!
+// For STM32F4 you must comment RGB_DMA define in DMD_config.h line 26
 //--------------------------------------------------------------------------------------/
 template<int COL_DEPTH>
 class DMD_RGB<RGB104x52_S13_Craftish, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>

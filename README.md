@@ -3,7 +3,7 @@
 # DMD_STM32a - LED Matrix library with Unicode fonts support 
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
-### Last version is v1.0.5 - Fix critical bug with setRotation() method
+### Last version is v1.1.0 - Add support of F6353/FM6363 S-PWM drivers
 ### Attention! The repository was recently updated to v1.0.0
 The main difference from 0.x.x versions is a new panel template format. The documentation will coming. You can get a brief explanation of the new templates from the comments of the [DMD_Panel_Templates.h](https://github.com/board707/DMD_STM32/blob/dev-V2/DMD_Panel_Templates.h) file.
 ### For last version with old panel templates [see v0.9.5](https://github.com/board707/DMD_STM32/releases/tag/v0.9.5)
