@@ -257,6 +257,7 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 
 	timer_pause(OE_TIMER);
 	timer_set_reload(OE_TIMER, (duration + this->callOverhead * 10));
+	timer_set_count(OE_TIMER, oe_duration + 1 );
 	timer_set_compare(OE_TIMER, oe_channel, oe_duration);
 
 #endif

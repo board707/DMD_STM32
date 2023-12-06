@@ -38,7 +38,8 @@ LED panels supported
 | Two-color indoor                |     HUB08    |    64x32   |     1/16    | DMD_RGB.h <br />  (work as RGB)          |
 | | | | | |
 | RGB with FM6126a driver         |     HUB75    |    64x32   |     1/16    | DMD_RGB_6126a.h                               |
-| RGB with FM6353 s-pwm type driver |     HUB75    |   128x64   |     1/32    | experimental, contact author                               |
+| RGB with FM6353/6363 S-PWM drivers |     HUB75    |   128x64   |     1/32    | DMD_RGB_6353.h                             |
+|                                 |               |    64x32   |     1/16    |                                              |
 
 The set of supported matrices is constantly updated.
 
@@ -55,27 +56,13 @@ Other features
  - For monochrome display - a new "Parallel" connection scheme, in which each horizontal row of panels is connected to a separate R_DATA pin
 
 
-Most important versions
----------
-(06 May 2023 - v1.0.5)  - Fix bug with setRotation() method
-
-(25 Mar 2023 - v1.0.4)  - Add support of panels with FM6126a chip
-
-(12 Feb 2023 - v1.0.0)  - New panel template model with multiparameter specialization
-
-(12 Dec 2022 - v0.9.2)  - Monochrome panels support for RP2040-based boards (Parallel connection mode)
-
-(16 Sep 2022 - v0.9.0)  - Add support of RP2040-based boards (RGB modes only) and using the DMA in the RGB modes for STM32F4 boards
-
-(10 Jul 2022 - v0.8.0)  - Add support of STM32F4 blackpills - STM32F401CC & STM32F411CE  (**Custom STM32 repo required!** see below)
-
-(19 Feb 2022 - v0.7.0)  - Add support of "Outdoor" RGB panels with 1/2 1/4 1/8 scans
-
-For full version history see [CHANGES.txt](CHANGES.txt)
-
 Compatible IDE and libraries
 ----------
-This library works with Arduino IDE 1.6-1.9, other versions are **not tested**. DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
+This library works with Arduino IDE 1.6-1.9, Arduino IDE 2.x versions are **not tested**. 
+
+**Adafruit_GFX library**
+
+DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
 
 **STM32** 
 
@@ -108,16 +95,35 @@ English translation:
 
 Documentation
 -----------
-No english documentation available (hopefully yet). See examples.
+No documentation available (hopefully yet). See examples.
 
 Example videos
 --------------
-[Some videos](https://github.com/board707/DMD_STM32/tree/old-V1#example-videos) are avaliable at the page of old version of library.
+* Using of dual buffereng to show fixed and scrolling text [https://youtu.be/DoOcfGb0PLw](https://youtu.be/DoOcfGb0PLw) 
+* [Some other videos](https://github.com/board707/DMD_STM32/tree/old-V1#example-videos) are avaliable at the page of old version of library.
 
 Adapters
 --------
 Sometimes wiring can be tricky so here I will put links to useful PCB-boards for use with this code (are not affiliated with the DMD_STM32)
 * [DMD-STM32 Shield for P10 Monochrome LED Matrix Panel](https://www.tindie.com/products/lightwell/dmd-stm32-shield-for-p10-led-matrix-panel/)  Designed by LIGHTWELL in Bulgaria 
+
+Most important versions
+---------
+(30 Nov 2023 - v1.1.0)  - Add support of panels with FM6353/6363 S-PWM drivers
+
+(25 Mar 2023 - v1.0.4)  - Add support of panels with FM6126a chip
+
+(12 Feb 2023 - v1.0.0)  - New panel template model with multiparameter specialization
+
+(12 Dec 2022 - v0.9.2)  - Monochrome panels support for RP2040-based boards (Parallel connection mode)
+
+(16 Sep 2022 - v0.9.0)  - Add support of RP2040-based boards (RGB modes only) and using the DMA in the RGB modes for STM32F4 boards
+
+(10 Jul 2022 - v0.8.0)  - Add support of STM32F4 blackpills - STM32F401CC & STM32F411CE  (**Custom STM32 repo required!** see below)
+
+(19 Feb 2022 - v0.7.0)  - Add support of "Outdoor" RGB panels with 1/2 1/4 1/8 scans
+
+For full version history see [CHANGES.txt](CHANGES.txt)
 
 Acknowledgements
 -----------

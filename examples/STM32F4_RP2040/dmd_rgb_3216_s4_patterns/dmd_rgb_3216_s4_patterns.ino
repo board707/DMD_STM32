@@ -55,7 +55,7 @@ class DMD_RGB<MUX_CNT, 32, 16, 4, 32, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPT
     void disableFastTextShift(bool shift) override {}
 
   protected:
-    uint16_t get_base_addr(int16_t x, int16_t y) override {
+    uint16_t get_base_addr(int16_t &x, int16_t &y) override {
       this->transform_XY(x, y);
       uint8_t pol_y = y % this->pol_displ;
       x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
@@ -288,10 +288,7 @@ void loop(void)
               else dmd.drawMarqueeX(m, -1 * dmd.stringWidth(m), 0);
             }
           }
-          else {
-
-            if (step[i] != 1) dmd.drawFilledBox(0, 0, 5, dmd.height() - 1, GRAPHICS_INVERSE);
-          }
+         
           // output mem buffer to matrix
           dmd.swapBuffers(true);
           break;

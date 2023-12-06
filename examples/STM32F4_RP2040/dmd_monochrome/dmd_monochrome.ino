@@ -193,10 +193,7 @@ void loop(void)
                         else dmd.drawMarqueeX(m, -1 * dmd.stringWidth(m), 0);
                     }
                 }
-                else {
-                    
-                    if (step[i] != 1) dmd.drawFilledBox(0, 0, 5, dmd.height() - 1, GRAPHICS_INVERSE);
-                }
+              
                 // output mem buffer to matrix
                 dmd.swapBuffers(true);
                 break;

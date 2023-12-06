@@ -19,7 +19,7 @@
 #pragma GCC diagnostic warning "-Woverflow" 
 
 //Number of panels in x and y axis
-#define DISPLAYS_ACROSS 2
+#define DISPLAYS_ACROSS 1
 #define DISPLAYS_DOWN 1
 
 // Enable of output buffering
@@ -292,10 +292,7 @@ void loop(void)
                         else dmd.drawMarqueeX(m, -1 * dmd.stringWidth(m), 0);
                     }
                 }
-                else {
-
-                    if (step[i] != 1) dmd.drawFilledBox(0, 0, 5, dmd.height() - 1, GRAPHICS_INVERSE);
-                }
+                
                 // output mem buffer to matrix
                 dmd.swapBuffers(true);
                 break;
