@@ -94,10 +94,7 @@ void DMD_RGB_BASE::setCycleLen()  {
 	if (this->scan_cycle_len < write_time) this->scan_cycle_len = write_time;
 
 }
-/*--------------------------------------------------------------------------------------*/
-#if (defined(ARDUINO_ARCH_RP2040))
 
-#endif
 /*--------------------------------------------------------------------------------------*/
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 void DMD_RGB_BASE::initialize_timers(voidFuncPtr handler) {
@@ -143,14 +140,7 @@ void DMD_RGB_BASE::initialize_timers(voidFuncPtr handler) {
 
 }
 #endif
-/*--------------------------------------------------------------------------------------*/
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-/*void DMD_RGB_BASE::set_pin_modes() {
 
-	DMD::set_pin_modes();
-
-}*/
-#endif
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::init(uint16_t scan_interval) {
 
@@ -236,7 +226,7 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 
 	if (this->plane > 0) duration = ((this->scan_cycle_len) << (this->plane - 1));
 	else  duration = this->scan_cycle_len;
-
+	
 	if ((this->plane > 0) || (nPlanes == 1)) oe_duration = (duration * this->brightness) / 255;
 	else oe_duration = ((duration * this->brightness) / 255) / 2;
 
@@ -256,8 +246,8 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 	timer_set_reload(MAIN_TIMER, (duration - this->callOverhead));
 
 	timer_pause(OE_TIMER);
+	timer_oc_set_mode(OE_TIMER, oe_channel, TIMER_OC_MODE_FROZEN, 0);
 	timer_set_reload(OE_TIMER, (duration + this->callOverhead * 10));
-	timer_set_count(OE_TIMER, oe_duration + 1 );
 	timer_set_compare(OE_TIMER, oe_channel, oe_duration);
 
 #endif
@@ -290,8 +280,7 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 
 	// For 4bit Color set mux at 1st Plane
 	else if (plane == 1) {
-
-		set_mux(row);
+		this->set_mux(row);
 		}
 
 
@@ -313,15 +302,13 @@ void DMD_RGB_BASE::scan_dmd_p2() {
 	*latsetreg = latmask; // Latch data loaded during *prior* interrupt
 	*latsetreg = latmask << 16;// Latch down
 
-
-	//timer_set_compare(OE_TIMER, oe_channel, oe_duration);
 	timer_set_count(MAIN_TIMER, 0);
 	timer_set_count(OE_TIMER, 0);
+	timer_oc_set_mode(OE_TIMER, oe_channel, (timer_oc_mode)this->OE_polarity, 0);
 	timer_generate_update(MAIN_TIMER);
 	timer_generate_update(OE_TIMER);
 	timer_resume(OE_TIMER);
 	timer_resume(MAIN_TIMER);
-
 }
 #endif
 
@@ -332,10 +319,8 @@ void DMD_RGB_BASE::scan_dmd_p3() {
 	// buffptr, being 'volatile' type, doesn't take well to optimization.
 	// A local register copy can speed some things up:
 	volatile static uint8_t* ptr;
-
-
-
-		ptr = buffptr;
+	
+	ptr = buffptr;
 #if defined(RGB_DMA)
 	timer_pause(DMA_TIMER);
 #if defined(__STM32F1__) 

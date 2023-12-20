@@ -64,6 +64,8 @@
 #define RGB64x32_S8_Eu057 		3,64,32,8,58 	// 64x32 1/8 32pix pattern, SHIFT_REG mux from Eugene057
 #define RGB104x52_S13_Craftish	 4,104,52,13,59   //104x52 s13 from Craftish, arduino.ru
 #define RGB32x16_S4_VitaliyDKZ    	2,32,16,4,60	// 32x16 1/4, BINARY mux
+#define RGB32x16_S2_VitaliyDKZ		1,32,16,2,61	// 32x16 1/2, BINARY mux
+#define RGB32_16_S4_DIRECT_LNikon	4,32,16,4,62	// 32x16 1/4 DIRECT
 
 
 
@@ -383,39 +385,7 @@ protected:
 	}
 
 };
-//--------------------------------------------------------------------------------------
-// 32x16 1/4 matrix from VitaliyDKZ  (issue #57)
-//
-// with pattern   [1] [3] 
-//                   |   /   |   /           
-//                [0] [2]   
-// Pixbase 1, BINARY mux
-//--------------------------------------------------------------------------------------/
-template<int COL_DEPTH>
-class DMD_RGB<RGB32x16_S4_VitaliyDKZ, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
-	{
-	public:
-		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
-			byte panelsWide, byte panelsHigh, bool d_buf = false) :
-			DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
-			panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
-			{
-			this->fast_Hbyte = false;
-			this->use_shift = false;
-			}
-		// Fast text shift is disabled for complex patterns, so we don't need the method
-		void disableFastTextShift(bool shift) override {}
 
-	protected:
-		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
-			this->transform_XY(x, y);
-			uint8_t pol_y = y % this->pol_displ;
-			x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
-			uint16_t base_addr = (pol_y % this->nRows) * this->x_len + x * this->multiplex ;
-                        if (pol_y < this->nRows) base_addr+= 1;
-			return base_addr;
-			}
-	};
 //--------------------------------------------------------------------------------------
 // 1/2 matrix I have
 //
@@ -576,17 +546,7 @@ protected:
 
 		uint8_t pol_y = y % this->pol_displ;
 		x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
-		/*uint16_t base_addr = (pol_y % this->nRows) * this->x_len + (x / 16) * this->multiplex * 16;
-		switch (pol_y / this->nRows) {
-		case 0: base_addr += 32; break;
-		case 1: base_addr += 40; break;
-		case 2:  break;
-		case 3: base_addr += 8; break;
-		}
-
-		if (x % 16 > 7) base_addr += 16 + x % 8;
-		else base_addr += x % 8;
-		*/
+		
 		static const uint8_t A_tbl[8] = { 0,1,0,1,0,1,0,1 };
 		static const uint8_t B_tbl[8] = { 2,2,3,3,0,0,1,1 };
 		static const uint8_t C_tbl[16] = { 0,2,8,10,
@@ -729,6 +689,124 @@ class DMD_RGB<RGB104x52_S13_Craftish, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPT
 
     }
 };
+//--------------------------------------------------------------------------------------
+// 32x16 1/4 matrix from VitaliyDKZ  (issue #57)
+//
+// with pattern   [1] [3] 
+//                   |   /   |   /           
+//                [0] [2]   
+// Pixbase 1, BINARY mux
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_S4_VitaliyDKZ, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+	{
+	public:
+		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+			byte panelsWide, byte panelsHigh, bool d_buf = false) :
+			DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+				panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
+			{
+			this->fast_Hbyte = false;
+			this->use_shift = false;
+			}
+		// Fast text shift is disabled for complex patterns, so we don't need the method
+		void disableFastTextShift(bool shift) override {}
+
+	protected:
+		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+			this->transform_XY(x, y);
+			uint8_t pol_y = y % this->pol_displ;
+			x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+			uint16_t base_addr = (pol_y % this->nRows) * this->x_len + x * this->multiplex;
+			if (pol_y < this->nRows) base_addr += 1;
+			return base_addr;
+			}
+	};
+//--------------------------------------------------------------------------------------
+// 32x16 1/2 matrix from VitaliyDKZ  (issue #60)
+//
+// Pixbase 1, BINARY mux
+// 
+// One pixel by line, from low to upper rows
+// Model: P10-2S-3535-16x32-V2.3
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_S2_VitaliyDKZ, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+	{
+	public:
+		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+			byte panelsWide, byte panelsHigh, bool d_buf = false) :
+			DMD_RGB_BASE2<COL_DEPTH>(1, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+				panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
+			{
+			this->fast_Hbyte = false;
+			this->use_shift = false;
+			}
+		// Fast text shift is disabled for complex patterns, so we don't need the method
+		void disableFastTextShift(bool shift) override {}
+
+	protected:
+		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+			this->transform_XY(x, y);
+			uint8_t pol_y = y % this->pol_displ;
+			x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+			uint16_t base_addr = (pol_y % this->nRows) * this->x_len + x * this->multiplex;
+			base_addr += this->multiplex - pol_y / this->nRows - 1;
+			return base_addr;
+			}
+};
+//--------------------------------------------------------------------------------------
+// 32x16 1/4 matrix from LNikon 
+// DIRECT mux
+//
+// 4-pixel pattern
+//			1	4 - 5
+//			|	|	|
+//			2 - 3	6 -
+// EVOSSON P10-4S-3535-3216
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB32_16_S4_DIRECT_LNikon, COL_DEPTH> : public
+	DMD_RGB_BASE2<COL_DEPTH>
+	{
+	public:
+		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t*
+			pinlist,
+			byte panelsWide, byte panelsHigh, bool d_buf = false) :
+			DMD_RGB_BASE2<COL_DEPTH>(4, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+				panelsWide, panelsHigh, d_buf, COL_DEPTH, 4, 32, 16)
+			{
+			this->fast_Hbyte = false;
+			this->use_shift = false;
+			}
+		// Fast text shift is disabled for complex patterns, so we don't 
+		// need the method
+			void disableFastTextShift(bool shift) override {}
+
+	protected:
+		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+			this->transform_XY(x, y);
+			uint8_t pol_y = y % this->pol_displ;
+			x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+
+			static const uint8_t A_tbl[8] = { 0,1,2,3,0,1,2,3 };
+			static const uint8_t B_tbl[8] = { 0,0,0,0,1,1,1,1 };
+			static const uint8_t C_tbl[16] = { 0,3,4,7,8,11,12,15,
+											  1,2,5,6,9,10,13,14 };
+			static const uint8_t Pan_Okt_cnt = this->DMD_PIXELS_ACROSS / 4;
+			uint8_t Oktet_m = B_tbl[pol_y] * Pan_Okt_cnt + (x / 4) %
+				Pan_Okt_cnt;
+
+			uint16_t base_addr = this->x_len * A_tbl[pol_y] + (x /
+				this->DMD_PIXELS_ACROSS) * this->DMD_PIXELS_ACROSS * this->multiplex +
+				C_tbl[Oktet_m] * 4;
+			base_addr += x % 4;
+
+			return base_addr;
+			}
+
+	};
+
 //--------------------------------------------------------------------------------------
 /*template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
 class DMD_RGB_SHIFTREG_ABC : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE,  COL_DEPTH>

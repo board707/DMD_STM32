@@ -39,7 +39,7 @@ DMD_Standard_Font::DMD_Standard_Font(const uint8_t* ptr) :DMD_Font(ptr) {
 
 	gfx_flag = false;
 	firstChar = pgm_read_byte(font_ptr + FONT_FIRST_CHAR);
-	lastChar = firstChar + pgm_read_byte(font_ptr + FONT_CHAR_COUNT);
+	lastChar = firstChar + (pgm_read_byte(font_ptr + FONT_CHAR_COUNT) - 1);
 	fontHeight = pgm_read_byte(font_ptr + FONT_HEIGHT);
 }
 /*--------------------------------------------------------------------------------------*/
