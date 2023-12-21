@@ -660,6 +660,32 @@ void DMD_RGB_BASE::drawFastHLine(int16_t x, int16_t y,
 		}
 	}
 }
+/*--------------------------------------------------------------------------------------*/
+void DMD_RGB_BASE::setMarqueeColor(uint16_t text_color, uint16_t bg_color)
+	{
+	this->setTextColor(text_color, bg_color);
+	marqueeType_MultiColor = false;
+	}
+void DMD_RGB_BASE::setMarqueeColor(DMD_Colorlist* colors) {
+	marqueeType_MultiColor = true;
+	marqueeColors = colors;
+	}
+/*--------------------------------------------------------------------------------------
+ Service routine to call drawString<color16> or drawString<DMD_Colorlist> instance 
+ inside the marquee methods. Virtual, overrides base DMD method.
+ --------------------------------------------------------------------------------------*/
+void  DMD_RGB_BASE::drawMarqueeString(int bX, int bY, const char* bChars, int length,
+	int16_t miny, int16_t maxy, byte orientation)
+	{
+	  if (marqueeType_MultiColor) {
+		this->drawString(bX, bY, bChars, length, marqueeColors, miny, maxy, orientation);
+		}
+	else {
+		this->drawString(bX, bY, bChars, length, textcolor, miny, maxy, orientation);
+		}
+
+	}
+
 
 /*--------------------------------------------------------------------------------------*/
 // Promote 3/3/3 RGB to Adafruit_GFX 5/6/5

@@ -86,8 +86,8 @@ typedef uint16_t PortType;
 #define PATTERN_STRIPE_0  2
 #define PATTERN_STRIPE_1  3
 
-//display screen (and subscreen) sizing
-#define DMD_BITSPERPIXEL           1       // used for Monochrome panels only
+//Monochrome panel settings
+#define DMD_BITSPERPIXEL           1     
 #define DMD_MONO_SCAN              4
 
 // Panel connections variants
@@ -107,26 +107,32 @@ typedef uint16_t PortType;
 //typedef uint8_t(*FontCallback)(const uint8_t*);
 
 /*--------------------------------------------------------------------------------------*/
-// container list class for DMD GPIOs
-class DMD_Pinlist
+// container list class for DMD GPIOs and Colours
+template <typename T>
+class DMD_List
 {
 public:
-	DMD_Pinlist(uint8_t pinA, uint8_t pinB) :count(2)
+	DMD_List(T pinA, T pinB) :count(2)
 	{
-		list = new uint8_t[2]{ pinA, pinB };
+		list = new T[2]{ pinA, pinB };
 	}
-	DMD_Pinlist(uint8_t pin_count, uint8_t* pinlist):count(pin_count)
+	DMD_List(uint8_t pin_count, T* pinlist):count(pin_count)
 	{
-		list = new uint8_t[pin_count];
-		memcpy(list, pinlist, count);
+		list = new T[pin_count];
+		memcpy(list, pinlist, count*sizeof(T));
 	}
 
 	uint8_t count = 0;
-	uint8_t* list = nullptr;
+	T* list = nullptr;
 
-	~DMD_Pinlist() { delete[] list; }
+	~DMD_List() { delete[] list; }
 
 };
+
+typedef DMD_List<uint8_t>  DMD_Pinlist;
+typedef DMD_List<uint16_t>  DMD_Colorlist;
+
+
 
 /*--------------------------------------------------------------------------------------*/
 //The main class of DMD library functions
@@ -138,7 +144,6 @@ public:
 	DMD(DMD_Pinlist* _mux_pinlist, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
 		uint8_t n_Rows, DMD_Pinlist* _data_pinlist, bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y);
 	
-
 	virtual ~DMD();
 
 	virtual void init(uint16_t scan_interval = 1000);
@@ -152,43 +157,136 @@ public:
 	virtual void shiftScreen(int8_t step) = 0;
 	virtual void transform_XY(int16_t& x, int16_t& y);
 	
-	// -- Char, string and marquee methods --
-	// Draw a string
-	void drawString(int bX, int bY, const char* bChars, int length, uint16_t color, int16_t miny, int16_t maxy, byte orientation = 0);
-	void drawString(int bX, int bY, const char* bChars, int length, uint16_t color, byte orientation = 0);
-	void drawStringX(int bX, int bY, const char* bChars, uint16_t color, byte orientation = 0);
+	
+	
+	// -- Char, string and marquee methods -- //
+	
+	/**********************************************************************/
+	/*!
+	@brief		Draw a text string with custom background color
 
-	//Select a text font
-	void selectFont(DMD_Font* font);
+	@param		bX, bY - start coordinates (top left point)
+	@param		bChars - string data
+	@param		length - string length
+	@param		color -  color to draw text with, 16-bit single value or DMD_Colorlist for multicolor text
+	@param		mixy, maxy - most upper and lower text point relative to bY - defines the area 
+					will covered by backgroung color
+	@param		orientation - gorizontal (0) or vertical (1) 
 
-	//Draw a single character
+	@note		drawStringX variant expects a null-terminated string and don't need a length, 
+				other two prints only first <length> chars of long text
+    */
+   /**********************************************************************/
+   
+	template <typename T>
+	void drawString(int bX, int bY, const char* bChars, int length,
+		T color, int16_t miny, int16_t maxy, byte orientation = 0 )
+		{
+		if ((bX >= _width) || (bY >= _height))
+			return;
+		uint8_t height = Font->get_height();
+		if (bY + height < 0) return;
+
+		int strWidth = 0;
+		this->drawLine(bX - 1, bY + miny, bX - 1, bY + maxy, textbgcolor);
+
+		for (int i = 0; i < length; i++) {
+
+			uint16_t current_color = get_text_color(i, color);
+			int charWide = this->drawChar(bX + strWidth, bY, bChars[i], current_color, miny, maxy, orientation);
+
+			if (charWide > 0) {
+				strWidth += charWide;
+				this->drawLine(bX + strWidth, bY + miny, bX + strWidth, bY + maxy, textbgcolor);
+				strWidth++;
+				}
+			else if (charWide < 0) {
+				return;
+				}
+			if ((bX + strWidth) >= _width || bY >= _height) return;
+			}
+
+		}
+	/*--------------------------------------------------------------------------------------*/
+	template <typename T>
+	void drawString(int bX, int bY, const char* bChars, int length,
+		T color, byte orientation = 0)
+		{
+		int16_t miny = 0, maxy = 0, w;
+		stringBounds(bChars, length, &w, &miny, &maxy, orientation);
+		drawString(bX, bY, bChars, length, color, miny, maxy, orientation);
+		}
+	/*--------------------------------------------------------------------------------------*/
+	template <typename T>
+	void drawStringX(int bX, int bY, const char* bChars, T color, byte orientation = 0)
+		{
+		int len = 0;
+		while (bChars[len] && len < MAX_STRING_LEN) { len++; }
+		this->drawString(bX, bY, bChars, len, color, orientation);
+		}
+	/*--------------------------------------------------------------------------------------*/
+	
+
+
+	/**********************************************************************/
+	/*!
+	@brief		Draw a single char with custom background color
+
+	@param		bX, bY - start coordinates (top left point)
+	@param		letter - char code
+	@param		color -  16-bit color to draw
+	@param		mixy, maxy - most upper and lower text point relative to bY (optional)
+	@param		orientation - gorizontal (0) or vertical (1)
+
+	*/
+	/**********************************************************************/
 	int drawChar(const int bX, const int bY, const unsigned char letter, uint16_t color, byte orientation = 0);
 	int drawChar(const int bX, const int bY, const unsigned char letter, uint16_t color, int16_t miny, int16_t maxy, byte orientation = 0);
-	//Draw a single character vertically  - method moved to drawChar()
-	//int drawCharV(const int bX, const int bY, const unsigned char letter, uint16_t color);
+	
+	/**********************************************************************/
+	/*!
+	@brief		Draw a string and prepare it to scroll
 
-	//Find the width of a character
-	int charWidth(const unsigned char letter, byte orientation = 0);
+	@param		bChars - string data
+	@param		length - string length
+	@param		left, top - start coordinates
+	@param		orientation - gorizontal (0) or vertical (1)
+	
+	@note		=== only one marquee can be used at the time ===
 
-	//Draw a scrolling string
+	@note		to set color of the text and background use in RGB panels
+				use setMarqueeColor(text_color, bg_color) method
+	*/
+	/**********************************************************************/
 	void drawMarquee(const char* bChars, int length, int left, int top, byte orientation = 0);
 	void drawMarqueeX(const char* bChars, int left, int top, byte orientation = 0);
-
-	//Move the maquee accross by amount
+	
+	//Scroll the marquee by amountX and amountY pixels
 	uint8_t  stepMarquee(int amountX, int amountY, byte orientation = 0);
 
-	// return string width in pixels
+	/*--------------------------------------------------------------------------------------*/
+
+	// -- Char and text attributes -- //
+
+	//Select a font for drawing chars, strings and marquee text 
+	void selectFont(DMD_Font* font);
+
+    //Find the width of a single character using defined text font
+	int charWidth(const unsigned char letter, byte orientation = 0);
+
+	//Return string width in pixels using defined text font
 	uint16_t stringWidth(const char* bChars, uint16_t length = 0, byte orientation = 0);
 	uint16_t stringWidthV(const char* bChars, uint16_t length = 0)
 	{
 		return stringWidth(bChars, length, 1);
 	}
 
+	//string bounds in pixels using defined text font
 	void stringBounds(const char* bChars, uint16_t length,
 		int16_t* w, int16_t* min_y, int16_t* max_y, byte orientation = 0);
 	
-	// Disable moving of marquee by pixel shift of whole screen.
-	// Set this flag if you need to display more than one string at time.
+	// Default method to scrolling the marquee is shifting of whole screen.
+	// Set this flag (true) to avoid this if you need to display more than one string at time.
 	virtual void disableFastTextShift(bool shift) {
 		if ((!shift) && (this->connectScheme == CONNECT_NORMAL)) this->use_shift = true;
 		else this->use_shift = false;
@@ -217,14 +315,15 @@ public:
 	//Draw or clear a filled box(rectangle) with a single pixel border
 	void drawFilledBox(int x1, int y1, int x2, int y2, uint16_t color);
 
-	//set brightness of panel
+	//Set brightness of panel ( 0 - 255)
 	virtual void setBrightness(uint8_t level) {
 		this->brightness = level;
 	};
 
-	// Inverse all data on display - for p10 matrix inversed by design
+	//Inverse all data on display - for p10 matrix inversed by design
 	inline void inverseAll(uint8_t flag) { this->inverse_ALL_flag = flag; };
 	
+	//Exchange drawing and output buffers (in dual_buf mode)
 	virtual void swapBuffers(boolean copy);
 
 #if defined(DEBUG2)
@@ -233,6 +332,10 @@ public:
 #endif
 
 	virtual void initialize_timers(voidFuncPtr handler);
+	
+	bool marqueeType_MultiColor = false;
+	DMD_Colorlist* marqueeColors = NULL;
+
 
 protected:
 	virtual void set_pin_modes();
@@ -245,7 +348,8 @@ protected:
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) {} ;
 	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) {};
-	
+	virtual void  drawMarqueeString(int bX, int bY, const char* bChars, int length,
+		int16_t miny, int16_t maxy, byte orientation = 0);
 	// pins
 	const uint8_t mux_cnt = 2;
 	uint8_t data_pins_cnt = 0;
@@ -301,7 +405,7 @@ protected:
 		marqueeOffsetY,
 		marqueeMarginH,
 		marqueeMarginL;
-
+	
 	bool use_shift = true;
 	bool fast_Hbyte = false;
 
@@ -322,15 +426,37 @@ protected:
 	uint8_t inverse_ALL_flag = PANEL_INVERSE;
 	byte connectScheme = CONNECT_NORMAL;
 	uint8_t graph_mode = GRAPHICS_NORMAL;
+
 	void set_graph_mode(uint8_t gm = GRAPHICS_NORMAL) {
 		graph_mode = gm;
 	}
 	
+	
+	/*--------------------------------------------------------------------------------------*/
+	// service routines for text and marquee modes, internal use
 	uint16_t inverse_color(uint16_t col) {
 		if (col == textbgcolor) return textcolor; else return textbgcolor;
-
 	}
+	
 
+	uint16_t get_marquee_text_color(uint8_t num) {
+		if (marqueeType_MultiColor)
+			return get_text_color(num, marqueeColors);
+		
+		else return textcolor;
+		}
+
+	uint16_t get_text_color(uint8_t num, uint16_t color) {
+		return color;
+		}
+	
+	uint16_t get_text_color(uint8_t num, DMD_Colorlist* colorlist) {
+		uint16_t color = colorlist->list[(num % (colorlist->count - 1)) + 1];
+		setTextColor(color, colorlist->list[0]);
+		return color;
+		}
+	/*--------------------------------------------------------------------------------------*/
+	
 // --- specific variables for RP2030 boards ---
 #if (defined(ARDUINO_ARCH_RP2040))
 	uint8_t OE_slice_num;

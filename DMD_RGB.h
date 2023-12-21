@@ -28,6 +28,7 @@
 
 
 
+
 // COLOR DEPTH
 #if (defined(__STM32F1__)|| defined(__STM32F4__)) 
 
@@ -57,34 +58,48 @@ public:
 	void shiftScreen(int8_t step) override;
 	void fillScreen(uint16_t color) override;
 
+ /**********************************************************************/
+ /*!
+   @brief   Set marquee text and background color
+
+   @param   text_color		16-bit 5-6-5 Color to draw text with
+   @param   bg_color		16-bit 5-6-5 Color to draw background/fill with
+ */
+ /**********************************************************************/
+	void setMarqueeColor(uint16_t text_color, uint16_t bg_color);
+
+/**********************************************************************/
+ /*!
+   @brief   Set marquee color for multicolor version
+
+   @param   colors	pointer to list of colors,
+					where 1st is for bacrground, and next colors loops over text chars
+*/
+ /**********************************************************************/
+	void setMarqueeColor(DMD_Colorlist* colors);
+
+	
 	virtual void scan_dmd();
-	virtual void scan_dmd_p1();
-	
-	
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-	virtual void scan_dmd_p2();
-	virtual void scan_dmd_p3();
-	virtual void initialize_timers(voidFuncPtr handler) override;
-#endif
-	
-	
 	void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) override;
 	void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) override;
-
+	
 	uint16_t
 		Color333(uint8_t r, uint8_t g, uint8_t b),
 		Color444(uint8_t r, uint8_t g, uint8_t b),
 		Color888(uint8_t r, uint8_t g, uint8_t b);
 	
-	
+	~DMD_RGB_BASE();
 
+	virtual void scan_dmd_p1();
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+	virtual void scan_dmd_p2();
+	virtual void scan_dmd_p3();
+	virtual void initialize_timers(voidFuncPtr handler) override;
+#endif
 #if defined(DEBUG2)
 	//void dumpMatrix(void);
 	void dumpMask(void);
 #endif
-
-	~DMD_RGB_BASE();
-
 protected:
 
 #if (defined(__STM32F1__) || defined(__STM32F4__))
@@ -98,6 +113,9 @@ protected:
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 		uint8_t* bg_col_bytes) override;
 	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) override;
+	
+	void  drawMarqueeString(int bX, int bY, const char* bChars, int length,
+		int16_t miny, int16_t maxy, byte orientation = 0) override;
 
 	byte* rgbpins;
 #if (defined(__STM32F1__) || defined(__STM32F4__))

@@ -338,10 +338,6 @@ void DMD::switch_row() {
 
 #endif
 }
-
-/*--------------------------------------------------------------------------------------*/
-
-
 /*--------------------------------------------------------------------------------------*/
 void DMD::transform_XY(int16_t& bX, int16_t& bY) {
 
@@ -372,62 +368,12 @@ void DMD::transform_XY(int16_t& bX, int16_t& bY) {
 
 	}
 }
-/*--------------------------------------------------------------------------------------
- Set or clear a pixel at the x and y location (0,0 is the top left corner)
- // Moved to child classes
---------------------------------------------------------------------------------------*/
-//void DMD::writePixel(int16_t x, int16_t y, uint16_t color) 
-
-
-/*--------------------------------------------------------------------------------------*/
-void DMD::drawStringX(int bX, int bY, const char* bChars,
-	uint16_t color, byte orientation)
-{
-	int len = 0;
-	while (bChars[len] && len < MAX_STRING_LEN) { len++; }
-	this->drawString(bX, bY, bChars, len, color, orientation);
-}
-/*--------------------------------------------------------------------------------------*/
-void DMD::drawString(int bX, int bY, const char* bChars, int length,
-	uint16_t color, byte orientation)
-{
-	int16_t miny = 0, maxy = 0, w;
-	stringBounds(bChars, length, &w, &miny, &maxy, orientation);
-	drawString(bX, bY, bChars, length, color, miny, maxy, orientation);
-}
-/*--------------------------------------------------------------------------------------*/
-void DMD::drawString(int bX, int bY, const char* bChars, int length,
-	uint16_t color, int16_t miny, int16_t maxy, byte orientation)
-{
-	if ((bX >= _width) || (bY >= _height))
-		return;
-	uint8_t height = Font->get_height();
-	if (bY + height < 0) return;
-
-	int strWidth = 0;
-	this->drawLine(bX - 1, bY + miny, bX - 1, bY + maxy, inverse_color(color));
-
-	for (int i = 0; i < length; i++) {
-
-		int charWide = this->drawChar(bX + strWidth, bY, bChars[i], color, miny, maxy, orientation);
-
-		if (charWide > 0) {
-			strWidth += charWide;
-			this->drawLine(bX + strWidth, bY + miny, bX + strWidth, bY + maxy, inverse_color(color));
-			strWidth++;
-		}
-		else if (charWide < 0) {
-			return;
-		}
-		if ((bX + strWidth) >= _width || bY >= _height) return;
-	}
-
-}
 
 
 /*--------------------------------------------------------------------------------------*/
 // Drawing the text in the screen and prepare using it in the marquee (running text)
 // note: only one marquee can be used at the time
+
 void DMD::drawMarqueeX(const char* bChars, int left, int top, byte orientation)
 {
 	int len = 0;
@@ -437,6 +383,7 @@ void DMD::drawMarqueeX(const char* bChars, int left, int top, byte orientation)
 /*--------------------------------------------------------------------------------------*/
 void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte orientation)
 {
+	
 	// temp parameter for beta version
 	uint8_t matrix_h = 16;
 
@@ -460,9 +407,18 @@ void DMD::drawMarquee(const char* bChars, int length, int left, int top, byte or
 	marqueeOffsetY = top;
 	marqueeOffsetX = left;
 	marqueeLength = length;
-	this->drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength, textcolor,
+	this->drawMarqueeString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
 		marqueeMarginH, marqueeMarginL, orientation);
 }
+/*--------------------------------------------------------------------------------------
+ Service routine to call drawString<color16> instance inside the marquee methods.
+               Virtual, have to override in DMD_RGB class.
+ --------------------------------------------------------------------------------------*/
+void  DMD::drawMarqueeString(int bX, int bY, const char* bChars, int length,
+	int16_t miny, int16_t maxy, byte orientation)
+	{
+	this->drawString(bX, bY, bChars, length, textcolor, miny, maxy, orientation);
+	}
 
 /*--------------------------------------------------------------------------------------*/
 // Moving marquee, prepared by drawMarquee() method, by one step. 
@@ -479,7 +435,7 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 	int16_t old_y = marqueeOffsetY;
 	marqueeOffsetX += amountX;
 	marqueeOffsetY += amountY;
-
+	
 
 	// check if marquee reached to the limits of matrix panel
 	// X axis
@@ -532,7 +488,8 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 			int wide = charWidth(marqueeText[i], orientation);
 			if (wide > 0) {
 				if (strWidth + wide >= limit_X) {
-					this->drawChar(strWidth, marqueeOffsetY, marqueeText[i], textcolor, marqueeMarginH, marqueeMarginL, orientation);
+					uint16_t curr_color = get_marquee_text_color(i);
+					this->drawChar(strWidth, marqueeOffsetY, marqueeText[i], curr_color, marqueeMarginH, marqueeMarginL, orientation);
 					return ret;
 				}
 				strWidth += wide + 1;
@@ -556,9 +513,9 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 			old_x + marqueeWidth, marqueeOffsetY + marqueeMarginL,
 			textbgcolor);
 
-
-		this->drawString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
-			textcolor, marqueeMarginH, marqueeMarginL, orientation);
+      
+		this->drawMarqueeString(marqueeOffsetX, marqueeOffsetY, marqueeText, marqueeLength,
+			marqueeMarginH, marqueeMarginL, orientation);
 	}
 
 	return ret;
