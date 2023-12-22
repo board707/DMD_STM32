@@ -5,6 +5,7 @@
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
 ### Last version is v1.1.2 - Introduced multicolor for fixed and scrolling text 
 <img src="https://github.com/board707/DMD_STM32/blob/old-V1/.github/dmd_multicolor_small.jpg" style="text-align: center" />
+
 See [video](https://youtu.be/lw87UqoO50E) and dmd_multicolor example for details.
 
 ### Version v1.1.0 - Add support of F6353/FM6363 S-PWM drivers
