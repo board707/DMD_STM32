@@ -66,6 +66,7 @@
 #define RGB32x16_S4_VitaliyDKZ    	2,32,16,4,60	// 32x16 1/4, BINARY mux
 #define RGB32x16_S2_VitaliyDKZ		1,32,16,2,61	// 32x16 1/2, BINARY mux
 #define RGB32_16_S4_DIRECT_LNikon	4,32,16,4,62	// 32x16 1/4 DIRECT
+#define RGB32x16_s2_boba7			2,32,16,2,63	// 32x16 1/2 DIRECT
 
 
 
@@ -806,6 +807,64 @@ class DMD_RGB<RGB32_16_S4_DIRECT_LNikon, COL_DEPTH> : public
 			}
 
 	};
+
+//--------------------------------------------------------------------------------------
+// 32x16 1/2 matrix from boba7 (issue 83)
+//
+// Pixbase 8, DIRECT mux
+//
+// MB5124 driver
+/* with pattern   [3H|3L]     [7H|7L] 
+//                   |   \       |   \         
+//                [2L|2H] \   [6L|6H]   
+//                   |     \     |
+//                [1H|1L]   \ [5H|5L] 
+//                   |       \   |        
+//                [0L|0H]     [4L|4H]   
+*/
+//--------------------------------------------------------------------------------------/
+
+template<int COL_DEPTH>
+class DMD_RGB<RGB32x16_s2_boba7, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+	{
+	public:
+		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+			byte panelsWide, byte panelsHigh, bool d_buf = false) :
+			DMD_RGB_BASE2<COL_DEPTH>(2, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+				panelsWide, panelsHigh, d_buf, COL_DEPTH, 2, 32, 16)
+			{
+			this->fast_Hbyte = false;
+			this->use_shift = false;
+			}
+		// Fast text shift is disabled for complex patterns, so we don't need the method
+		void disableFastTextShift(bool shift) override {}
+
+	protected:
+		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+			this->transform_XY(x, y);
+			uint8_t pol_y = y % this->pol_displ;
+			x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+
+			static const uint8_t px_base = 8;
+			static const uint8_t D_tbl[4] = { 3, 2, 1, 0 };
+			static const uint8_t C_tbl[4] = { 1, 0, 1, 0 };
+
+			uint16_t base_addr = (pol_y % this->nRows) * this->x_len + (x / px_base) * this->multiplex * px_base;
+			uint8_t Oktet_m = pol_y / this->nRows;
+			base_addr += D_tbl[Oktet_m] * px_base;
+			if (C_tbl[Oktet_m] == 1) {
+				base_addr += (px_base - 1) - x % px_base;
+				}
+			else
+				{
+				base_addr += x % px_base;
+				}
+			return base_addr;
+
+			}
+
+	};
+
 
 //--------------------------------------------------------------------------------------
 /*template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
