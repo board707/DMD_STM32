@@ -61,21 +61,21 @@ Other features
  - For monochrome display - a new "Parallel" connection scheme, in which each horizontal row of panels is connected to a separate R_DATA pin
 
 
-Compatible IDE and libraries
+Attention! Pre-installation requirements
 ----------
 This library works with Arduino IDE 1.6-1.9, Arduino IDE 2.x versions are **not tested**. 
 
 **Adafruit_GFX library**
 
-DMD_STM32a project requires Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
+DMD_STM32a project **requires** Adafruit_GFX library version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
 
 **STM32** 
 
-Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is required to support STM32 based boards on Arduino IDE.To support STM32F4 boards you need custom version of repo: https://github.com/board707/Arduino_STM32/tree/lto_for_c6
+The only Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is supported for STM32 based boards on Arduino IDE.To support STM32F4 boards you need custom version of repo: https://github.com/board707/Arduino_STM32/tree/lto_for_c6
 
 **Raspberry Pi Pico** 
 
-This code requires Earle Philhower core https://github.com/earlephilhower/arduino-pico
+This code **requires Earle Philhower core** https://github.com/earlephilhower/arduino-pico
 
 Compatible boards
 -----------------
@@ -97,6 +97,7 @@ English translation:
 * [Wiki: Connections for Monochrome panels](https://github.com/board707/DMD_STM32/wiki/Connections---Monochrome)
 * [Wiki: Connections for RGB](https://github.com/board707/DMD_STM32/wiki/Connections---RGB)
 
+See the examples for recommended pin combinations.
 
 Documentation
 -----------
