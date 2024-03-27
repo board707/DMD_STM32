@@ -286,7 +286,7 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 
 
 #if (defined(ARDUINO_ARCH_RP2040))
-
+	dma_channel_wait_for_finish_blocking(dma_chan);
 	dmd_out_program_reinit(pio, sm_data, data_prog_offs, &pio_config);
 	dma_channel_set_read_addr(dma_chan, buffptr, true);
 	pwm_set_counter(MAIN_slice_num, 0);
