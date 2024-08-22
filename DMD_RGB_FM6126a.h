@@ -96,6 +96,7 @@ class DMD_RGB_FM6126_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCA
 
 			timer_set_count(this->MAIN_TIMER, 0);
 			timer_set_count(this->OE_TIMER, 0);
+			timer_oc_set_mode(this->OE_TIMER, this->oe_channel, (timer_oc_mode)this->OE_polarity, 0);
 			timer_generate_update(this->MAIN_TIMER);
 			timer_generate_update(this->OE_TIMER);
 			timer_resume(this->OE_TIMER);
