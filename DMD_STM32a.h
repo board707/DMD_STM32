@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 1.1.3 ******
+ ****** VERSION 1.1.0 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library
 
@@ -63,6 +63,8 @@ typedef uint32 PortType;
 #define TIM_MAX_RELOAD ((1 << 16) - 1)
 enum OE_PWM_Polarity{ OE_PWM_POSITIVE = TIMER_OC_MODE_PWM_1, OE_PWM_NEGATIVE = TIMER_OC_MODE_PWM_2 };
 #elif (defined(ARDUINO_ARCH_RP2040))
+#define TIM_MAX_RELOAD ((1 << 16) - 1)
+#define MAX_PANEL_CLK 15
 enum OE_PWM_Polarity { OE_PWM_POSITIVE = false, OE_PWM_NEGATIVE = true };
 typedef uint16_t PortType;
 #endif
@@ -466,10 +468,10 @@ protected:
 	PIO pio = pio0;
 	uint8_t sm_data = 0;
 	uint8_t sm_mux = 1;
-	const uint8_t pwm_clk_div = 10;
+	uint8_t pwm_clk_div = 10;
 	uint16_t data_prog_offs = 0;
 	pio_sm_config pio_config;
-	const uint8_t pio_clkdiv = 3;
+	uint8_t pio_clkdiv = 3;
 #endif
 	
 	

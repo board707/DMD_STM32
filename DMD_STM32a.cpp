@@ -143,15 +143,18 @@ void DMD::initialize_timers(voidFuncPtr handler) {
 /*--------------------------------------------------------------------------------------*/
 void DMD::initialize_timers(voidFuncPtr handler) {
 
-	
+	// test PWM WRAP for overflow
+	if ((this->scan_cycle_len * 4 / this->pwm_clk_div) > TIM_MAX_RELOAD) {
+		this->pwm_clk_div = 1 + (this->scan_cycle_len * 4 / TIM_MAX_RELOAD);
+	}
 	this->scan_cycle_len = this->scan_cycle_len / this->pwm_clk_div;
 
-	
+     // Adjust pio clk divider to not overflow panel CLK > 15 MHz
+	if (CYCLES_PER_MICROSECOND/ (4* this->pio_clkdiv) > MAX_PANEL_CLK) {
+		this->pio_clkdiv = 1+ CYCLES_PER_MICROSECOND/ (4* MAX_PANEL_CLK);
+	}
 
-	
-
-
-	//pio configs
+   //pio configs
 	sm_data = pio_claim_unused_sm(pio, true);
 	//data_prog_offs = pio_add_program(pio, &dmd_out_program);
 	data_prog_offs = pio_add_dmd_out_program(pio, this->data_pins_cnt);
