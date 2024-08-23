@@ -1,4 +1,11 @@
 # ChangeLog
+## [1.1.5] - 2024-08-23 
+ - Fix issue #124 - FM6126 not works after v1.1.0
+ - Fix issue #115 - add clock settings for overclocked RP2040
+ - Make DMD_RGB_SHIFTREG_ABC compatible with variadic templates
+ - Add Wiki docs
+ - Add new template
+
 ## [1.1.4] - 2024-04-12 
  - Fix "text not smooth" issue #86
  - Change <COLOR_4BITS> to <COLOR_4BITS_Packed> mode in STM32F1 examples due to incompatibility 

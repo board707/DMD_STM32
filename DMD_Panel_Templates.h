@@ -91,6 +91,7 @@
 #define RGB80x40_S10_OKSingra     	4,80,40,10,102,16,PATTERN_LPS	// 80x40 s10 16pixbase, BINARY, from OKSingra, issue #88
 #define RGB32x16_s4_miralay001     	2,32,16,4,102,8,PATTERN_UPS   // 32x16 s4 8pixbase, BINARY, from miralay001, issue #96
 #define RGB80x40_S10_ShiPC123 		3,80,40,10,102,4,PATTERN_UPS	// 80x40 s10 4 pixbase, SHIFT_REG, from ShiPC123, issue #104
+#define RGB80x40s10SR_digi55 		3,80,40,10,122,16,1             // 80x40 s10, pixbase 16, SHIFT_REG from @digi55, issue #121
 
 
 /*--------------------------------------------------------------------------------------*/
@@ -395,6 +396,50 @@ protected:
 		return base_addr;
 	}
 	
+};
+//--------------------------------------------------------------------------------------
+//  *** Variadic templates *** 
+// outdoor matrix, BINARY/DIRECT mux
+// with parametrized Pixbase consecutive byte, generalized
+// 121 is analog to pattern 1 above, 122 is analog to 2
+// scan quarter of height (i.e 64x32 1/8),
+// 
+//   Pattern with LPS/UPS switched every pixbase pixels
+//   Pattern = 0 - start from upper line
+//   Pattern = 1 - start from lower line
+//
+// used for @digi55 80x40 s10 panel issue 121
+//--------------------------------------------------------------------------------------/
+
+template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int Pixbase, int Pattern, int COL_DEPTH>
+class DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, 122, Pixbase, Pattern, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+{
+public:
+  DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+    byte panelsWide, byte panelsHigh, bool d_buf = false) :
+    DMD_RGB_BASE2<COL_DEPTH>(MUX_CNT, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+      panelsWide, panelsHigh, d_buf, COL_DEPTH, SCAN, P_Width, P_Height)
+  {
+        this->fast_Hbyte = false;
+        this->use_shift = false;
+        }
+    // Fast text shift is disabled for complex patterns, so we don't need the method
+        void disableFastTextShift(bool shift) override {}
+
+protected:
+  
+  uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+    this->transform_XY(x, y);
+    uint8_t pol_y = y % this->pol_displ;
+    x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+    uint16_t base_addr = (pol_y % this->nRows) * this->x_len +
+            (x / Pixbase) * this->multiplex * Pixbase + x % Pixbase;
+    if ((Pattern + (x % P_Width)/Pixbase)%2)  { if (pol_y < this->nRows)  base_addr += Pixbase; }         
+    else { if (pol_y >=  this->nRows)  base_addr += Pixbase; }
+     
+    return base_addr;
+  }
+  
 };
 //--------------------------------------------------------------------------------------
 // Non-plain outdoor matrices

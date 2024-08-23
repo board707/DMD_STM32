@@ -4,7 +4,7 @@
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
 
-### Last version is v1.1.2 - Introduced multicolor for fixed and scrolling text 
+### Last major addition is v1.1.2 - Introduced multicolor for fixed and scrolling text 
 <img src="https://github.com/board707/DMD_STM32/blob/old-V1/.github/dmd_multicolor_small.jpg" style="text-align: center" />
 
 See [video](https://youtu.be/lw87UqoO50E) and dmd_multicolor example for details.
@@ -42,7 +42,7 @@ LED panels supported
 | Two-color indoor                |     HUB08    |    64x32   |     1/16    | DMD_RGB.h <br />  (work as RGB)          |
 | | | | | |
 | RGB with FM6126a driver         |     HUB75    |    64x32   |     1/16    | DMD_RGB_6126a.h                               |
-| RGB with FM6353/6363 S-PWM drivers |     HUB75    |   128x64   |     1/32    | DMD_RGB_6353.h                             |
+| RGB ICDN2153/FM6353/6363 S-PWM |     HUB75    |   128x64   |     1/32    | DMD_RGB_6353.h                             |
 |                                 |               |    64x32   |     1/16    |                                              |
 
 Read more about supported panels in the [Wiki/Supported panels](https://github.com/board707/DMD_STM32/wiki/quick_start#supported-panels). The set of supported matrices is constantly updated.
