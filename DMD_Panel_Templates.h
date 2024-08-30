@@ -751,7 +751,7 @@ class DMD_RGB<RGB104x52_S13_Craftish, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPT
 #else
 #define pew                    \
     *this->datasetreg = this->clk_clrmask;     \
-    *this->datasetreg = expand[*ptr++];
+    *this->datasetreg = this->expand[*ptr++];
 #endif
 
       for (uint16_t uu = 0; uu < this->x_len; uu += 104)

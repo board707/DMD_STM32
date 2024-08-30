@@ -47,10 +47,6 @@ void DMD_Monochrome_Parallel::set_pin_modes() {
 
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 	DMD::set_pin_modes();
-#ifdef USE_UPPER_8BIT
-	clk_clrmask_low = clk_clrmask >> 8;
-	clkmask_low = clkmask >> 8;
-#endif // USE_UPPER_8BIT
 #endif
 
 	for (byte i = 0; i < this->data_pins_cnt; i++) {
@@ -62,6 +58,12 @@ void DMD_Monochrome_Parallel::set_pin_modes() {
         this->clk_clrmask |= (1 << (i));		
 #endif
 	}
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+#ifdef USE_UPPER_8BIT
+	clk_clrmask_low = clk_clrmask >> 8;
+	clkmask_low = clkmask >> 8;
+#endif // USE_UPPER_8BIT
+#endif	
 
 }
 /*--------------------------------------------------------------------------------------*/
