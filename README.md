@@ -18,13 +18,12 @@ About the library
 
 The library initially started out as STM32 port of Freetronics DMD library (https://github.com/freetronics/DMD). Now it has grown into a separate project with support for different types of monochrome, two-color and RGB panels. 
 
-One of the important features of the library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language. The library includes **Cyrillic** and **Turkish** fonts. For using of national fonts, see the examples `dmd_rg.ino` and `dmd_rgb_turk.ino` (Turkish)
+One of the important features of the library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language. The library includes **Cyrillic** and **Turkish** fonts. For using of national fonts, see the examples `dmd_rgb.ino` and `dmd_rgb_turk.ino` (Turkish).
 
-This code branch is further development of [DMD_STM32 library](https://github.com/board707/DMD_STM32/tree/old-V1). The code was totally rewritten, the library received a modular structure with a DMD_STM32a base class and several child classes for various matrices and connection types. 
+The nain advantage of the library, which distinguishes it from its analogues, is the very wide range of supported RGB panels. Modules of almost any size, multiplexing type and scanning paterrn can be used. All these are configured by "matrix pattern" - a strings of digits, represents a key characteristics of given panel. The library does provide to users a rich set of predefined matrix patterns, and if some panel is missing from the list, it can be easily added without changing the main library code.
 
 LED panels supported
 -----------------
-
 
 | **Description**                 | **Interface** | **Pixels** |   **Scan**  | **Code module**                              |
 |---------------------------------|:-------------:|:----------:|:-----------:|----------------------------------------------|
