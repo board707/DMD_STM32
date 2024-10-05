@@ -8,6 +8,7 @@
  /--------------------------------------------------------------------------------------*/
 #include "DMD_RGB.h"
 
+
 static volatile DMD_RGB_BASE* running_dmd_R;
 void inline __attribute__((always_inline)) scan_running_dmd_R()
 
@@ -422,10 +423,10 @@ void DMD_RGB_BASE::drawPixel(int16_t x, int16_t y, uint16_t c)  {
 
 			*ptr |= output_mask;
 
-			* ptr &= ~B000111;            // Mask out R,G,B in one op
-			if (r & bit) *ptr |= B000001; // Plane N R: bit 2
-			if (g & bit) *ptr |= B000010; // Plane N G: bit 3
-			if (b & bit) *ptr |= B000100; // Plane N B: bit 4
+			* ptr &= ~0b000111;            // Mask out R,G,B in one op
+			if (r & bit) *ptr |= 0b000001; // Plane N R: bit 2
+			if (g & bit) *ptr |= 0b000010; // Plane N G: bit 3
+			if (b & bit) *ptr |= 0b000100; // Plane N B: bit 4
 			ptr += displ_len;                 // Advance to next bit plane
 		}
 	}
@@ -437,10 +438,10 @@ void DMD_RGB_BASE::drawPixel(int16_t x, int16_t y, uint16_t c)  {
 
 			*ptr |= output_mask;
 
-			* ptr &= ~B111000;            // Mask out R,G,B in one op
-			if (r & bit) *ptr |= B001000; // Plane N R: bit 5
-			if (g & bit) *ptr |= B010000; // Plane N G: bit 6
-			if (b & bit) *ptr |= B100000; // Plane N B: bit 7
+			* ptr &= ~0b111000;            // Mask out R,G,B in one op
+			if (r & bit) *ptr |= 0b001000; // Plane N R: bit 5
+			if (g & bit) *ptr |= 0b010000; // Plane N G: bit 6
+			if (b & bit) *ptr |= 0b100000; // Plane N B: bit 7
 			ptr += displ_len;                 // Advance to next bit plane
 		}
 	}
@@ -452,7 +453,7 @@ void DMD_RGB_BASE::drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize
 	uint8_t* bg_col_bytes) {
 
 	
-	static uint8_t ColorByteMask[] = { B000111 , B111000 };
+	static uint8_t ColorByteMask[] = { 0b000111 , 0b111000 };
 	if ((hbyte != 0xff)&& (bsize > 8)) bsize = 8;
 	
 		//if whole line is outside - go out
@@ -485,7 +486,7 @@ void DMD_RGB_BASE::drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize
 		mask = ColorByteMask + 1;
 	}
 	col_bytes = fg_col_bytes;
-	for (uint8_t j = 0; j < bsize; j++) {
+	for (uint16_t j = 0; j < bsize; j++) {
 		if (hbyte != 0xff) {
 			if (hbyte & 0x80) {
 				col_bytes = fg_col_bytes;
@@ -551,9 +552,9 @@ void DMD_RGB_BASE::getColorBytes(uint8_t* cbytes, uint16_t color) {
 	bit = 1;
 	for (; bit < limit; bit <<= 1) {
 		// Mask out R,G,B in one op
-		if (r & bit) *ptr |= B00001001; // Plane N R: bit 2
-		if (g & bit) *ptr |= B00010010; // Plane N G: bit 3
-		if (b & bit) *ptr |= B00100100; // Plane N B: bit 4
+		if (r & bit) *ptr |= 0b00001001; // Plane N R: bit 2
+		if (g & bit) *ptr |= 0b00010010; // Plane N G: bit 3
+		if (b & bit) *ptr |= 0b00100100; // Plane N B: bit 4
 
 		ptr++;                 // Advance to next bit plane
 	}

@@ -371,18 +371,18 @@ void getColorBytes(uint8_t* cbytes, uint16_t color) override {
 
 	//if (nPlanes == 4) {
 
-	if (r & 1) { ptr[1] |= B10000000; ptr[2] |= B01000000; }
-	if (g & 1) { *ptr |= B01000000; ptr[2] |= B10000000; }// Plane 0 G: bit 0
-	if (b & 1) { *ptr |= B10000000; ptr[1] |= B01000000; }// Plane 0 B: bit 0
+	if (r & 1) { ptr[1] |= 0b10000000; ptr[2] |= 0b01000000; }
+	if (g & 1) { *ptr |= 0b01000000; ptr[2] |= 0b10000000; }// Plane 0 G: bit 0
+	if (b & 1) { *ptr |= 0b10000000; ptr[1] |= 0b01000000; }// Plane 0 B: bit 0
 
 
 	limit = 1 << nPlanes;
 	bit = 2;
 	for (; bit < limit; bit <<= 1) {
 		// Mask out R,G,B in one op
-		if (r & bit) *ptr |= B001001; // Plane N R: bit 2
-		if (g & bit) *ptr |= B010010; // Plane N G: bit 3
-		if (b & bit) *ptr |= B100100; // Plane N B: bit 4
+		if (r & bit) *ptr |= 0b001001; // Plane N R: bit 2
+		if (g & bit) *ptr |= 0b010010; // Plane N G: bit 3
+		if (b & bit) *ptr |= 0b100100; // Plane N B: bit 4
 
 		ptr++;                 // Advance to next bit plane
 		}
@@ -393,8 +393,8 @@ void getColorBytes(uint8_t* cbytes, uint16_t color) override {
 void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,
 	uint8_t* bg_col_bytes) override {
 
-	static uint8_t ColorByteMask[] = { B00000111 , B01000111 , B11000111 ,
-										  B11111000 , B10111000 , B00111000 };
+	static uint8_t ColorByteMask[] = { 0b00000111 , 0b01000111 , 0b11000111 ,
+										  0b11111000 , 0b10111000 , 0b00111000 };
 
 	if ((hbyte != 0xff) && (bsize > 8)) bsize = 8;
 
@@ -428,7 +428,7 @@ void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_
 		mask = ColorByteMask + 3;
 		}
 	col_bytes = fg_col_bytes;
-	for (uint8_t j = 0; j < bsize; j++) {
+	for (uint16_t j = 0; j < bsize; j++) {
 		if (hbyte != 0xff) {
 			if (hbyte & 0x80) {
 				col_bytes = fg_col_bytes;
@@ -486,19 +486,19 @@ void drawPixel(int16_t x, int16_t y, uint16_t c) override {
 
 		// Plane 0 is a tricky case -- its data is spread about,
 		// stored in least two bits not used by the other planes.
-		ptr[displ_len * 2] &= ~B11000000;           // Plane 0 R,G mask out in one op
-		if (r & 1) ptr[displ_len * 2] |= B01000000; // Plane 0 R: 64 bytes ahead, bit 0
-		if (g & 1) ptr[displ_len * 2] |= B10000000; // Plane 0 G: 64 bytes ahead, bit 1
-		if (b & 1) ptr[displ_len] |= B01000000; // Plane 0 B: 32 bytes ahead, bit 0
-		else      ptr[displ_len] &= ~B01000000; // Plane 0 B unset; mask out
+		ptr[displ_len * 2] &= ~0b11000000;           // Plane 0 R,G mask out in one op
+		if (r & 1) ptr[displ_len * 2] |= 0b01000000; // Plane 0 R: 64 bytes ahead, bit 0
+		if (g & 1) ptr[displ_len * 2] |= 0b10000000; // Plane 0 G: 64 bytes ahead, bit 1
+		if (b & 1) ptr[displ_len] |= 0b01000000; // Plane 0 B: 32 bytes ahead, bit 0
+		else      ptr[displ_len] &= ~0b01000000; // Plane 0 B unset; mask out
 		// The remaining three image planes are more normal-ish.
 		// Data is stored in the high 6 bits so it can be quickly
 		// copied to the DATAPORT register w/6 output lines.
 		for (; bit < limit; bit <<= 1) {
-			*ptr &= ~B000111;            // Mask out R,G,B in one op
-			if (r & bit) *ptr |= B000001; // Plane N R: bit 2
-			if (g & bit) *ptr |= B000010; // Plane N G: bit 3
-			if (b & bit) *ptr |= B000100; // Plane N B: bit 4
+			*ptr &= ~0b000111;            // Mask out R,G,B in one op
+			if (r & bit) *ptr |= 0b000001; // Plane N R: bit 2
+			if (g & bit) *ptr |= 0b000010; // Plane N G: bit 3
+			if (b & bit) *ptr |= 0b000100; // Plane N B: bit 4
 			ptr += displ_len;                 // Advance to next bit plane
 			}
 		}
@@ -506,16 +506,16 @@ void drawPixel(int16_t x, int16_t y, uint16_t c) override {
 		// Data for the lower half of the display is stored in the upper
 		// bits, except for the plane 0 stuff, using 2 least bits.
 
-		*ptr &= ~B11000000;                  // Plane 0 G,B mask out in one op
-		if (r & 1)  ptr[displ_len] |= B10000000; // Plane 0 R: 32 bytes ahead, bit 1
-		else       ptr[displ_len] &= ~B10000000; // Plane 0 R unset; mask out
-		if (g & 1) *ptr |= B01000000; // Plane 0 G: bit 0
-		if (b & 1) *ptr |= B10000000; // Plane 0 B: bit 0
+		*ptr &= ~0b11000000;                  // Plane 0 G,B mask out in one op
+		if (r & 1)  ptr[displ_len] |= 0b10000000; // Plane 0 R: 32 bytes ahead, bit 1
+		else       ptr[displ_len] &= ~0b10000000; // Plane 0 R unset; mask out
+		if (g & 1) *ptr |= 0b01000000; // Plane 0 G: bit 0
+		if (b & 1) *ptr |= 0b10000000; // Plane 0 B: bit 0
 		for (; bit < limit; bit <<= 1) {
-			*ptr &= ~B111000;            // Mask out R,G,B in one op
-			if (r & bit) *ptr |= B001000; // Plane N R: bit 5
-			if (g & bit) *ptr |= B010000; // Plane N G: bit 6
-			if (b & bit) *ptr |= B100000; // Plane N B: bit 7
+			*ptr &= ~0b111000;            // Mask out R,G,B in one op
+			if (r & bit) *ptr |= 0b001000; // Plane N R: bit 5
+			if (g & bit) *ptr |= 0b010000; // Plane N G: bit 6
+			if (b & bit) *ptr |= 0b100000; // Plane N B: bit 7
 			ptr += displ_len;                 // Advance to next bit plane
 			}
 		}
