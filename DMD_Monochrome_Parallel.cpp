@@ -207,8 +207,11 @@ void  DMD_Monochrome_Parallel::scan_dmd() {
 //#if (CYCLES_PER_MICROSECOND > 100)
 		*datasetreg = (clkmask << 16);
 //#endif
-		*datasetreg = ptr[cnt++];
-
+#ifdef USE_UPPER_8BIT
+		*datasetreg = (ptr[cnt++]) << 8;
+#else
+                *datasetreg = ptr[cnt++];
+#endif
 #endif
 			
 	}
