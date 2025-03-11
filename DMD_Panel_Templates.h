@@ -92,6 +92,7 @@
 #define RGB32x16_s4_miralay001     	2,32,16,4,102,8,PATTERN_UPS   // 32x16 s4 8pixbase, BINARY, from miralay001, issue #96
 #define RGB80x40_S10_ShiPC123 		3,80,40,10,102,4,PATTERN_UPS	// 80x40 s10 4 pixbase, SHIFT_REG, from ShiPC123, issue #104
 #define RGB80x40s10SR_digi55 		3,80,40,10,122,16,1             // 80x40 s10, pixbase 16, SHIFT_REG from @digi55, issue #121
+#define RGB104x52_S13_funnymind   	4,104,52,13,64                 // 104x52 s13 pixbase 4, SHIFT_REG, from funnymind, issue #145
 
 
 /*--------------------------------------------------------------------------------------*/
@@ -940,7 +941,58 @@ class DMD_RGB<RGB32x16_s2_boba7, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 
 	};
 
+//--------------------------------------------------------------------------------------
+// 104x52 s13 panel from funnymind (issue 145)
+//
+// Drivers DP5135 + RUL5158c
+//
+// Pixbase 4, 595 mux
+//
+/* Very weird pattern
+//
+// Two pixbase sections from the left are switching (like 122 pattern)
+// all other pixels to the right are in continious lines.
+*/
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB104x52_S13_funnymind, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+	{
+	public:
+		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+			byte panelsWide, byte panelsHigh, bool d_buf = false) :
+			DMD_RGB_BASE2<COL_DEPTH>(4, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+				panelsWide, panelsHigh, d_buf, COL_DEPTH, 13, 104, 52)
+			{
+			this->fast_Hbyte = false;
+			this->use_shift = false;
+			}
+		// Fast text shift is disabled for complex patterns, so we don't 
+		// need the method
+			void disableFastTextShift(bool shift) override {}
 
+	protected:
+		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+			this->transform_XY(x, y);
+			uint8_t pol_y = y % this->pol_displ;
+			x += (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+                        
+            static const uint8_t px_base = 4; 
+			static const uint8_t C_tbl[52] = 
+			      { 0,3,28,29,30, 31,32,33,34,35, 36,37,38,39,40, 41,42,43,44,45, 46,47,48,49,50, 51,
+                    1,2,4,5,6, 7,8,9,10,11, 12,13,14,15,16, 17,18,19,20,21, 22,23,24,25,26,27 };
+			
+			static const uint8_t Pan_Okt_cnt = this->DMD_PIXELS_ACROSS / px_base;
+			uint8_t Oktet_m = (pol_y / this->nRows) * Pan_Okt_cnt + (x / px_base) % Pan_Okt_cnt;
+
+			uint16_t base_addr = (pol_y % this->nRows) * this->x_len  +
+                       (x /this->DMD_PIXELS_ACROSS) * this->DMD_PIXELS_ACROSS * this->multiplex +
+						C_tbl[Oktet_m] * px_base;
+			base_addr += x % px_base;
+
+			return base_addr;
+			}
+
+	};
 //--------------------------------------------------------------------------------------
 /*template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
 class DMD_RGB_SHIFTREG_ABC : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE,  COL_DEPTH>
