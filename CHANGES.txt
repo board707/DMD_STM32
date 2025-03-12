@@ -1,4 +1,13 @@
 # ChangeLog
+## [1.1.7] - 2025-03-12
+ - Fix issue #146 - Parallel monochrome code with USE_UPPER_8BIT option 
+   doesn't work on STM32F4
+ - Add new template (issue #145)
+
+## [1.1.6] - 2024-10-05 
+ - Fix issue #131 - fast HByte not works with screen width > 255 pix
+ - Fix bug in DMD_Monochrome_Parallel clearscreen function, UPPER_8BIT mode
+
 ## [1.1.5] - 2024-08-23 
  - Fix issue #124 - FM6126 not works after v1.1.0
  - Fix issue #115 - add clock settings for overclocked RP2040
