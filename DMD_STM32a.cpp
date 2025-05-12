@@ -189,7 +189,7 @@ void DMD::initialize_timers(voidFuncPtr handler) {
 	dma_channel_config dma_c = dma_channel_get_default_config(dma_chan);
 	channel_config_set_transfer_data_size(&dma_c, DMA_SIZE_8);     // read by one byte
 	channel_config_set_read_increment(&dma_c, true);
-	channel_config_set_dreq(&dma_c, sm_data - DREQ_PIO0_TX0);                 // requested by PIO
+	channel_config_set_dreq(&dma_c, sm_data + DREQ_PIO0_TX0);                 // requested by PIO
 
 	dma_channel_configure(
 		dma_chan,
@@ -451,12 +451,12 @@ uint8_t DMD::stepMarquee(int amountX, int amountY, byte orientation)
 		ret |= 1;
 	}
 	// Y axis
-	if (marqueeOffsetY < -marqueeHeight) {
-		marqueeOffsetY = _height;
+	if (marqueeOffsetY < -marqueeMarginL) {
+		marqueeOffsetY = _height - marqueeMarginH;
 		ret |= 1;
 	}
-	else if (marqueeOffsetY > _height) {
-		marqueeOffsetY = -marqueeHeight;
+	else if (marqueeOffsetY > (_height - marqueeMarginH)) {
+		marqueeOffsetY = -1 * (marqueeMarginL + 1);
 		ret |= 1;
 	}
 	if (ret) {
@@ -590,7 +590,7 @@ int DMD::drawChar(const int bX, const int bY, const unsigned char letter, uint16
 	uint8_t matrix_h = 16;
 	
 	if (c == ' ') { //CHANGED FROM ' '
-		if (orientation) { // vertical scroll
+		if ((orientation) && (Font->is_gfx_font())) {   // vertical scroll (allowed for GFX fonts only)
 			this->drawFilledBox(bX, bY, bX + height, bY + matrix_h, bg_color);
 			return height;
 		}

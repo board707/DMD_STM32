@@ -1,4 +1,10 @@
 # ChangeLog
+## [1.1.8] - 2025-05-12
+  Minor changes as:
+ - Tune limits of vertical scrolling
+ - Avoid vertical orientation of space char for standard fonts
+ - Fix typo in RP2040 DMA config
+
 ## [1.1.7] - 2025-03-12
  - Fix issue #146 - Parallel monochrome code with USE_UPPER_8BIT option 
    doesn't work on STM32F4
