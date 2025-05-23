@@ -45,3 +45,7 @@
   */
 //#define USE_UPPER_8BIT
 #endif
+// === for Monochrome Parallel ===
+/* Normally, each pins controls a single horizontal row.
+   Change the line below to control a more panel rows by pin. */
+//#define MONO_PARA_PACK_FACTOR 1

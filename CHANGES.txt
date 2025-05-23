@@ -1,4 +1,9 @@
 # ChangeLog
+## [1.1.9] - 2025-05-23
+ - Add an ability to manage a multiple rows per pin on Parallel Monochrome mode,
+  that allow to construct a screen with more than 7 rows high.
+ - Get rid a 'unused parameter' warnings. 
+
 ## [1.1.8] - 2025-05-12
   Minor changes as:
  - Tune limits of vertical scrolling

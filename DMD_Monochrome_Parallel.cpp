@@ -23,6 +23,12 @@ DMD_Monochrome_Parallel::DMD_Monochrome_Parallel(byte _pin_A, byte _pin_B, byte 
 		d_buf, dmd_pixel_x, dmd_pixel_y)
 {
 	mem_Buffer_Size = DMD_PIXELS_ACROSS * panelsWide * DMD_PIXELS_DOWN;
+
+	
+	if (((panelsHigh +6) / 7 ) > pack_factor) { 
+			pack_factor = (panelsHigh +6) / 7;
+		 }
+	mem_Buffer_Size *= pack_factor;
 	x_len = mem_Buffer_Size / DMD_MONO_SCAN;
 	
 	// Allocate and initialize matrix buffer:
@@ -50,13 +56,15 @@ void DMD_Monochrome_Parallel::set_pin_modes() {
 #endif
 
 	for (byte i = 0; i < this->data_pins_cnt; i++) {
+		if (this->data_pins[i] != 255) {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
-		this->row_mask[i] = digitalPinToBitMask(this->data_pins[i]);
-		pinMode(this->data_pins[i], OUTPUT);
-        this->clk_clrmask |= this->row_mask[i];
+			this->row_mask[i] = digitalPinToBitMask(this->data_pins[i]);
+			pinMode(this->data_pins[i], OUTPUT);
+      		this->clk_clrmask |= this->row_mask[i];
 #elif  (defined(ARDUINO_ARCH_RP2040))
-        this->clk_clrmask |= (1 << (i));		
+       		 this->clk_clrmask |= (1 << (i));		
 #endif
+		}
 	}
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 #ifdef USE_UPPER_8BIT
@@ -69,6 +77,9 @@ void DMD_Monochrome_Parallel::set_pin_modes() {
 /*--------------------------------------------------------------------------------------*/
 void DMD_Monochrome_Parallel::init(uint16_t scan_interval)
 {
+	if (this->pack_factor > 1) {
+		this->data_pins_cnt = (this->DisplaysHigh + this->pack_factor - 1)/this->pack_factor;
+	}
 	if (scan_interval < 100) scan_interval = 100;
 	DMD::init(scan_interval);
 	this->initialize_timers(scan_running_dmd);
@@ -97,6 +108,11 @@ void DMD_Monochrome_Parallel::drawPixel(int16_t x, int16_t y, uint16_t color) {
 	// inverse data bits for some panels
 	bPixel = bPixel ^ inverse_ALL_flag;
 	byte panel_row = bY / DMD_PIXELS_DOWN;
+	if (this->pack_factor > 1) {
+		
+		bX += (panel_row % this->pack_factor) * this->WIDTH;
+		panel_row = bY / (this->pack_factor * DMD_PIXELS_DOWN);
+	}
 	byte panel_bY = bY % DMD_PIXELS_DOWN;
 	byte mux = panel_bY % 4;
 	byte mux_byte_cnt = panel_bY / 4;
@@ -193,7 +209,7 @@ void  DMD_Monochrome_Parallel::scan_dmd() {
 
 	
 #if (defined(__STM32F1__))
-	for (uint16_t uu = 0; uu < WIDTH; uu += 8)
+	for (uint16_t uu = 0; uu < WIDTH*pack_factor; uu += 8)
 	{
 		// Loop is unrolled for speed:
 		pew pew pew pew pew pew pew pew
@@ -201,7 +217,7 @@ void  DMD_Monochrome_Parallel::scan_dmd() {
 			pew pew pew pew pew pew pew pew
 			pew pew pew pew pew pew pew pew
 #elif  (defined(__STM32F4__))
-	for (uint16_t uu = 0; uu < WIDTH*4; uu++)
+	for (uint16_t uu = 0; uu < x_len; uu++)
 	{
 		*datasetreg = all_clr_mask;     
 //#if (CYCLES_PER_MICROSECOND > 100)
@@ -268,7 +284,7 @@ void DMD_Monochrome_Parallel::shiftScreen(int8_t step) {
 			for (byte k = 0; k < column_cnt;k++) {
 				bool last_column = (k == (column_cnt - 1));
 				// four lines
-				for (byte jj = 0; jj < 4; jj++) {
+				for (byte jj = 0; jj < 4*pack_factor; jj++) {
 					// seven points
 					for (byte i = 0; i < 7;i++) {
 						bDMDScreenRAM[ptr] = bDMDScreenRAM[ptr + 1];
@@ -292,7 +308,7 @@ void DMD_Monochrome_Parallel::shiftScreen(int8_t step) {
 			for (byte k = 0; k < column_cnt;k++) {
 				bool last_column = (k == (column_cnt - 1));
 				// four lines
-				for (byte jj = 0; jj < 4; jj++) {
+				for (byte jj = 0; jj < 4*pack_factor; jj++) {
 					// seven points
 					for (byte i = 0; i < 7;i++) {
 						bDMDScreenRAM[ptr] = bDMDScreenRAM[ptr - 1];

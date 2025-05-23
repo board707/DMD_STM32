@@ -16,8 +16,12 @@ public:
 	void clearScreen(byte bNormal)  override;
 	void shiftScreen(int8_t step)  override;
 
-	// changing connect scheme not allowed for Parallel
-	virtual void setConnectScheme(uint8_t sch) override {} ;
+	// You can only allowed to change the connectScheme (to use a Zigzag) 
+	// only on a display with an even number of rows per channel.
+	virtual void setConnectScheme(uint8_t sch) override {
+		if ((pack_factor %2) == 0 ) 
+		  DMD::setConnectScheme(sch);
+	};
 
 protected:
 
@@ -26,6 +30,12 @@ protected:
 private:
 
 	const uint8_t column_size = 8 * DMD_MONO_SCAN;
+	// horizontal rows per channel
+#ifdef MONO_PARA_PACK_FACTOR
+	uint8_t pack_factor = MONO_PARA_PACK_FACTOR;
+#else	
+	uint8_t pack_factor = 1;
+#endif	
  
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 #ifdef USE_UPPER_8BIT
