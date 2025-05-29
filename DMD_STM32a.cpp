@@ -141,6 +141,32 @@ void DMD::initialize_timers(voidFuncPtr handler) {
 #endif
 #if (defined(ARDUINO_ARCH_RP2040))
 /*--------------------------------------------------------------------------------------*/
+/* Move PIO and DMA config to separate method
+   to be redefined in child classes   
+*/
+void DMD::pio_dma_init() {
+	//pio configs
+	sm_data = pio_claim_unused_sm(pio, true);
+	data_prog_offs = pio_add_dmd_out_program(pio, this->data_pins_cnt);
+	pio_config = dmd_out_program_get_default_config(data_prog_offs);
+	dmd_out_program_init(pio, sm_data, data_prog_offs, &pio_config, pio_clkdiv, this->data_pins[0], this->data_pins_cnt, pin_DMD_SCLK, pin_DMD_CLK);
+	
+	// DMA config
+	dma_chan = dma_claim_unused_channel(true);
+	dma_channel_config dma_c = dma_channel_get_default_config(dma_chan);
+	channel_config_set_transfer_data_size(&dma_c, DMA_SIZE_8);     // read by one byte
+	channel_config_set_read_increment(&dma_c, true);
+	channel_config_set_dreq(&dma_c, sm_data + DREQ_PIO0_TX0);      // requested by PIO
+
+	dma_channel_configure(
+		dma_chan,
+		&dma_c,
+		&pio0_hw->txf[sm_data], // Write address (only need to set this once)
+		NULL,             // Don't provide a read address yet
+	   	this->x_len,      // Write x_len bytes than stop
+		false             // Don't start yet
+	);
+}
 void DMD::initialize_timers(voidFuncPtr handler) {
 
 	// test PWM WRAP for overflow
@@ -154,12 +180,8 @@ void DMD::initialize_timers(voidFuncPtr handler) {
 		this->pio_clkdiv = 1+ CYCLES_PER_MICROSECOND/ (4* MAX_PANEL_CLK);
 	}
 
-   //pio configs
-	sm_data = pio_claim_unused_sm(pio, true);
-	//data_prog_offs = pio_add_program(pio, &dmd_out_program);
-	data_prog_offs = pio_add_dmd_out_program(pio, this->data_pins_cnt);
-	pio_config = dmd_out_program_init(pio, sm_data, data_prog_offs, pio_clkdiv, this->data_pins[0], this->data_pins_cnt, pin_DMD_SCLK, pin_DMD_CLK);
-	
+	// PIO and DMA config
+    pio_dma_init();
 
 	//define timers numbers
 	OE_slice_num = pwm_gpio_to_slice_num(pin_DMD_nOE);        // OE timer number from OE pin number
@@ -183,22 +205,6 @@ void DMD::initialize_timers(voidFuncPtr handler) {
 	pwm_set_irq_enabled(MAIN_slice_num, true);             // enable timer overflow irq
 	irq_set_exclusive_handler(PWM_IRQ_WRAP, handler);
 	irq_set_enabled(PWM_IRQ_WRAP, true);
-
-	// DMA config
-	dma_chan = dma_claim_unused_channel(true);
-	dma_channel_config dma_c = dma_channel_get_default_config(dma_chan);
-	channel_config_set_transfer_data_size(&dma_c, DMA_SIZE_8);     // read by one byte
-	channel_config_set_read_increment(&dma_c, true);
-	channel_config_set_dreq(&dma_c, sm_data + DREQ_PIO0_TX0);                 // requested by PIO
-
-	dma_channel_configure(
-		dma_chan,
-		&dma_c,
-		&pio0_hw->txf[sm_data], // Write address (only need to set this once)
-		NULL,             // Don't provide a read address yet
-	   	this->x_len,      // Write x_len bytes than stop
-		false             // Don't start yet
-	);
 
 	pwm_init(MAIN_slice_num, &c_MAIN, true);         // start MAIN timer
 	pwm_init(OE_slice_num, &c_OE, true);         // start OE timer

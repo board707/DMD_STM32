@@ -12,6 +12,17 @@
 // dmd_out //
 // ------- //
 
+/* Default DMD output pio program.
+   
+   Start with generating of LAT pulse.
+   Then going to the main loop - request a byte from DMA 
+   and put lower 6 bits to the DMD R0-B1 pins.
+   Repeat this x_len times.
+   
+   set pin - LAT
+   side pin - CLK
+   OUT pins - R0-B1
+*/
 #define dmd_out_wrap_target 0
 #define dmd_out_wrap 6
 
@@ -57,35 +68,102 @@ static inline pio_sm_config dmd_out_program_get_default_config(uint offset) {
     sm_config_set_sideset(&c, 1, false, false);
     return c;
 }
+#endif
+
+
+// ----------- //
+// dmd_out_lat //
+// ----------- //
+
+/* DMD output pio program (version for FM6126/RUL6024 chips)
+   
+   The same as dmd_out, but set LAT high at the last N bits of data.
+   
+   Program should be init by 32bit config value, which used
+   to setup the length of the data and number of LATCHES.
+
+   Config value format:
+   [31:16] - number of LATCHES (complement to 16)
+   [15:0]  - number of 16bits blocks minus 2
+  
+   set pin - LAT
+   side pin - CLK
+   OUT pins - R0-B1
+*/
+#define dmd_lat_wrap_target 0
+#define dmd_lat_wrap 18
+
+static const uint16_t dmd_lat_program_instructions[] = {
+            //     .wrap_target
+    0xe081, //  0: set    pindirs, 1      side 0     
+    0x80a0, //  1: pull   block           side 0     
+    0x6030, //  2: out    x, 16           side 0     
+    0x60d0, //  3: out    isr, 16         side 0     
+    0xe04f, //  4: set    y, 15           side 0     
+    0x80a0, //  5: pull   block           side 0     
+    0x6006, //  6: out    pins, 6         side 0     
+    0x7062, //  7: out    null, 2         side 1     
+    0x1085, //  8: jmp    y--, 5          side 1     
+    0x1044, //  9: jmp    x--, 4          side 1     
+    0xa026, // 10: mov    x, isr          side 0     
+    0xe04f, // 11: set    y, 15           side 0     
+    0x004e, // 12: jmp    x--, 14         side 0     
+    0xe001, // 13: set    pins, 1         side 0     
+    0x80a0, // 14: pull   block           side 0     
+    0x6006, // 15: out    pins, 6         side 0     
+    0x7162, // 16: out    null, 2         side 1 [1] 
+    0x118c, // 17: jmp    y--, 12         side 1 [1] 
+    0xe000, // 18: set    pins, 0         side 0     
+            //     .wrap
+};
+
+#if !PICO_NO_HARDWARE
+static const struct pio_program dmd_lat_program = {
+    .instructions = dmd_lat_program_instructions,
+    .length = 19,
+    .origin = -1,
+};
+
+static inline pio_sm_config dmd_lat_program_get_default_config(uint offset) {
+    pio_sm_config c = pio_get_default_sm_config();
+    sm_config_set_wrap(&c, offset + dmd_lat_wrap_target, offset + dmd_lat_wrap);
+    sm_config_set_sideset(&c, 1, false, false);
+    return c;
+}
+
+static inline uint pio_add_dmd_lat_program(PIO pio) {
+    return pio_add_program(pio, &dmd_lat_program);
+    }
+
 
 // this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
-static inline pio_sm_config dmd_out_program_init(PIO pio, uint sm, uint offset,
+static inline void dmd_out_program_init(PIO pio, uint sm, uint offset, pio_sm_config* c,
     int clk_div,
     int outBase, int outCnt,
     int setBase,
     int sideBase)
 {
-    pio_sm_config c = dmd_out_program_get_default_config(offset);
+    
     pio_sm_set_consecutive_pindirs(pio, sm, outBase, outCnt, true);  // 6 RGB pins
     for (int i = outBase; i < outBase+outCnt; i++) {
         pio_gpio_init(pio, i);
     }
-    sm_config_set_out_pins(&c, outBase, outCnt);
+    sm_config_set_out_pins(c, outBase, outCnt);
     pio_gpio_init(pio, setBase);
     pio_sm_set_consecutive_pindirs(pio, sm, setBase, 1, true);  // LATCH pin
-    sm_config_set_set_pins(&c, setBase, 1);
+    sm_config_set_set_pins(c, setBase, 1);
     pio_gpio_init(pio, sideBase);
     pio_sm_set_consecutive_pindirs(pio, sm, sideBase, 1, true);  // CLK pin
-    sm_config_set_sideset_pins(&c, sideBase);
-    sm_config_set_sideset(&c, 1, false, false);
+    sm_config_set_sideset_pins(c, sideBase);
+    sm_config_set_sideset(c, 1, false, false);
     //sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
-    sm_config_set_clkdiv(&c, clk_div);
-    sm_config_set_out_shift(&c, true, false, 8);
-    sm_config_set_in_shift(&c, false, false, 8);
-    pio_sm_init(pio, sm, offset, &c);
+    sm_config_set_clkdiv(c, clk_div);
+    sm_config_set_out_shift(c, true, false, 8);
+    sm_config_set_in_shift(c, false, false, 8);
+    pio_sm_init(pio, sm, offset, c);
     pio_sm_exec(pio, sm, offset + dmd_out_offset_entry_data);
     pio_sm_set_enabled(pio, sm, true);
-    return c;
+   // return c;
 }
 static inline void dmd_out_program_reinit (PIO pio, uint sm, uint offset, const pio_sm_config * sm_config)
 {
@@ -99,6 +177,12 @@ static inline void dmd_out_program_reinit (PIO pio, uint sm, uint offset, const 
 // dmd_mux //
 // ------- //
 
+/* DMD MUX pio program
+
+Get a 32bit value from OSR and put it into the 5 mux pins
+
+OUT pins - ABCDE
+*/
 #define dmd_mux_wrap_target 0
 #define dmd_mux_wrap 2
 

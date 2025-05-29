@@ -96,8 +96,8 @@ public:
 	~DMD_RGB_BASE();
 
 	virtual void scan_dmd_p1();
-#if (defined(__STM32F1__) || defined(__STM32F4__))
 	virtual void scan_dmd_p2();
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	virtual void scan_dmd_p3();
 	virtual void initialize_timers(voidFuncPtr handler) override;
 #endif
@@ -110,10 +110,11 @@ protected:
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 	virtual void generate_rgbtable() { generate_rgbtable_default(CLK_WITH_DATA); }
 	void generate_rgbtable_default(uint8_t options);
-	void send_to_allRGB(uint16_t data, uint16_t latches);
-	virtual void chip_init() {};	
+	
+		
 #endif
- 
+    void send_to_allRGB(uint16_t data, uint16_t latches);
+    virtual void chip_init() {};
 	virtual void setCycleLen();
 	virtual uint16_t get_base_addr(int16_t& x, int16_t& y);
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes,

@@ -161,9 +161,9 @@ void DMD_RGB_BASE::init(uint16_t user_fps) {
 
 }
 /*--------------------------------------------------------------------------------------*/
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-void DMD_RGB_BASE::send_to_allRGB(uint16_t data, uint16_t latches) {
 
+void DMD_RGB_BASE::send_to_allRGB(uint16_t data, uint16_t latches) {
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 	uint8_t reg_bit = 0;
 	const uint16_t b_mask = 0b1000000000000000;
 
@@ -185,9 +185,38 @@ void DMD_RGB_BASE::send_to_allRGB(uint16_t data, uint16_t latches) {
 
 	*latsetreg = latmask << 16;// Latch down
 	*datasetreg = rgbmask_all << 16; // off all rgb channels
+// -------------------------------------------	
+#elif (defined(ARDUINO_ARCH_RP2040))	
 
+// to use DMA ring mode we need to align data to 16 bytes
+uint8_t reg[16]  __attribute__((aligned(16))) = {0};
+
+// Convert 16bit config value to byte array
+// high bits to 0xff, low bits to 0
+for (int i = 0; i < 16; i++) {
+	if (data & 0x8000) {
+		reg[i] = 0xff;
+	}
+	else {
+		reg[i] = 0x00;
+	}
+	data <<= 1;
 }
+
+// RGB data transfer by PIO machine controlled by parameter below
+// Upper 16 bits is a number of LATCHES at the end of data (complement to 16)
+// Lower 16 bits is a number of 16 pixels blocks in a single transfer ( substract 2 )
+uint32_t control_par = ((uint32_t)(16-latches) << 16)|((x_len >> 4) - 2);
+
+dmd_out_program_reinit(pio, sm_data, data_prog_offs, &pio_config);
+// Put a `control_par' parameter
+pio_sm_put_blocking(pio, sm_data, control_par);
+// Start DMA transfer of `reg` buffer
+dma_channel_set_read_addr(dma_chan, reg, true);
+dma_channel_wait_for_finish_blocking(dma_chan);
 #endif
+}
+
 /*--------------------------------------------------------------------------------------*/
 uint16_t DMD_RGB_BASE::get_base_addr(int16_t& x, int16_t& y) {
 	this->transform_XY(x, y);
@@ -206,8 +235,8 @@ uint16_t DMD_RGB_BASE::get_base_addr(int16_t& x, int16_t& y) {
 void DMD_RGB_BASE::scan_dmd() {
 	
 	scan_dmd_p1();
-#if (defined(__STM32F1__) || defined(__STM32F4__))
 	scan_dmd_p2();
+#if (defined(__STM32F1__) || defined(__STM32F4__))	
 	scan_dmd_p3();
 #endif
 }
@@ -286,20 +315,12 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 
 
 
-#if (defined(ARDUINO_ARCH_RP2040))
-	dma_channel_wait_for_finish_blocking(dma_chan);
-	dmd_out_program_reinit(pio, sm_data, data_prog_offs, &pio_config);
-	dma_channel_set_read_addr(dma_chan, buffptr, true);
-	pwm_set_counter(MAIN_slice_num, 0);
-	pwm_set_counter(OE_slice_num, 0);
-	pwm_set_enabled(MAIN_slice_num, true);
-	pwm_set_enabled(OE_slice_num, true);
-	buffptr += displ_len;
-#endif
+
 }
-#if (defined(__STM32F1__) || defined(__STM32F4__))
+
 
 void DMD_RGB_BASE::scan_dmd_p2() {
+#if (defined(__STM32F1__) || defined(__STM32F4__))	
 	*latsetreg = latmask; // Latch data loaded during *prior* interrupt
 	*latsetreg = latmask << 16;// Latch down
 
@@ -310,8 +331,24 @@ void DMD_RGB_BASE::scan_dmd_p2() {
 	timer_generate_update(OE_TIMER);
 	timer_resume(OE_TIMER);
 	timer_resume(MAIN_TIMER);
-}
+#elif (defined(ARDUINO_ARCH_RP2040))
+	// Wait to finishing of previous transfer 
+	dma_channel_wait_for_finish_blocking(dma_chan);
+	dmd_out_program_reinit(pio, sm_data, data_prog_offs, &pio_config);
+	// Start DMA transfer from `buffptr` buffer
+	dma_channel_set_read_addr(dma_chan, buffptr, true);
+
+	// Restart MAIN and OE timers
+	pwm_set_counter(MAIN_slice_num, 0);
+	pwm_set_counter(OE_slice_num, 0);
+	pwm_set_enabled(MAIN_slice_num, true);
+	pwm_set_enabled(OE_slice_num, true);
+
+	// increment a buffer pointer for the next row
+	buffptr += displ_len;
 #endif
+}
+
 
 /*--------------------------------------------------------------------------------------*/
 #if (defined(__STM32F1__) || defined(__STM32F4__))

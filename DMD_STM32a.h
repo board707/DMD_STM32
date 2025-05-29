@@ -3,7 +3,7 @@
 /*--------------------------------------------------------------------------------------
  DMD_STM32a.h  - advansed version of DMD_STM32.h
 
- ****** VERSION 1.1.8 ******
+ ****** VERSION 1.2.0 ******
 
  DMD_STM32.h  - STM32 port of DMD.h library
 
@@ -336,6 +336,9 @@ public:
 #endif
 
 	virtual void initialize_timers(voidFuncPtr handler);
+	#if (defined(ARDUINO_ARCH_RP2040))
+	virtual void pio_dma_init();
+    #endif
 	
 	bool marqueeType_MultiColor = false;
 	DMD_Colorlist* marqueeColors = NULL;

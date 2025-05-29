@@ -1,4 +1,7 @@
 # ChangeLog
+## [1.2.0] - 2025-05-29
+ - Add FM6126a driver support for RP2040 controllers  
+
 ## [1.1.9] - 2025-05-23
  - Add an ability to manage a multiple rows per pin on Parallel Monochrome mode,
   that allow to construct a screen with more than 7 rows high.
