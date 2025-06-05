@@ -204,7 +204,7 @@ public:
         this->use_shift = false;
         }
     // Fast text shift is disabled for complex patterns, so we don't need the method
-        void disableFastTextShift(bool shift) override {UNUSED(shift);}
+        void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -240,7 +240,7 @@ public:
         this->use_shift = false;
         }
     // Fast text shift is disabled for complex patterns, so we don't need the method
-		void disableFastTextShift(bool shift) override {UNUSED(shift);}
+		void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	
@@ -271,7 +271,7 @@ public:
         this->use_shift = false;
         }
     // Fast text shift is disabled for complex patterns, so we don't need the method
-        void disableFastTextShift(bool shift) override {UNUSED(shift);}
+        void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	
@@ -315,7 +315,7 @@ public:
         this->use_shift = false;
         }
     // Fast text shift is disabled for complex patterns, so we don't need the method
-        void disableFastTextShift(bool shift) override {UNUSED(shift);}
+        void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	
@@ -364,7 +364,7 @@ public:
         this->use_shift = false;
         }
     // Fast text shift is disabled for complex patterns, so we don't need the method
-        void disableFastTextShift(bool shift) override {UNUSED(shift);}
+        void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	
@@ -425,7 +425,7 @@ public:
         this->use_shift = false;
         }
     // Fast text shift is disabled for complex patterns, so we don't need the method
-        void disableFastTextShift(bool shift) override {UNUSED(shift);}
+        void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
   
@@ -535,7 +535,7 @@ public:
 		this->use_shift = false;
 	}
 	// Fast text shift is disabled for complex patterns, so we don't need the method
-	void disableFastTextShift(bool shift) override {UNUSED(shift);}
+	void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -569,7 +569,7 @@ public:
 		this->use_shift = false;
 	}
 	// Fast text shift is disabled for complex patterns, so we don't need the method
-	void disableFastTextShift(bool shift) override {UNUSED(shift);}
+	void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -615,7 +615,7 @@ public:
 		this->use_shift = false;
 	}
 	// Fast text shift is disabled for complex patterns, so we don't need the method
-	void disableFastTextShift(bool shift) override {UNUSED(shift);}
+	void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -659,7 +659,7 @@ public:
 		this->use_shift = false;
 	}
 	// Fast text shift is disabled for complex patterns, so we don't need the method
-	void disableFastTextShift(bool shift) override {UNUSED(shift);}
+	void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 protected:
 	uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -722,7 +722,7 @@ class DMD_RGB<RGB104x52_S13_Craftish, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPT
       this->use_shift = false;
     }
     // Fast text shift is disabled for complex patterns, so we don't need the method
-    void disableFastTextShift(bool shift) override {UNUSED(shift);}
+    void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
   protected:
     uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -820,7 +820,7 @@ class DMD_RGB<RGB32x16_S2_VitaliyDKZ, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPT
 			this->use_shift = false;
 			}
 		// Fast text shift is disabled for complex patterns, so we don't need the method
-		void disableFastTextShift(bool shift) override {UNUSED(shift);}
+		void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 	protected:
 		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -858,7 +858,7 @@ class DMD_RGB<RGB32_16_S4_DIRECT_LNikon, COL_DEPTH> : public
 			}
 		// Fast text shift is disabled for complex patterns, so we don't 
 		// need the method
-			void disableFastTextShift(bool shift) override {UNUSED(shift);}
+			void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 	protected:
 		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -913,7 +913,7 @@ class DMD_RGB<RGB32x16_s2_boba7, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 			this->use_shift = false;
 			}
 		// Fast text shift is disabled for complex patterns, so we don't need the method
-		void disableFastTextShift(bool shift) override {UNUSED(shift);}
+		void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 	protected:
 		uint16_t get_base_addr(int16_t& x, int16_t& y) override {
@@ -968,7 +968,7 @@ class DMD_RGB<RGB104x52_S13_funnymind, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEP
 			}
 		// Fast text shift is disabled for complex patterns, so we don't 
 		// need the method
-			void disableFastTextShift(bool shift) override {UNUSED(shift);}
+			void disableFastTextShift(bool shift) override {UNUSED1(shift);}
 
 	protected:
 		uint16_t get_base_addr(int16_t& x, int16_t& y) override {

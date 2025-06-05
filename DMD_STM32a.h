@@ -35,8 +35,10 @@
 //#define DEBUG2		1
 #define DEBUG_PRINT( x )   Serial1.print( #x );Serial1.print(" = ");Serial1.println( x )
 
-#define UNUSED(x) (void)(x)
-#define UNUSED_ALL(...) (void)sizeof(__VA_ARGS__)
+#define UNUSED1(x) (void)(x)
+#define UNUSED2(x,y) (void)(x),(void)(y)
+#define UNUSED3(x,y,z) (void)(x),(void)(y),(void)(z)
+
 //Arduino toolchain header, version dependent
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
@@ -353,10 +355,10 @@ protected:
 	virtual void generate_muxmask();
 	virtual void set_mux(uint8_t curr_row);
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes, uint8_t* bg_col_bytes) {
-		UNUSED_ALL(x, y, hbyte, bsize, fg_col_bytes, bg_col_bytes);
+		UNUSED3(x, y, hbyte);  UNUSED3(bsize, fg_col_bytes, bg_col_bytes);
 		} ;
 	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) {
-		UNUSED_ALL(cbytes,color);
+		UNUSED2(cbytes,color);
 	};
 	virtual void  drawMarqueeString(int bX, int bY, const char* bChars, int length,
 		int16_t miny, int16_t maxy, byte orientation = 0);
@@ -457,7 +459,7 @@ protected:
 		}
 
 	uint16_t get_text_color(uint8_t num, uint16_t color) {
-		UNUSED(num);
+		UNUSED1(num);
 		return color;
 		}
 	

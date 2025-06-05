@@ -20,6 +20,7 @@ static volatile uint8_t running_dmd_len = 0;
 /*--------------------------------------------------------------------------------------*/
 void register_running_dmd(DMD_MonoChrome_SPI* dmd, uint16_t scan_int)
 {
+	UNUSED1(scan_int);
 	uint8_t spi_num = dmd->spi_num;
 	if (!spi_num) return;
 	
