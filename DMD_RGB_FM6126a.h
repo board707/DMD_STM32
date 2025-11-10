@@ -28,7 +28,7 @@
 #else
 #define pew                                     \
 	*(this->datasetreg) = this->clk_clrmask;    \
-	*(this->datasetreg) = this->expand[*ptr++]; \
+	*(this->datasetreg) = this->expand[(*ptr++) & 0x3F]; \
 	*(this->datasetreg) = this->clkmask;
 #endif
 #elif CLOCK_SEPARATE == 0
@@ -40,7 +40,7 @@
 
 #define pew                                  \
 	*(this->datasetreg) = this->clk_clrmask; \
-	*(this->datasetreg) = this->expand[*ptr++];
+	*(this->datasetreg) = this->expand[(*ptr++) & 0x3F];
 
 #endif
 #endif
@@ -247,6 +247,21 @@ public:
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : DMD_RGB_FM6126_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COLOR_4BITS_Packed>(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
+
+	// Using of expand[] table is a default for Color_4Bits_Packed mode.
+	#if CLOCK_SEPARATE == 1
+	#define pew                              \
+		*(this->datasetreg) = this->clk_clrmask;    \
+		*(this->datasetreg) = this->expand[(*ptr++) & 0x3F]; \
+		*(this->datasetreg) = this->clkmask;
+	
+	#elif CLOCK_SEPARATE == 0
+	#define pew                            \
+		*(this->datasetreg) = this->clk_clrmask; \
+		*(this->datasetreg) = this->expand[(*ptr++) & 0x3F];
+	
+	#endif
+	
 
 	virtual void scan_dmd_p3() override
 	{

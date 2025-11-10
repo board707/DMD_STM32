@@ -1,4 +1,8 @@
 # ChangeLog
+## [1.2.1] - 2025-11-09
+ - Fix bug with UNUSED_ALL() macro (issue #165)
+ - Fix incorrect pin mapping in FM6126a driver in <COLOR_4BITS_Packed> mode.
+
 ## [1.2.0] - 2025-05-29
  - Add FM6126a driver support for RP2040 controllers  
 
