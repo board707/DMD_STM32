@@ -57,12 +57,7 @@ class DMD_Font
 public:
 	DMD_Font(const uint8_t* ptr);
 	~DMD_Font();
-	const uint8_t* font_ptr;
-	uint8_t firstChar =0;
-	uint8_t lastChar =0 ;
-	uint8_t fontHeight = 0 ;
-	bool gfx_flag = false;
-
+	
 	bool is_gfx_font();
 	uint8_t get_first();
 	uint8_t get_last();
@@ -71,7 +66,14 @@ public:
 	virtual bool is_char_in(unsigned char c) = 0;
 
 	virtual uint8_t get_char_width(unsigned char c, byte orientation = 0) = 0;
-	
+
+	uint8_t interCharSpace = 1;
+	const uint8_t* font_ptr;
+protected:
+	uint8_t firstChar =0;
+	uint8_t lastChar =0 ;
+	uint8_t fontHeight = 0 ;
+	bool gfx_flag = false;	
 };
 /******************************************************/
 class DMD_Standard_Font : public DMD_Font {

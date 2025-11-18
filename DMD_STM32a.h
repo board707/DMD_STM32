@@ -203,8 +203,10 @@ public:
 
 			if (charWide > 0) {
 				strWidth += charWide;
-				this->drawLine(bX + strWidth, bY + miny, bX + strWidth, bY + maxy, textbgcolor);
-				strWidth++;
+				if( Font->interCharSpace > 0 ) {
+					this->drawFilledBox(bX + strWidth, bY + miny, bX + strWidth + Font->interCharSpace - 1, bY + maxy, textbgcolor);
+					strWidth+=Font->interCharSpace;
+				}
 				}
 			else if (charWide < 0) {
 				return;
@@ -275,7 +277,10 @@ public:
 	// -- Char and text attributes -- //
 
 	//Select a font for drawing chars, strings and marquee text 
-	void selectFont(DMD_Font* font);
+	void selectFont(DMD_Font* font, uint8_t interCharInterval);
+	void selectFont(DMD_Font* font) {
+		selectFont(font, 1);
+	}
 
     //Find the width of a single character using defined text font
 	int charWidth(const unsigned char letter, byte orientation = 0);

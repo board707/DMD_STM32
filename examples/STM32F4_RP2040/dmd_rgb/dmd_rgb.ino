@@ -147,8 +147,8 @@ void loop(void)
     
     utf8_rus(k, (const unsigned char*)s);
     char* m = s;
-    // select standard font
-    dmd.selectFont(&UkrRusArial_F);
+    // select standard font with char spacing 3px
+    dmd.selectFont(&UkrRusArial_F,3);
     
     // set text foreground and background colors
     dmd.setTextColor(col[0], bg);

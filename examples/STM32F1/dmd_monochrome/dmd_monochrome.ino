@@ -120,8 +120,8 @@ void loop(void)
     char k[30];
     utf8_rus(k, (const unsigned char* )m);
 
-    // but initially select standard font
-    dmd.selectFont(&UkrRusArial_F);
+    // select standard font with char spacing 3px
+    dmd.selectFont(&UkrRusArial_F,3);
 
     // shift steps in pixels for running text (positive - shift right, negative - left)
     int8_t step[] = { 1,-1,-2,2 };

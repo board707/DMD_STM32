@@ -565,9 +565,10 @@ void DMD::drawFilledBox(int x1, int y1, int x2, int y2,
 /*--------------------------------------------------------------------------------------
 	   Select current font
 --------------------------------------------------------------------------------------*/
-void DMD::selectFont(DMD_Font* font)
+void DMD::selectFont(DMD_Font* font, uint8_t interCharInterval)
 {
 	this->Font = font;
+	this->Font->interCharSpace = interCharInterval;
 }
 
 /*--------------------------------------------------------------------------------------
@@ -763,11 +764,11 @@ void DMD::stringBounds(const char* bChars, uint16_t length,
 				}
 				else {
 					charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy);
-					if (x > 0) width += x + 1;
+					if (x > 0) width += x + ff->interCharSpace;
 				}
 			}
 		}
-		if (width) width--;
+		if (width) width-= ff->interCharSpace;
 		*w = width;
 		if (orientation) {
 			*min_y = 0;
@@ -802,10 +803,10 @@ uint16_t DMD::stringWidth(const char* bChars, uint16_t length, byte orientation)
 	for (idx = 0; idx < length; idx++) {
 		int cwidth = charWidth(bChars[idx], orientation);
 		if (cwidth > 0)
-			width += cwidth + 1;
+			width += cwidth + Font->interCharSpace;
 	}
 	if (width) {
-		width--;
+		width-= Font->interCharSpace;
 	}
 	return width;
 
