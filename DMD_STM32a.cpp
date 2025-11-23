@@ -32,16 +32,16 @@
 --------------------------------------------------------------------------------------*/
 
 
-DMD::DMD(DMD_Pinlist* _mux_pinlist, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
+DMD::DMD(byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
 	uint8_t n_Rows, DMD_Pinlist* _data_pinlist, bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
-	:Adafruit_GFX(panelsWide * dmd_pixel_x, panelsHigh * dmd_pixel_y), mux_cnt(_mux_pinlist->count), mux_pinlist(_mux_pinlist), nRows(n_Rows), 
+	:Adafruit_GFX(panelsWide * dmd_pixel_x, panelsHigh * dmd_pixel_y), nRows(n_Rows), 
 	data_pinlist(_data_pinlist), pin_DMD_CLK(_data_pinlist->list[0]), pin_DMD_nOE(_pin_nOE), pin_DMD_SCLK(_pin_SCLK), DisplaysWide(panelsWide), DisplaysHigh(panelsHigh), dbuf(d_buf),
 	DMD_PIXELS_ACROSS(dmd_pixel_x), DMD_PIXELS_DOWN(dmd_pixel_y)
 {
 
 	DisplaysTotal = DisplaysWide * DisplaysHigh;
 	
-	mux_pins = mux_pinlist->list;
+	//mux_pins = mux_pinlist->list;
 	data_pins = &(data_pinlist->list[1]);
 	data_pins_cnt = data_pinlist->count-1;
 	
@@ -54,18 +54,19 @@ DMD::DMD(DMD_Pinlist* _mux_pinlist, byte _pin_nOE, byte _pin_SCLK, byte panelsWi
 	latmask = digitalPinToBitMask(pin_DMD_SCLK);
 	oemask = digitalPinToBitMask(pin_DMD_nOE);
 	oesetreg = portSetRegister(pin_DMD_nOE);
-	muxsetreg = portSetRegister(mux_pins[0]);
+	//muxsetreg = portSetRegister(mux_pins[0]);
 	
 #endif
-	mux_mask2 = (uint32_t*)malloc((nRows + 1) * 4);
+	//mux_mask2 = (uint32_t*)malloc((nRows + 1) * 4);
 	
 }
 /*--------------------------------------------------------------------------------------*/
 DMD::~DMD()
 {
-	free(mux_mask2);
-	delete mux_pinlist;
+	//free(mux_mask2);
+	//delete mux_pinlist;
 	delete data_pinlist;
+	if (Mux != NULL) delete Mux;
 #if defined(DEBUG2)
 	free((uint16_t*)dd_ptr);
 #endif
@@ -74,10 +75,7 @@ DMD::~DMD()
 void DMD::set_pin_modes() {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
-	for (uint8_t i = 0; i < mux_cnt; i++) {
-		digitalWrite(mux_pins[i], LOW);
-		pinMode(mux_pins[i], OUTPUT);
-	}
+	
 	digitalWrite(pin_DMD_CLK, LOW);
 	pinMode(pin_DMD_CLK, OUTPUT);
 
@@ -97,14 +95,14 @@ void DMD::set_pin_modes() {
 void DMD::init(uint16_t scan_interval) {
 	
 	this->set_pin_modes();
-
+    this->Mux->init();
 	// calculate update interval
 	 scan_cycle_len = (uint32_t) scan_interval * CYCLES_PER_MICROSECOND;
    
    // here will be initialize_timers() call in child classes 
 
 
-	 this->generate_muxmask();
+	
 
     // clean both buffers
 	if (matrixbuff[0] != matrixbuff[1]) {
@@ -231,80 +229,7 @@ uint16_t DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
 }
 #endif
 /*--------------------------------------------------------------------------------------*/
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-void DMD::generate_muxmask() {
 
-#define set_mux_ch_by_mask(x)  ((uint32_t) x)
-#define clr_mux_ch_by_mask(x)  (((uint32_t)x) << 16)
-
-	for (uint8_t i = 0; i < nRows; i++)
-	{
-		mux_mask2[i] = 0;
-		if (mux_cnt == nRows)                // DIRECT MUX
-		{
-			for (uint8_t j = 0; j < nRows; j++)
-			{
-				uint16_t mux_ch_mask = digitalPinToBitMask(mux_pins[j]);
-				// set selected channel to LOW, all other to HIGH
-				if (i == j)
-				{
-					mux_mask2[i] |= clr_mux_ch_by_mask(mux_ch_mask);    //low
-				}
-				else
-				{
-					mux_mask2[i] |= set_mux_ch_by_mask(mux_ch_mask);    //high
-				}
-			}
-		}
-		else {                             // BINARY MUX
-			for (uint8_t j = 0; (1 << j) < nRows; j++)
-			{
-				uint16_t mux_ch_mask = digitalPinToBitMask(mux_pins[j]);
-				if (i & (1 << j))
-				{
-					mux_mask2[i] |= set_mux_ch_by_mask(mux_ch_mask);
-				}
-				else
-				{
-					mux_mask2[i] |= clr_mux_ch_by_mask(mux_ch_mask);
-				}
-			}
-		}
-	}
-	mux_mask2[nRows] = mux_mask2[0];
-
-}
-/*--------------------------------------------------------------------------------------*/
-#elif (defined(ARDUINO_ARCH_RP2040))
-void DMD::generate_muxmask() {
-
-	for (uint8_t i = 0; i < nRows; i++)
-		{		
-		if (mux_cnt == nRows)                // DIRECT MUX
-			// set selected channel to LOW, all other to HIGH
-			{
-			mux_mask2[i] = ((1 << nRows) - 1) & (~(1 << i));
-			}
-		else {                             // BINARY MUX
-			mux_mask2[i] = i;
-			}
-		}
-	mux_mask2[nRows] = mux_mask2[0];
-
-	sm_mux = pio_claim_unused_sm(pio, true);
-	//uint8_t data_mux_offs = pio_add_program(pio, &dmd_mux_program);
-	uint8_t data_mux_offs = pio_add_dmd_mux_program(pio, this->mux_cnt);
-	dmd_mux_program_init(pio, sm_mux, data_mux_offs, this->mux_pins[0], this->mux_cnt);
-}
-#endif
-/*--------------------------------------------------------------------------------------*/
-void DMD::set_mux(uint8_t curr_row) {
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-	*muxsetreg = mux_mask2[curr_row];
-#elif (defined(ARDUINO_ARCH_RP2040))
-    pio_sm_put_blocking(pio, sm_mux, mux_mask2[curr_row]);
-#endif
-}
 /*--------------------------------------------------------------------------------------*/
 void DMD::switch_row() {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
@@ -319,7 +244,7 @@ void DMD::switch_row() {
 	timer_set_compare(OE_TIMER, oe_channel, oe_duration);
 #endif
 	
-	this->set_mux(bDMDByte);
+	this->Mux->set_mux(bDMDByte);
 
 	if (bDMDByte == 2) {
 		if (swapflag == true) {    // Swap front/back buffers if requested

@@ -1,4 +1,9 @@
 # ChangeLog
+## [1.2.3] - 2025-11-23
+ - Moved the multiplexer code to a separate class, which made it possible 
+   to assign the multiplexer type regardless of the driver type. 
+   For example, this add the support for shift multiplexing for FM6126a panels.
+
 ## [1.2.2] - 2025-11-18
  - Add ability of set up of font inercharacter interval by selectFont() method
 

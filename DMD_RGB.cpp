@@ -23,7 +23,7 @@ void inline __attribute__((always_inline)) scan_running_dmd_R()
 
 DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 	byte panelsWide, byte panelsHigh, bool d_buf, uint8_t col_depth, uint8_t n_Rows, byte dmd_pixel_x, byte dmd_pixel_y)
-	: DMD(new DMD_Pinlist(mux_cnt, mux_list), _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, n_Rows, 
+	: DMD(_pin_nOE, _pin_SCLK, panelsWide, panelsHigh, n_Rows, 
 		new DMD_Pinlist(7, pinlist), d_buf, dmd_pixel_x, dmd_pixel_y), nPlanes(col_depth)
 {
 
@@ -52,6 +52,15 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	// default text colors - green on black
 	textcolor = Color888(0, 255, 0);
 	textbgcolor = 0;
+
+	
+	if (mux_cnt == 33) {
+		Mux = new DMD_Mux595(new DMD_Pinlist(3, mux_list), n_Rows);
+	}
+	else {
+		Mux = new DMD_Mux3to8(new DMD_Pinlist(mux_cnt, mux_list), n_Rows);
+	}
+	
 
 }
 /*--------------------------------------------------------------------------------------*/
@@ -147,13 +156,14 @@ void DMD_RGB_BASE::init(uint16_t user_fps) {
 
 	if (user_fps) this->default_fps = user_fps;
 	this->setCycleLen();
+	this->Mux->init();
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 	set_pin_modes();
-	generate_muxmask();
+	//generate_muxmask();
 	generate_rgbtable();
 	chip_init();
 #elif (defined(ARDUINO_ARCH_RP2040))
-	generate_muxmask();
+	// generate_muxmask();
 #endif
 	initialize_timers(scan_running_dmd_R);
 	setBrightness(200);
@@ -232,6 +242,31 @@ uint16_t DMD_RGB_BASE::get_base_addr(int16_t& x, int16_t& y) {
 	return base_addr;
 }
 /*--------------------------------------------------------------------------------------*/
+void DMD_RGB_BASE::configure_multiplexer(MUX_TYPE mux)
+{
+	if (this->Mux->mux_type == mux) return ;
+	DMD_Multiplexer* new_mux = nullptr;	
+
+	switch (mux) {
+
+	case DMD_MUX_TYPE138:
+		new_mux = new DMD_Mux3to8(nullptr, 0);
+		break;
+	case DMD_MUX_TYPE_SHIFTREG:
+		new_mux = new DMD_Mux595(nullptr, 0);
+		break;	
+	}
+
+	if (new_mux != nullptr) {
+		new_mux->transfer_data(this->Mux);
+		delete this->Mux;
+		this->Mux = new_mux;
+		this->Mux->init();
+	}
+	
+	
+}
+/*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::scan_dmd() {
 	
 	scan_dmd_p1();
@@ -291,7 +326,7 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 
 	// For OneBitColor set mux BEFORE changing row
 	if (nPlanes == 1) {
-		this->set_mux(row);
+		this->Mux->set_mux(row);
 		}
 
 
@@ -310,7 +345,7 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 
 	// For 4bit Color set mux at 1st Plane
 	else if (plane == 1) {
-		this->set_mux(row);
+		this->Mux->set_mux(row);
 		}
 
 

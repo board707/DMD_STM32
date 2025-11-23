@@ -17,7 +17,7 @@
 
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
-// Moment of set CLK signal (0 - CLK immediately with DATA, 1 - CLK one step after DATA)
+// Option of set CLK signal (0 - CLK immediately with DATA, 1 - CLK one step after DATA)
 #define CLOCK_SEPARATE 0
 #if CLOCK_SEPARATE == 1
 #if defined(DIRECT_OUTPUT)
@@ -26,6 +26,7 @@
 	*(this->datasetreg) = *ptr++;            \
 	*(this->datasetreg) = this->clkmask;
 #else
+// Add narrowing the expand table index to 6 bits to reduce the table size in the future.
 #define pew                                     \
 	*(this->datasetreg) = this->clk_clrmask;    \
 	*(this->datasetreg) = this->expand[(*ptr++) & 0x3F]; \
@@ -81,7 +82,7 @@ public:
 
 		*(this->oesetreg) = this->oemask; // Disable LED output during row/plane switchover
 
-		this->set_mux(1);						  // A -> High
+		this->Mux->set_mux(1);						  // A -> High
 		*(this->latsetreg) = this->latmask << 16; // LAT - LOW
 		*(this->datasetreg) = this->clk_clrmask;  // off all rgb channels
 
@@ -91,7 +92,7 @@ public:
 		delayMicroseconds(2);
 		this->send_to_allRGB(0, 3); // send all 0's to all rgb
 
-		this->set_mux(0); // Clear all mux channels
+		this->Mux->set_mux(0); // Clear all mux channels
 		*(this->oesetreg) = this->oemask << 16;
 	}
 /*-------------------------------------------------*/
@@ -117,7 +118,7 @@ public:
 		digitalWrite(this->pin_DMD_nOE, HIGH);  // Disable LED output during row/plane switchover
 		
 		// At that moment a generate_muxmask() method has already been completed and set_mux() is ready for use
-		this->set_mux(1); // A -> High
+		this->Mux->set_mux(1);	 // A -> High
 
 		this->send_to_allRGB(b13a, 12); // write 2nd config register
 		delayMicroseconds(2);
@@ -126,7 +127,7 @@ public:
 		this->send_to_allRGB(0, 3); // send all 0's to all rgb
 		delayMicroseconds(2);
 		
-		this->set_mux(0); // Clear all mux channels
+		this->Mux->set_mux(0);	 // Clear all mux channels
 						 
 		digitalWrite(this->pin_DMD_nOE, LOW);
 	}
@@ -234,6 +235,7 @@ public:
 		this->buffptr += this->displ_len;
 	}
 #endif
+#undef pew
 };
 
 //--------------------------------------------------------------------------------------
@@ -249,6 +251,7 @@ public:
 	}
 
 	// Using of expand[] table is a default for Color_4Bits_Packed mode.
+	// Add narrowing the table index to 6 bits to reduce the table size in the future.
 	#if CLOCK_SEPARATE == 1
 	#define pew                              \
 		*(this->datasetreg) = this->clk_clrmask;    \

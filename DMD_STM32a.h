@@ -31,112 +31,15 @@
 --------------------------------------------------------------------------------------*/
 #ifndef DMD_STM32a_H_
 #define DMD_STM32a_H_
-#include "stm_int.h"
-//#define DEBUG2		1
-#define DEBUG_PRINT( x )   Serial1.print( #x );Serial1.print(" = ");Serial1.println( x )
-
-#define UNUSED1(x) (void)(x)
-#define UNUSED2(x,y) (void)(x),(void)(y)
-#define UNUSED3(x,y,z) (void)(x),(void)(y),(void)(z)
-
-//Arduino toolchain header, version dependent
-#if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
-
+#include "DMD_Defs.h"
 #include "Adafruit_GFX.h"
 #include "DMD_Config.h"
 #include "DMD_Font.h"
-#if (defined(ARDUINO_ARCH_RP2040))
-#include <hardware/irq.h>
-#include <hardware/pwm.h>
-#include <hardware/dma.h>
-#include <hardware/gpio.h>
-#include <pico/stdlib.h> 
-#include "dmd_out.pio.h"
-#endif
-//#define TICS_IN_uS (F_CPU / 1000000ul)
-#ifndef CYCLES_PER_MICROSECOND
-#define CYCLES_PER_MICROSECOND (F_CPU / 1000000ul)
-#endif
-
-#if (defined(__STM32F1__) || defined(__STM32F4__))
-typedef uint32 PortType;
-#define TIM_MAX_RELOAD ((1 << 16) - 1)
-enum OE_PWM_Polarity{ OE_PWM_POSITIVE = TIMER_OC_MODE_PWM_1, OE_PWM_NEGATIVE = TIMER_OC_MODE_PWM_2 };
-#elif (defined(ARDUINO_ARCH_RP2040))
-#define TIM_MAX_RELOAD ((1 << 16) - 1)
-#define MAX_PANEL_CLK 15
-enum OE_PWM_Polarity { OE_PWM_POSITIVE = false, OE_PWM_NEGATIVE = true };
-typedef uint16_t PortType;
-#endif
-
-//Pixel/graphics writing modes (bGraphicsMode)
-#define GRAPHICS_NORMAL    1
-#define GRAPHICS_INVERSE   0
-#define GRAPHICS_TOGGLE    2
-#define GRAPHICS_OR        3
-#define GRAPHICS_NOR       4
-
-//Panel inverse mode (for some panels)
-#define PANEL_INVERSE 0
-
-//Max length of scrolling text
-#define MAX_STRING_LEN 300
-
-//drawTestPattern Patterns
-#define PATTERN_ALT_0     0
-#define PATTERN_ALT_1     1
-#define PATTERN_STRIPE_0  2
-#define PATTERN_STRIPE_1  3
-
-//Monochrome panel settings
-#define DMD_BITSPERPIXEL           1     
-#define DMD_MONO_SCAN              4
-
-// Panel connections variants
-#define CONNECT_NORMAL 0
-#define CONNECT_ROTATE90 1
-#define CONNECT_ZIGZAG 2
-
-// Shift marquee result codes
-#define MARQUEE_OUT_OF_SCREEN 1					// text has left the screen
-#define MARQUEE_JUSTIFY_ON_LEFT 2				// text justify on the left border
-#define MARQUEE_JUSTIFY_ON_RIGHT 4				// ...on the right border
-
-#ifndef _swap_int16_t
-#define _swap_int16_t(a, b) { int16_t t = a; a = b; b = t; }
-#endif
+#include "DMD_Multiplexer.h"
 
 //typedef uint8_t(*FontCallback)(const uint8_t*);
 
-/*--------------------------------------------------------------------------------------*/
-// container list class for DMD GPIOs and Colours
-template <typename T>
-class DMD_List
-{
-public:
-	DMD_List(T pinA, T pinB) :count(2)
-	{
-		list = new T[2]{ pinA, pinB };
-	}
-	DMD_List(uint8_t pin_count, T* pinlist):count(pin_count)
-	{
-		list = new T[pin_count];
-		memcpy(list, pinlist, count*sizeof(T));
-	}
 
-	uint8_t count = 0;
-	T* list = nullptr;
-
-	~DMD_List() { delete[] list; }
-
-};
-
-typedef DMD_List<uint8_t>  DMD_Pinlist;
-typedef DMD_List<uint16_t>  DMD_Colorlist;
 
 
 
@@ -147,7 +50,7 @@ class DMD : public Adafruit_GFX
 public:
 	//Instantiate the DMD
 
-	DMD(DMD_Pinlist* _mux_pinlist, byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
+	DMD(byte _pin_nOE, byte _pin_SCLK, byte panelsWide, byte panelsHigh,
 		uint8_t n_Rows, DMD_Pinlist* _data_pinlist, bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y);
 	
 	virtual ~DMD();
@@ -357,10 +260,10 @@ protected:
 		//virtual void generate_muxmask();
 		virtual uint16_t setup_main_timer(uint32_t cycles, voidFuncPtr handler);
 #endif
-	virtual void generate_muxmask();
-	virtual void set_mux(uint8_t curr_row);
+	//virtual void generate_muxmask();
+	//virtual void set_mux(uint8_t curr_row);
 	virtual void drawHByte(int16_t x, int16_t y, uint8_t hbyte, uint16_t bsize, uint8_t* fg_col_bytes, uint8_t* bg_col_bytes) {
-		UNUSED3(x, y, hbyte);  UNUSED3(bsize, fg_col_bytes, bg_col_bytes);
+		UNUSED3(x, y, hbyte); UNUSED3(bsize, fg_col_bytes, bg_col_bytes);
 		} ;
 	virtual void getColorBytes(uint8_t* cbytes, uint16_t color) {
 		UNUSED2(cbytes,color);
@@ -368,17 +271,18 @@ protected:
 	virtual void  drawMarqueeString(int bX, int bY, const char* bChars, int length,
 		int16_t miny, int16_t maxy, byte orientation = 0);
 	// pins
-	const uint8_t mux_cnt = 2;
+	//const uint8_t mux_cnt = 2;
 	uint8_t data_pins_cnt = 0;
-	uint8_t* mux_pins;
+	//uint8_t* mux_pins;
 	uint8_t* data_pins;
 	
-	DMD_Pinlist* mux_pinlist;
+	//DMD_Pinlist* mux_pinlist;
 	const uint8_t nRows = 4;
 	DMD_Pinlist* data_pinlist;
-	uint32_t* mux_mask2;
-	
+	//uint32_t* mux_mask2;
 
+	DMD_Multiplexer* Mux = NULL;
+	
 	const byte pin_DMD_CLK;
 	const byte pin_DMD_nOE;   // active low Output Enable, setting this low lights all the LEDs in the selected rows. Can pwm it at very high frequency for brightness control.
 	const byte pin_DMD_SCLK;  // LATCH PORT
@@ -389,7 +293,8 @@ protected:
 	PortType latmask, oemask; 
 	
 	// PORT register pointers 
-	volatile PortType* muxsetreg, * oesetreg, * latsetreg;
+	//volatile PortType* muxsetreg;
+	volatile PortType* oesetreg, * latsetreg;
 	volatile PortType* datasetreg;
 	uint8_t oe_channel;
 #endif
@@ -483,7 +388,7 @@ protected:
 	// PIO config
 	PIO pio = pio0;
 	uint8_t sm_data = 0;
-	uint8_t sm_mux = 1;
+	//uint8_t sm_mux = 1;
 	uint8_t pwm_clk_div = 10;
 	uint16_t data_prog_offs = 0;
 	pio_sm_config pio_config;

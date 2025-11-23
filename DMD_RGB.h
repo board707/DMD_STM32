@@ -93,6 +93,8 @@ public:
 		Color_order = color_order;
 	}
 
+	void configure_multiplexer(MUX_TYPE mux);
+	
 	~DMD_RGB_BASE();
 
 	virtual void scan_dmd_p1();
@@ -311,9 +313,12 @@ virtual void scan_dmd_p3() override {
 
 	if (plane > 0) {
 
+// Using of expand[] table is a default for Color_4Bits_Packed mode.
 #define pew                    \
 		*datasetreg = clk_clrmask;     \
 		*datasetreg = expand[*ptr++];
+
+
 
 		for (uint16_t uu = 0; uu < x_len; uu += 8)
 			{

@@ -1002,35 +1002,18 @@ public:
 };*/
 //--------------------------------------------------------------------------------------
 template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int... Pars>
-class DMD_RGB_SHIFTREG_ABC : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, Pars... >
+class [[deprecated("Use dmd.configure_multiplexer() instead")]]
+DMD_RGB_SHIFTREG_ABC : public DMD_RGB<33, P_Width, P_Height, SCAN, SCAN_TYPE, Pars... >
 	
 {
 public:
 	DMD_RGB_SHIFTREG_ABC(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 		byte panelsWide, byte panelsHigh, bool d_buf = false) :
-		DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, Pars... >(mux_list, _pin_nOE, _pin_SCLK, pinlist,
+		DMD_RGB<33, P_Width, P_Height, SCAN, SCAN_TYPE, Pars... >(mux_list, _pin_nOE, _pin_SCLK, pinlist,
 			panelsWide, panelsHigh, d_buf)
 	{}
 
 protected:
-	void generate_muxmask() override
-		{
-		pinMode(this->mux_pins[0], OUTPUT);
-	    pinMode(this->mux_pins[1], OUTPUT);
-	    pinMode(this->mux_pins[2], OUTPUT);
-		}
-
-	void set_mux(uint8_t curr_row) override {
-		byte pin_DMD_A = this->mux_pins[0];
-		byte pin_DMD_B = this->mux_pins[1];
-		byte pin_DMD_C = this->mux_pins[2];
-		// Just shift the row mux by one for incremental access
-		digitalWrite(pin_DMD_B, HIGH);
-		digitalWrite(pin_DMD_C, (curr_row == 0)); // Shift out 1 for line 0, 0 otherwise
-		digitalWrite(pin_DMD_A, HIGH); // Clock out this bit
-		digitalWrite(pin_DMD_A, LOW);
-		digitalWrite(pin_DMD_B, LOW);
-	}
-
+	
 };
 #endif

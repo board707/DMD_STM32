@@ -19,7 +19,7 @@ static byte bPixelLookupTable[8] =
 DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK,
 	byte panelsWide, byte panelsHigh, SPIClass _spi,
 	bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
-	:DMD(new DMD_Pinlist(_pin_A, _pin_B), _pin_nOE, _pin_SCLK, panelsWide, panelsHigh,
+	:DMD(_pin_nOE, _pin_SCLK, panelsWide, panelsHigh,
 		DMD_MONO_SCAN, new DMD_Pinlist(_spi.sckPin(), _spi.mosiPin()), d_buf, dmd_pixel_x, dmd_pixel_y), SPI_DMD(_spi)
 {
 	mem_Buffer_Size = DisplaysTotal * ((DMD_PIXELS_ACROSS * DMD_BITSPERPIXEL / 8) * DMD_PIXELS_DOWN);
@@ -37,6 +37,8 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	backindex = 0;
 	bDMDScreenRAM = matrixbuff[backindex]; // Back buffer
 	front_buff = matrixbuff[1 - backindex]; // -> front buffer
+
+	Mux = new DMD_Mux3to8(new DMD_Pinlist(_pin_A, _pin_B), DMD_MONO_SCAN);
 
 
 #if ( DMD_USE_DMA )	

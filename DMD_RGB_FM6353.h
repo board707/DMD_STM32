@@ -116,7 +116,7 @@ class DMD_RGB_FM6353_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCA
 			timer_set_reload(this->MAIN_TIMER, (GCLK_NUM * TIM3_PERIOD + 8 * ADD_NUM - 1));
 			(this->MAIN_TIMER->regs).gen->CR2 = TIMER_CR2_MMS_COMPARE_OC1REF;         // Master/slave : use CC1 as trigger output
 			timer_set_compare(this->MAIN_TIMER, 1, GCLK_NUM * TIM3_PERIOD);           // OE generator on/off
-
+/* removed for implement external MUX class on F1
 #if defined(__STM32F1__)	
 			timer_set_compare(this->MAIN_TIMER, 2, GCLK_NUM * TIM3_PERIOD + 4 * ADD_NUM);       // set CC value for interrupt
 			timer_set_compare(this->MAIN_TIMER, 3, GCLK_NUM * TIM3_PERIOD + 2 * ADD_NUM);       // set CC value for DMA request
@@ -124,9 +124,12 @@ class DMD_RGB_FM6353_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCA
 #elif defined(__STM32F4__) 
 			timer_set_compare(this->MAIN_TIMER, 2, GCLK_NUM * TIM3_PERIOD + 2 * ADD_NUM);       // set CC value for interrupt
 #endif		
+*/
+			timer_set_compare(this->MAIN_TIMER, 2, GCLK_NUM * TIM3_PERIOD + 2 * ADD_NUM); 
 			timer_oc_set_mode(this->MAIN_TIMER, 1, TIMER_OC_MODE_PWM_1, 0);
 
 
+/* removed for implement external MUX class on F1
 #if defined(__STM32F1__) 
 			// setup DMA transfer from mux table to A B C D E GPIOs
 			dma_init(rgbDmaDev);
@@ -139,6 +142,9 @@ class DMD_RGB_FM6353_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCA
 			timer_attach_interrupt(this->MAIN_TIMER, TIMER_CC2_INTERRUPT, scan_running_dmd_R);
 
 #endif
+*/
+			// Not use DMA because in STM32F4 MCU only DMA2 has access to GPIOs
+			timer_attach_interrupt(this->MAIN_TIMER, TIMER_CC2_INTERRUPT, handler);
 
 			timer_init(this->OE_TIMER);
 			timer_pause(this->OE_TIMER);
@@ -189,14 +195,14 @@ class DMD_RGB_FM6353_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCA
 				// and disable GCLK generation
 				timer_set_compare(this->MAIN_TIMER, 1, 0);
 				}
-#if defined(__STM32F4__) 
+//#if defined(__STM32F4__)              // disabled for implementing Mux class support
 			// otherwise the normal operation - switching lines
 			else {
-				this->set_mux(this->row);
+				this->Mux->set_mux(this->row);
 				this->row++;
 				if (this->row >= this->nRows) this->row = 0;
 				}
-#endif
+//#endif
 			this->oe_scan_res = false;
 			}
 
@@ -210,7 +216,8 @@ class DMD_RGB_FM6353_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCA
 				this->oe_scan_res = true;
 
 #if defined(__STM32F1__)	
-				timer_attach_interrupt(this->MAIN_TIMER, TIMER_CC2_INTERRUPT, scan_running_dmd_R);
+				// disabled for implementing Mux class support
+		//		timer_attach_interrupt(this->MAIN_TIMER, TIMER_CC2_INTERRUPT, scan_running_dmd_R);
 #endif
 				interrupts();
 				// wait for GCLK stop
@@ -220,13 +227,14 @@ class DMD_RGB_FM6353_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCA
 
 			timer_pause(this->MAIN_TIMER);
 #if defined(__STM32F1__) 
-			dma_disable(rgbDmaDev, DmaMuxChannel);
-			timer_detach_interrupt(this->MAIN_TIMER, TIMER_CC2_INTERRUPT);
+				// disabled for implementing Mux class support
+		//	dma_disable(rgbDmaDev, DmaMuxChannel);
+		//	timer_detach_interrupt(this->MAIN_TIMER, TIMER_CC2_INTERRUPT);
 #endif
 
 			// switch to row 0
 			this->row = 0;
-			this->set_mux(this->row);
+			this->Mux->set_mux(this->row);
 			this->row++;
 			delayMicroseconds(10);
 			this->oe_scan_flag = true;
@@ -238,12 +246,13 @@ class DMD_RGB_FM6353_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCA
 
 			timer_pause(this->OE_TIMER);
 			timer_set_compare(this->MAIN_TIMER, 1, this->GCLK_NUM * this->TIM3_PERIOD);
+/*   disabled for implementing Mux class support
 #if defined(__STM32F1__) 
 			dma_setup_transfer(rgbDmaDev, DmaMuxChannel, (uint32_t*)this->muxsetreg, DMA_SIZE_32BITS, (uint32_t*)this->mux_mask2 + 1, DMA_SIZE_32BITS, (DMA_MINC_MODE | DMA_CIRC_MODE | DMA_FROM_MEM));
 			dma_set_num_transfers(rgbDmaDev, DmaMuxChannel, this->nRows);
 			dma_enable(rgbDmaDev, DmaMuxChannel);
 #endif		
-
+*/
 			timer_set_count(this->MAIN_TIMER, 0);
 			timer_set_count(this->OE_TIMER, 0);
 			timer_resume(this->OE_TIMER);
@@ -397,6 +406,7 @@ class DMD_RGB_FM6363_BASE : public DMD_RGB_FM6353_BASE<MUX_CNT, P_Width, P_Heigh
 
 
 #if defined(__STM32F1__) 
+            dma_init(this->rgbDmaDev);
 			dma_setup_transfer(this->rgbDmaDev, this->DmaClkChannel, (uint32_t*)(this->datasetreg), DMA_SIZE_32BITS, (uint32_t*)this->dclk_strobe, DMA_SIZE_32BITS, (DMA_MINC_MODE | DMA_CIRC_MODE | DMA_FROM_MEM));
 			dma_set_num_transfers(this->rgbDmaDev, this->DmaClkChannel, 2);
 			dma_enable(this->rgbDmaDev, this->DmaClkChannel);

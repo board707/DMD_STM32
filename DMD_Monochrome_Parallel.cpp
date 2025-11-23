@@ -19,7 +19,7 @@ void inline __attribute__((always_inline)) scan_running_dmd()
 DMD_Monochrome_Parallel::DMD_Monochrome_Parallel(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
 	byte panelsWide, byte panelsHigh,
 	bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
-	:DMD(new DMD_Pinlist(_pin_A, _pin_B), _pin_nOE, _pin_SCLK, panelsWide, panelsHigh, DMD_MONO_SCAN, new DMD_Pinlist(panelsHigh+1, pinlist),
+	:DMD(_pin_nOE, _pin_SCLK, panelsWide, panelsHigh, DMD_MONO_SCAN, new DMD_Pinlist(panelsHigh+1, pinlist),
 		d_buf, dmd_pixel_x, dmd_pixel_y)
 {
 	mem_Buffer_Size = DMD_PIXELS_ACROSS * panelsWide * DMD_PIXELS_DOWN;
@@ -40,7 +40,7 @@ DMD_Monochrome_Parallel::DMD_Monochrome_Parallel(byte _pin_A, byte _pin_B, byte 
 	backindex = 0;
 	bDMDScreenRAM = matrixbuff[backindex]; // Back buffer
 	front_buff = matrixbuff[1 - backindex]; // -> front buffer
-	
+	Mux = new DMD_Mux3to8(new DMD_Pinlist(_pin_A, _pin_B), DMD_MONO_SCAN);
 	running_dmd = this;
 }
 /*--------------------------------------------------------------------------------------*/

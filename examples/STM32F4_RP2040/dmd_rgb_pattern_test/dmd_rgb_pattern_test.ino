@@ -79,6 +79,9 @@ uint16_t fg = 0;  // foreground
 void setup(void)
 {
     dmd.init();
+    // uncomment to set a multiplexer to SHIFTREG decode type
+    // leave commented for 3to8 decoder (default)
+    //dmd.setMultiplexerType(DMD_Multiplexer_type :: SHIFTREG);  
     fg = dmd.Color888(0, 0, 255);
     dmd.setBrightness(50);
 }
