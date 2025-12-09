@@ -10,8 +10,8 @@
 
 
 static volatile DMD_RGB_BASE* running_dmd_R;
-void inline __attribute__((always_inline)) scan_running_dmd_R()
-
+//void inline __attribute__((always_inline)) scan_running_dmd_R()
+void scan_running_dmd_R()
 {
 	DMD_RGB_BASE* next = (DMD_RGB_BASE*)running_dmd_R;
 	next->scan_dmd();

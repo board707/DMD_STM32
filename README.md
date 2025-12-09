@@ -1,16 +1,19 @@
 <img src="https://github.com/board707/DMD_STM32/blob/old-V1/.github/fok0.jpg" width="600" />
 
-# DMD_STM32a - LED Matrix library with Unicode fonts support 
+# DMD_STM32a - LED Matrix library with SPWM driver support
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
-### Last release is v1.2.0 - support of FM6126a panels added for RP2040 boards
 
-### Last major addition is v1.1.2 - Introduced multicolor for fixed and scrolling text 
-<img src="https://github.com/board707/DMD_STM32/blob/old-V1/.github/dmd_multicolor_small.jpg" style="text-align: center" />
+### New in v1.2.4  - Unique support of three classes of SPWM type driver chips
 
-See [video](https://youtu.be/lw87UqoO50E) and dmd_multicolor example for details.
+The new release introduces comprehensive support for a set of new "PWM-type" LED drivers previously unsupported by most known libraries. The supported chips represents a three distinct PWM driver control architectures:
+  * Unified Signal Control - both PWM timing and row switching managed by a single GCLK ( OE ) control signal  (supported: **ICN2153**, **FM6353**)
+  * Dual Signal Synchronization - PWM timing coordinated through combined GCLK (OE -Output Enable) and  DCLK signals  ( driver model: **FM6363** )
+  * Fully Decoupled Control Mechanism - PWM timing (DCLK) and row switching ( GCLK ) operated through completely independent signals (chips: **DP3264**, **ICND2055**, **FM6373** )
 
-> Attention! Recent versions are incompatibe with code prior v1.0.0 
+Compatibility and Requirements: Only implemented for STM32 boards at the time. Using a STM32F4 boards is strongly recommended. See dmd_spwm_panel example for details.
+
+> Attention! Recent versions are incompatible with code prior v1.0.0 
 > The main difference from 0.x.x versions is a new panel template format. You can see a brief explanation in the [Wiki/About matrix patterns](https://github.com/board707/DMD_STM32/wiki/Reference#appendix-a) and in the comments of the [DMD_Panel_Templates.h](https://github.com/board707/DMD_STM32/blob/dev-V2/DMD_Panel_Templates.h) file.  
 > Last version with old panel templates [v0.9.5](https://github.com/board707/DMD_STM32/releases/tag/v0.9.5)
 
@@ -21,7 +24,7 @@ The library initially started out as STM32 port of Freetronics DMD library (http
 
 One of the important features of the library is support of Adafruit GFX format fonts: https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts. Using Adafruit `fontconvert` utility allows users to convert and display on DMD matrix Truetype fonts, including Unicode fonts with national characters of almost any language. The library includes **Cyrillic** and **Turkish** fonts. For using of national fonts, see the examples `dmd_rgb.ino` and `dmd_rgb_turk.ino` (Turkish).
 
-The nain advantage of the library, which distinguishes it from its analogues, is the very wide range of supported RGB panels. Modules of almost any size, multiplexing type and scanning paterrn can be used. All these are configured by "matrix pattern" - a strings of digits, represents a key characteristics of given panel. The library does provide to users a rich set of predefined matrix patterns, and if some panel is missing from the list, it can be easily added without changing the main library code.
+The main advantage of the library, which distinguishes it from its analogues, is the very wide range of supported RGB panels. Modules of almost any size, multiplexing type and scanning pattern can be used. All these are configured by "matrix pattern" - a strings of digits, represents a key characteristics of given panel. The library does provide to users a rich set of predefined matrix patterns, and if some panel is missing from the list, it can be easily added without changing the main library code.
 
 LED panels supported
 -----------------
@@ -41,9 +44,11 @@ LED panels supported
 | | | | | |
 | Two-color indoor                |     HUB08    |    64x32   |     1/16    | DMD_RGB.h <br />  (work as RGB)          |
 | | | | | |
-| RGB with FM6126a/Rul6024 driver |     HUB75    |    64x32   |     1/16    | DMD_RGB_6126a.h                               |
-| RGB ICDN2153/FM6353/6363 S-PWM |     HUB75    |   128x64   |     1/32    | DMD_RGB_6353.h                             |
-|                                 |               |    64x32   |     1/16    |                                              |
+| RGB with FM6126a driver         |     HUB75    |    64x32   |     1/16    | DMD_RGB_6126a.h                               |
+| | | | | |
+| RGB S-PWM driver panels         |     HUB75    |   128x64   |     1/32    | DMD_SPWM_Driver.h                             |
+|  supports FM6353/6363/6373      |              |    64x32   |     1/16    |                                              |
+|  ICND2153/2055, DP3264          | | | | |
 
 Read more about supported panels in the [Wiki/Supported panels](https://github.com/board707/DMD_STM32/wiki/quick_start#supported-panels). The set of supported matrices is constantly updated.
 
@@ -54,7 +59,7 @@ If your panel is not supported by the library yet, please feel free to open an i
 Other features
 ------------
  - The graphics subsystem is inherited from Adafruit GFX library https://github.com/adafruit/Adafruit-GFX-Library
- - Dual memory buffering for reducing scanning artefacts and making some visual effects (see [Wiki/Examples](https://github.com/board707/DMD_STM32/wiki/quick_start#examples)).
+ - Dual memory buffering for reducing scanning artifacts and making some visual effects (see [Wiki/Examples](https://github.com/board707/DMD_STM32/wiki/quick_start#examples)).
  - Two color modes for RGB: highcolor RGB444 and low memory consuming RGB111 mode for LED signs, information boards etc.
  - Multicolor strings for fixed text and scrolling (since v1.1.2)
  - Chaining up to 100 panels for Monochrome (46 tested) or 16 for RGB 64x32. The number of matrices is limited by the size of the controller memory.
@@ -116,9 +121,9 @@ Documentation
 
 Example videos
 --------------
-* Using of dual buffereng to show fixed and scrolling text [https://youtu.be/DoOcfGb0PLw](https://youtu.be/DoOcfGb0PLw)
+* Using of dual buffering to show fixed and scrolling text [https://youtu.be/DoOcfGb0PLw](https://youtu.be/DoOcfGb0PLw)
 * Multicolor fixed and scrolling text [https://youtu.be/lw87UqoO50E](https://youtu.be/lw87UqoO50E)
-* [Some other videos](https://github.com/board707/DMD_STM32/tree/old-V1#example-videos) are avaliable at the page of old version of library.
+* [Some other videos](https://github.com/board707/DMD_STM32/tree/old-V1#example-videos) are available at the page of old version of library.
 
 Adapters
 --------
@@ -127,13 +132,15 @@ Sometimes wiring can be tricky so here I will put links to useful PCB-boards for
 
 Most important versions
 ---------
+(09 Dec 2025 - v1.2.4)  - Introduced a new class for SPWM type drivers
+
 (22 Dec 2023 - v1.1.2)  - Introduced multicolor for fixed and scrolling text 
 
 (30 Nov 2023 - v1.1.0)  - Add support of panels with FM6353/6363 S-PWM drivers
 
 (25 Mar 2023 - v1.0.4)  - Add support of panels with FM6126a chip
 
-(12 Feb 2023 - v1.0.0)  - New panel template model with multiparameter specialization
+(12 Feb 2023 - v1.0.0)  - New panel template model with multi-parameter specialization
 
 (16 Sep 2022 - v0.9.0)  - Add support of RP2040-based boards and using the DMA in the RGB modes for STM32F4 boards
 
@@ -146,6 +153,8 @@ For full version history see [CHANGES.txt](CHANGES.txt)
 Acknowledgements
 -----------
 - Evgeny Fokin for testing and provided matrices.
+- Alexander Pikulik - for interesting panel with FM6373 SPWM driver.
+- Eugeny Cherny - thanks for providing a panel with new driver.
 - Eduard Yansapov - for testing.
 - @bilalibrir - for help with the code for Outdoor RGB matrix 
 

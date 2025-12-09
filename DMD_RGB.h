@@ -33,7 +33,8 @@ enum class DMD_Color_order : uint8_t { RGB = 0x00, RBG, BRG, BGR, GRB, GBR };
 // COLOR DEPTH
 #if (defined(__STM32F1__)|| defined(__STM32F4__)) 
 
-void inline __attribute__((always_inline)) scan_running_dmd_R();
+//void inline __attribute__((always_inline)) scan_running_dmd_R();
+void scan_running_dmd_R();
 
 #define COLOR_4BITS_Packed		3
 #endif

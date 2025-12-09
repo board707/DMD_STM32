@@ -125,16 +125,66 @@ DMD_Mux595::DMD_Mux595 (DMD_Pinlist* _mux_pinlist, uint8_t n_Rows) : DMD_Multipl
 
 
 
-void DMD_Mux595::set_mux(uint8_t curr_row)  {
+void DMD_Mux595::set_mux(uint8_t new_row)  {
+	static uint8_t last_row = n_Rows;
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+const uint32_t mux_clk_mask = digitalPinToBitMask(this->mux_pins->list[0]);   //this->mux_pins->list[0]
+const uint32_t mux_lat_mask = digitalPinToBitMask(this->mux_pins->list[1]);  
+const uint32_t mux_sdi_mask = digitalPinToBitMask(this->mux_pins->list[2]);  
+if (new_row != last_row) {
+	*this->muxsetreg = mux_lat_mask;   // LAT - HIGH
+	if (new_row == 0) {
+		*this->muxsetreg =  mux_clk_mask | mux_sdi_mask;
+		*this->muxsetreg =  mux_clk_mask | mux_sdi_mask;
+	}	
+	else {
+		*this->muxsetreg = mux_clk_mask | (mux_sdi_mask << 16);	
+		*this->muxsetreg = mux_clk_mask | (mux_sdi_mask << 16);	
+	}
+	*this->muxsetreg = (mux_clk_mask  << 16);
+	*this->muxsetreg = (mux_lat_mask  << 16); // LAT - LOW
+	last_row = new_row;
+}
+#elif (defined(ARDUINO_ARCH_RP2040))
 	const byte pin_DMD_A = this->mux_pins->list[0];
 	const byte pin_DMD_B = this->mux_pins->list[1];
 	const byte pin_DMD_C = this->mux_pins->list[2];
     // Just shift the row mux by one for incremental access
-    digitalWrite(pin_DMD_B, HIGH);
-    digitalWrite(pin_DMD_C, (curr_row == 0)); // Shift out 1 for line 0, 0 otherwise
-    digitalWrite(pin_DMD_A, HIGH); // Clock out this bit
-    digitalWrite(pin_DMD_A, LOW);
-    digitalWrite(pin_DMD_B, LOW);
+	if (new_row != last_row) {
+		digitalWrite(pin_DMD_B, HIGH);  // LAT - HIGH
+		digitalWrite(pin_DMD_C, (new_row == 0));
+		digitalWrite(pin_DMD_A, HIGH); // Clock out this bit
+		digitalWrite(pin_DMD_A, LOW);	
+		digitalWrite(pin_DMD_B, LOW);  // LAT - LOW
+		last_row = new_row;
+	}
+ #endif  
+    
 }
+		
+		
+		/*if (new_row < last_row) {
+            digitalWrite(pin_DMD_C, LOW); // Shift out 0 
+			for (uint8_t i = 0; i < (n_Rows - last_row ); i++) {
+				
+				digitalWrite(pin_DMD_A, HIGH); // Clock out this bit
+				digitalWrite(pin_DMD_A, LOW);
+			}
+			digitalWrite(pin_DMD_C, 1); // Shift out 1 for line 0
+			digitalWrite(pin_DMD_A, HIGH); // Clock out this bit
+			digitalWrite(pin_DMD_A, LOW);	
+			last_row =0;
+			
+		}
+		digitalWrite(pin_DMD_C, LOW); 
+		for (uint8_t i = 0; i < (new_row - last_row ); i++) {
+				
+			digitalWrite(pin_DMD_A, HIGH); // Clock out this bit
+			digitalWrite(pin_DMD_A, LOW);
+		}
+		
+		*/
+		
+	
 
 

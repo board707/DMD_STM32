@@ -1,11 +1,16 @@
 # ChangeLog
+## [1.2.4] - 2025-12-09
+ - Full rewrite of SPWM driver supporting code.
+   Three new SPWM drivers added - DP3264, ICN2055, DP6373.
+ - Add support of SHIFT_REG multiplexors for SPWM driver panels.  
+
 ## [1.2.3] - 2025-11-23
  - Moved the multiplexer code to a separate class, which made it possible 
    to assign the multiplexer type regardless of the driver type. 
    For example, this add the support for shift multiplexing for FM6126a panels.
 
 ## [1.2.2] - 2025-11-18
- - Add ability of set up of font inercharacter interval by selectFont() method
+ - Add ability of set up of font iner-character interval by selectFont() method
 
 ## [1.2.1] - 2025-11-09
  - Fix bug with UNUSED_ALL() macro (issue #165)
@@ -32,7 +37,7 @@
 
 ## [1.1.6] - 2024-10-05 
  - Fix issue #131 - fast HByte not works with screen width > 255 pix
- - Fix bug in DMD_Monochrome_Parallel clearscreen function, UPPER_8BIT mode
+ - Fix bug in DMD_Monochrome_Parallel clear screen function, UPPER_8BIT mode
 
 ## [1.1.5] - 2024-08-23 
  - Fix issue #124 - FM6126 not works after v1.1.0
@@ -83,8 +88,8 @@
  - Add new RGB 64x32 s8 template
 
 ## [1.0.0] - 2023-02-12 
- - *** Uncompatible changes! ***
- - New panel template model with multiparameter specialization
+ - *** Incompatible changes! ***
+ - New panel template model with multi-parameter specialization
  - Move all templates to separate file DMD_Panel_Templates.h
  - New example for 32x16 s4 panels with variable pattern template
  - Fix some other bugs
@@ -116,7 +121,7 @@
  - Fix wrong row counter in 1bit color mode for multirow panels
 
 ## [0.8.0] - 2022-07-09 
- - Add support of STM32F4 boards - blackpills STM32F401CC & STM32F411CE
+ - Add support of STM32F4 boards - blackpill STM32F401CC & STM32F411CE
  - Add support of cheap STM32F103C6 boards
 
 ## [0.7.0] - 2022-02-19 
@@ -128,7 +133,7 @@
  
 ## [0.6.11] - 2022-01-15 
  - Fix incorrect string bounds definition for standard and GFXFonts in some cases
- - Fix artefacts in Parallel Monochrome mode
+ - Fix artifacts in Parallel Monochrome mode
  - Add ability to choose timer for OE other than Tim3 (see Alternative Timer Setup in DMD_STM32a.h)
 
 ## [0.6.9] - 2021-12-18 
@@ -158,7 +163,7 @@
  - Fix stepMarquee() bug in inverse displays
  
 ## [0.4.1] - 2019-10-23
- - Minor fix, move all STM32 specific to conditional compolation
+ - Minor fix, move all STM32 specific to conditional compilation
 
 ## [0.4.0] - 2019-10-16
  - Move all timer and interrupt settings to the library from user code
@@ -200,6 +205,6 @@
    - Change constructor, move pins from #define to object data
    
 ### Added
-   - Example of using two DMD instanses simultaneously - double_dmd
+   - Example of using two DMD instances simultaneously - double_dmd
   
 
