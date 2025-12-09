@@ -70,7 +70,7 @@ void setup(void)
   // uncomment to set a multiplexer to SHIFTREG decode type
   // leave commented for 3to8 decoder (default)
     
-  //dmd.setMultiplexerType(DMD_Multiplexer_type :: SHIFTREG);   
+  //dmd.configure_multiplexer(DMD_MUX_TYPE_SHIFTREG);  
 }
 
 /*--------------------------------------------------------------------------------------
