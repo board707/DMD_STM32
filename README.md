@@ -71,7 +71,8 @@ Compatible boards
 
 * STM32F1 - STM32F103C8 (bluepill) and STM32F103C6 boards tested 
 * STM32F4 - STM32F401CC and STM32F411CE boards 
-* Raspberry Pi Pico and other RP2040-based boards 
+* Raspberry Pi Pico and other RP2040-based boards. 
+* RP2350 based boards should works as well, but not fully tested yet.
 
 Installation
 -------------
@@ -96,7 +97,7 @@ There are two ways to install the library:
   > Please note that Clark's repo versions prior [d05a128](https://github.com/rogerclarkmelbourne/Arduino_STM32/commit/d05a1289f1e2eaa5127a4bfed9602e2cd48c6ffe) (28 Apr 2024) is incompatible with recent Adafruit GFX library. Use Adafruit GFX version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
 
 
-* Raspberry Pi Pico
+* Raspberry Pi Pico/ Pico2
 
    This code requires Earle Philhower core https://github.com/earlephilhower/arduino-pico
 

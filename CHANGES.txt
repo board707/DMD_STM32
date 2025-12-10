@@ -10,7 +10,7 @@
    For example, this add the support for shift multiplexing for FM6126a panels.
 
 ## [1.2.2] - 2025-11-18
- - Add ability of set up of font iner-character interval by selectFont() method
+ - Add ability of set up of font inter-character interval by selectFont() method
 
 ## [1.2.1] - 2025-11-09
  - Fix bug with UNUSED_ALL() macro (issue #165)
