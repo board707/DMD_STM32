@@ -11,7 +11,9 @@ The new release introduces comprehensive support for a set of new "PWM-type" LED
   * Dual Signal Synchronization - PWM timing coordinated through combined GCLK (OE -Output Enable) and  DCLK signals  ( driver model: **FM6363** )
   * Fully Decoupled Control Mechanism - PWM timing (DCLK) and row switching ( GCLK ) operated through completely independent signals (chips: **DP3264**, **ICND2055**, **FM6373** )
 
-Compatibility and Requirements: Only implemented for STM32 boards at the time. Using a STM32F4 boards is strongly recommended. See dmd_spwm_panel example for details.
+Please participate in the [discussion](https://github.com/board707/DMD_STM32/discussions/183) about the further development of the release.
+
+**Compatibility and Requirements:** Only implemented for STM32 boards at the time. Using a STM32F4 boards is strongly recommended. See dmd_spwm_panel example for details.
 
 > Attention! Recent versions are incompatible with code prior v1.0.0 
 > The main difference from 0.x.x versions is a new panel template format. You can see a brief explanation in the [Wiki/About matrix patterns](https://github.com/board707/DMD_STM32/wiki/Reference#appendix-a) and in the comments of the [DMD_Panel_Templates.h](https://github.com/board707/DMD_STM32/blob/dev-V2/DMD_Panel_Templates.h) file.  
@@ -111,7 +113,7 @@ For detailed info about matrix connection see Wiki:
 
 Consult the examples for recommended pin combinations.
 
-Documentation
+Documentation and Support
 -----------
 
 * [Wiki: Home](https://github.com/board707/DMD_STM32/wiki/Home)
@@ -119,6 +121,7 @@ Documentation
 * [Examples](https://github.com/board707/DMD_STM32/wiki/quick_start#examples)
 * [Library API Reference](https://github.com/board707/DMD_STM32/wiki/Reference)
 * [LED Drivers Database](https://github.com/board707/DMD_STM32/wiki/Led_drivers)
+* [Ask on Arduino.ru forum](https://forum.arduino.ru/t/dmd-stm32-biblioteka-dmd-matricz-dlya-stm32-i-rp2040/8573)  (rus)
 
 Example videos
 --------------
