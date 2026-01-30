@@ -1,5 +1,14 @@
 #include "DMD_Multiplexer.h"
 
+//#if (defined(ARDUINO_ARCH_RP2040))
+// short delay for tune MUX595 CLK pulse
+static inline void busyWaitDelay(volatile uint32_t cycles) {
+    while (cycles--) {
+        __asm volatile ("nop");  // No-operation instruction
+    }
+}
+//#endif
+
 DMD_Multiplexer::DMD_Multiplexer (DMD_Pinlist* _mux_pinlist, uint8_t n_Rows) : 
 mux_pins(_mux_pinlist), n_Rows(n_Rows) { } 
 
@@ -134,13 +143,13 @@ const uint32_t mux_sdi_mask = digitalPinToBitMask(this->mux_pins->list[2]);
 if (new_row != last_row) {
 	*this->muxsetreg = mux_lat_mask;   // LAT - HIGH
 	if (new_row == 0) {
-		*this->muxsetreg =  mux_clk_mask | mux_sdi_mask;
-		*this->muxsetreg =  mux_clk_mask | mux_sdi_mask;
+		*this->muxsetreg =  mux_sdi_mask;	
 	}	
 	else {
-		*this->muxsetreg = mux_clk_mask | (mux_sdi_mask << 16);	
-		*this->muxsetreg = mux_clk_mask | (mux_sdi_mask << 16);	
+		*this->muxsetreg = (mux_sdi_mask << 16);			
 	}
+	*this->muxsetreg = mux_clk_mask ;
+	busyWaitDelay(1);
 	*this->muxsetreg = (mux_clk_mask  << 16);
 	*this->muxsetreg = (mux_lat_mask  << 16); // LAT - LOW
 	last_row = new_row;
@@ -151,11 +160,13 @@ if (new_row != last_row) {
 	const byte pin_DMD_C = this->mux_pins->list[2];
     // Just shift the row mux by one for incremental access
 	if (new_row != last_row) {
-		digitalWrite(pin_DMD_B, HIGH);  // LAT - HIGH
-		digitalWrite(pin_DMD_C, (new_row == 0));
-		digitalWrite(pin_DMD_A, HIGH); // Clock out this bit
-		digitalWrite(pin_DMD_A, LOW);	
-		digitalWrite(pin_DMD_B, LOW);  // LAT - LOW
+		gpio_put(pin_DMD_B, HIGH);  // LAT - HIGH
+		gpio_put(pin_DMD_C, (new_row == 0));
+		busyWaitDelay(1); 		   // hold SDI before CLK
+		gpio_put(pin_DMD_A, HIGH); // Clock out this bit
+		busyWaitDelay(2);		   // hold CLK HIGH
+		gpio_put(pin_DMD_A, LOW);	
+		gpio_put(pin_DMD_B, LOW);  // LAT - LOW 
 		last_row = new_row;
 	}
  #endif  

@@ -116,7 +116,7 @@ protected:
 	
 		
 #endif
-    void send_to_allRGB(uint16_t data, uint16_t latches);
+    virtual void send_to_allRGB(uint16_t data, uint16_t latches);
     virtual void chip_init() {};
 	virtual void setCycleLen();
 	virtual uint16_t get_base_addr(int16_t& x, int16_t& y);

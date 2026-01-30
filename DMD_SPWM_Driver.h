@@ -37,8 +37,12 @@ The chips supported:
 
 /*--------------------------------------------------------------------------------------*/
 #if (defined(__STM32F1__) || defined(__STM32F4__))
+
+#define CLOCK_SETTINGS  CLK_AFTER_DATA   // options: CLK_WITH_DATA / CLK_AFTER_DATA
+
 #include "DMD_RGB.h"
 
+#if (CLOCK_SETTINGS  == CLK_WITH_DATA)
 #define pew_6353_2(x)          \
 	*(this->datasetreg) = (x); \
 	*(this->datasetreg) = this->clk_clrmask;
@@ -48,6 +52,20 @@ The chips supported:
 	*(this->datasetreg) = (x);               \
 	*(this->datasetreg) = this->clk_clrmask; \
 	*(this->datasetreg) = this->clk_clrmask;
+
+#else   // CLK_AFTER_DATA
+
+#define pew_6353_2(x)          \
+	*(this->datasetreg) = (x); \
+	*(this->datasetreg) = this->clkmask; \
+	*(this->datasetreg) = this->clk_clrmask;
+
+#define pew_6353_4(x)                        \
+	*(this->datasetreg) = (x);               \
+	*(this->datasetreg) = this->clkmask;     \
+	*(this->datasetreg) = this->clkmask;	 \
+	*(this->datasetreg) = this->clk_clrmask;
+#endif
 
 #define ADD_CONFIG_REGS(arr) this->add_config_regs((arr), sizeof(arr) / sizeof((arr)[0]))
 
@@ -104,7 +122,7 @@ protected:
 	uint32_t MAIN_TIMER_reload, MAIN_TIMER_cc1, MAIN_TIMER_cc2;
 	uint32_t OE_TIMER_reload, OE_TIMER_cc;
 
-	void generate_rgbtable() override { DMD_RGB_BASE::generate_rgbtable_default(CLK_WITH_DATA); }
+	void generate_rgbtable() override { DMD_RGB_BASE::generate_rgbtable_default(CLOCK_SETTINGS); }
 
 	// placeholder for color mode specialization
 	virtual uint16_t expand_planes(volatile uint8_t *ptr3) = 0;

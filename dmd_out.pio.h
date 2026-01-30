@@ -168,7 +168,7 @@ static inline void dmd_out_program_init(PIO pio, uint sm, uint offset, pio_sm_co
 static inline void dmd_out_program_reinit (PIO pio, uint sm, uint offset, const pio_sm_config * sm_config)
 {
     pio_sm_init(pio, sm, offset, sm_config);
-    pio_sm_exec(pio, sm, offset + dmd_out_offset_entry_data);
+    pio_sm_exec(pio, sm, offset );
     pio_sm_set_enabled(pio, sm, true);
 }
 #endif

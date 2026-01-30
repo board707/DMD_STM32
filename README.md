@@ -4,16 +4,14 @@
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
 
-### New in v1.2.4  - Unique support of three classes of SPWM type driver chips
+### New in v1.2.5  - Now support of SPWM type drivers on RP2040 boards too ! 
 
 The new release introduces comprehensive support for a set of new "PWM-type" LED drivers previously unsupported by most known libraries. The supported chips represents a three distinct PWM driver control architectures:
   * Unified Signal Control - both PWM timing and row switching managed by a single GCLK ( OE ) control signal  (supported: **ICN2153**, **FM6353**)
   * Dual Signal Synchronization - PWM timing coordinated through combined GCLK (OE -Output Enable) and  DCLK signals  ( driver model: **FM6363** )
   * Fully Decoupled Control Mechanism - PWM timing (DCLK) and row switching ( GCLK ) operated through completely independent signals (chips: **DP3264**, **ICND2055**, **FM6373** )
 
-Please participate in the [discussion](https://github.com/board707/DMD_STM32/discussions/183) about the further development of the release.
-
-**Compatibility and Requirements:** Only implemented for STM32 boards at the time. Using a STM32F4 boards is strongly recommended. See dmd_spwm_panel example for details.
+Compatibility and Requirements: In case of STM32 core using a STM32F4 boards is strongly recommended. See dmd_spwm_panel example for details.
 
 > Attention! Recent versions are incompatible with code prior v1.0.0 
 > The main difference from 0.x.x versions is a new panel template format. You can see a brief explanation in the [Wiki/About matrix patterns](https://github.com/board707/DMD_STM32/wiki/Reference#appendix-a) and in the comments of the [DMD_Panel_Templates.h](https://github.com/board707/DMD_STM32/blob/dev-V2/DMD_Panel_Templates.h) file.  
@@ -113,7 +111,7 @@ For detailed info about matrix connection see Wiki:
 
 Consult the examples for recommended pin combinations.
 
-Documentation and Support
+Documentation
 -----------
 
 * [Wiki: Home](https://github.com/board707/DMD_STM32/wiki/Home)
@@ -121,7 +119,6 @@ Documentation and Support
 * [Examples](https://github.com/board707/DMD_STM32/wiki/quick_start#examples)
 * [Library API Reference](https://github.com/board707/DMD_STM32/wiki/Reference)
 * [LED Drivers Database](https://github.com/board707/DMD_STM32/wiki/Led_drivers)
-* [Ask on Arduino.ru forum](https://forum.arduino.ru/t/dmd-stm32-biblioteka-dmd-matricz-dlya-stm32-i-rp2040/8573)  (rus)
 
 Example videos
 --------------
@@ -134,7 +131,7 @@ Adapters
 Sometimes wiring can be tricky so here I will put links to useful PCB-boards for use with this code (are not affiliated with the DMD_STM32)
 * [DMD-STM32 Shield for P10 Monochrome LED Matrix Panel](https://www.tindie.com/products/lightwell/dmd-stm32-shield-for-p10-led-matrix-panel/)  Designed by LIGHTWELL in Bulgaria 
 
-Most important versions
+Other most important versions
 ---------
 (09 Dec 2025 - v1.2.4)  - Introduced a new class for SPWM type drivers
 

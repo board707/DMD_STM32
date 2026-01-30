@@ -1,9 +1,13 @@
 /*--------------------------------------------------------------------------------------
  Demo for SPWM driver panel
 
- DMD_STM32a example code for STM32 
+ DMD_STM32a example code for STM32 & RP2040 boards
  ------------------------------------------------------------------------------------- */
+#if (defined(__STM32F1__) || defined(__STM32F4__))
 #include "DMD_SPWM_Driver.h"
+#elif (defined(ARDUINO_ARCH_RP2040))
+#include "DMD_SPWM_Driver_RP.h"
+#endif
 
  // Fonts includes
 #include "st_fonts/UkrRusArial14.h"
@@ -44,6 +48,28 @@ uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E
 // If you need to change this - reorder the R0, G0, B0, R1, G1, B1 pins.
 // All this pins also must be selected from same port!
 uint8_t custom_rgbpins[] = {PA6, PA0,PA1,PA2,PA3,PA4,PA5 }; // CLK, R0, G0, B0, R1, G1, B1
+
+#elif (defined(ARDUINO_ARCH_RP2040))
+
+// ==== DMD_RGB pins ====
+// mux pins - A, B, C... all mux pins must be selected from same port!
+#define DMD_PIN_A 6
+#define DMD_PIN_B 7
+#define DMD_PIN_C 8
+#define DMD_PIN_D 9
+#define DMD_PIN_E 10
+// put all mux pins at list
+uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E };
+
+// pin OE must be one of PB0 PB1 PA6 PA7
+#define DMD_PIN_nOE 15
+#define DMD_PIN_SCLK 12
+
+// Pins for R0, G0, B0, R1, G1, B1 channels and for clock.
+// By default the library uses RGB color order.2
+// If you need to change this - reorder the R0, G0, B0, R1, G1, B1 pins.
+// All this pins also must be selected from same port!
+uint8_t custom_rgbpins[] = { 11, 0,1,2,3,4,5 }; // CLK, R0, G0, B0, R1, G1, B1
 
 #endif
 

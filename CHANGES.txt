@@ -1,4 +1,9 @@
 # ChangeLog
+## [1.2.5] - 2026-01-30
+ - SPWM driver supporting code for RP2040 boards.
+ - RP2040: Rewrite SHIFT_REG multiplexor code with direct GPIO access.   
+ - STM32: Change phase of data pulses to eliminate ghostings on SPWM panels.  
+
 ## [1.2.4] - 2025-12-09
  - Full rewrite of SPWM driver supporting code.
    Three new SPWM drivers added - DP3264, ICN2055, DP6373.
