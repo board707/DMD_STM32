@@ -94,6 +94,10 @@ protected:
 	volatile bool oe_scan_res = false;
 	uint8_t max_clk_freq = 15;  // 15 MHz
 
+    // Most driver chips only receives the lower 14 bits of 16 bits transmitted data.
+	// Some drivers needs 13 bits.
+	uint8_t gclk_bits = 14;
+
 	// Clk_Lat SM
     uint8_t sm_clk_lat = 0;
 	uint16_t clk_lat_prog_offs = 0;
@@ -421,10 +425,11 @@ protected:
 					// get 4 msb greyscale bytes
 					// and put them to dma_buffer
 					uint32_t greyscale = this->expand_planes(ptr2);  
-					memcpy(backward_ptr + i, (uint8_t*)&greyscale, sizeof(greyscale));  
+					memset(backward_ptr + i,(uint8_t)0,16-gclk_bits); 
+					memcpy(backward_ptr + i + 16-gclk_bits, (uint8_t*)&greyscale, sizeof(greyscale));  
 					// copy a most lsb byte to all other 12 planes of greyscale
 					uint8_t lsb = greyscale & 0xff;  
-					memset(backward_ptr + i + 4,lsb,12);
+					memset(backward_ptr + i + 20-gclk_bits, lsb,gclk_bits -4);
 					ptr2+=16;
 					i+=16;
 				}
@@ -632,6 +637,9 @@ public:
 
 	
 		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		
+		this->gclk_bits = 13;
+		
 		uint16_t icn2055_conf[] = {
 			0x021f, 0x0317, 0x0400, 0x0507, 0x0603, 0x0720, 0x0820, 0x0908, 0x0a08, 0x0b00,
 			0x0c08, 0x0d01, 0x0e04, 0x0f01, 0x1082, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1950,
@@ -851,6 +859,7 @@ public:
 		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
 		
 		this->clk_after_upload  = true;
+		this->gclk_bits = 13;
 		
 		uint16_t conf_6363[] = {0x7e08, 0x0fb0, 0xe79d, 0x60b6, 0x5a70};
 
