@@ -114,6 +114,14 @@ public:
 protected:
 	volatile bool oe_scan_flag = false;
 	volatile bool oe_scan_res = false;
+
+	 // Most driver chips only receives the lower 14 bits of 16 bits transmitted data.
+	// Some drivers needs 13 bits.
+	uint8_t gclk_bits = 14;
+	uint8_t dimming_factor = 0;
+	const uint8_t min_gclk = 8;
+
+
 	uint8_t TIM3_PERIOD, GCLK_NUM, ADD_NUM;
 
 	uint16_t *config_registers;
@@ -123,6 +131,13 @@ protected:
 	uint32_t OE_TIMER_reload, OE_TIMER_cc;
 
 	void generate_rgbtable() override { DMD_RGB_BASE::generate_rgbtable_default(CLOCK_SETTINGS); }
+
+	void set_Dimming(uint8_t factor) {
+		if (factor > this->gclk_bits - min_gclk) {
+			dimming_factor = this->gclk_bits - min_gclk;
+		}
+		else dimming_factor = factor;
+	}
 
 	// placeholder for color mode specialization
 	virtual uint16_t expand_planes(volatile uint8_t *ptr3) = 0;
@@ -241,7 +256,7 @@ protected:
 	{
 
 		this->Mux->set_mux(this->row);
-
+        timer_set_count(this->OE_TIMER, 0); // synchronize OE timer with MAIN timer on next start
 		if (this->row == 0)
 		{
 			if (this->oe_scan_flag == false)
@@ -253,7 +268,7 @@ protected:
 				return;
 			}
 		}
-		timer_set_count(this->OE_TIMER, 0); // synchronize OE timer with MAIN timer on next start
+		
 		this->row++;
 		if (this->row >= this->nRows)
 			this->row = 0;
@@ -329,22 +344,26 @@ protected:
 
 				for (uint8_t sect = 0; sect < num_sect; sect++)
 				{
-					// 16 greyscale bits for each pixel MSB first
-					// 4 most significant bits are loaded from buffer
+					// Load 16 greyscale bits for each pixel MSB first
+					// 14,13 or 12 bits are used by driver, 
+					// 2 - 4 MSB bits MUST be leave empty
+
+					// 12 MSB bits are loaded from buffer
+					// 0{2}-data{4}-data_lsb{2}  (for 14bit frame)
 					uint16_t b = this->expand_planes(ptr2);
 
-// the others are copied from 4th bit
+					// unused lower bits are filled by zeros
 #if defined(__STM32F1__)
 
 					// on STM32F1 unroll the loop for speed
-					pew_6353_2(b) pew_6353_2(b)
+					//pew_6353_2(b) 
+					//pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
 					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
-					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
-					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
+					
 
 #elif defined(__STM32F4__)
 
-					for (auto i = 0; i < 11; i++)
+					for (auto i = 0; i < 3; i++)
 					{
 						pew_6353_2(b)
 					}
@@ -360,9 +379,9 @@ protected:
 					}
 					else
 					{
-						*(this->latsetreg) = this->latmask;						 // switch LE ON
+						*(this->latsetreg) = this->latmask;			// LAT - HIGH
 						pew_6353_2(b) 
-						* (this->latsetreg) = this->latmask << 16; // LAT - LOW
+						* (this->latsetreg) = this->latmask << 16;   // LAT - LOW
 					}
 				}
 			}
@@ -403,18 +422,50 @@ public:
 	}
 
 protected:
+    // Extract color bits from bitplanes buffer
+	// and fill 12 MSB grayscale bits  
 	uint16_t expand_planes(volatile uint8_t *ptr3) override
 	{
 		uint16_t b = 0;
-		for (byte i = 0; i < 4; i++)
+		uint8_t bit_ptr = 16;
+		uint8_t bits[COL_DEPTH] = {0};
+		// The postion of greyscale MSB can varied from 14 to 12th depending of chip
+		// You can additionally shift it down as low as 8th bit by <dimming_factor>
+		// to adjust color and brightness
+		uint8_t gclk_msb = this->gclk_bits + this->dimming_factor;
+
+		// Zerofill upper bits above greyscale MSB (14-12th ) 
+		while (bit_ptr != gclk_msb)
 		{
-			if (i < COL_DEPTH)
-			{
-				b = this->expand[*ptr3];
-				// b = *ptr3;
-				ptr3 += this->displ_len;
-			}
 			pew_6353_2(b)
+			bit_ptr--;
+		}
+		// Exctract pixel data from bitplanes buffer
+        // Since the bitplanes are stored from LSB to MSB, we first read them into the array
+		int8_t i = 0;
+		for (i = 0; i < COL_DEPTH; i++)
+		{
+		    bits[i] = *ptr3;
+			ptr3 += this->displ_len;
+		}
+        
+		// and than load it in reverse order - MSB to LSB
+		i = COL_DEPTH;
+		do 
+		{
+			b = this->expand[bits[i-1]];
+			pew_6353_2(b)
+			bit_ptr--;
+			i--;
+		} 
+		while (i > 0);
+		
+		// zerofill the remaining bits to make a total of 12
+		b = 0;
+		while (bit_ptr != (this-> min_gclk - 4 ))
+		{
+			pew_6353_2(b)
+			bit_ptr--;
 		}
 		return b;
 	}
@@ -436,20 +487,50 @@ public:
 	}
 
 protected:
+ 	// Extract color bits from bitplanes buffer
+	// and fill 12 MSB grayscale bits  
 	uint16_t expand_planes(volatile uint8_t *ptr2) override
 	{
 
 		uint16_t factor_l = this->displ_len;
-		uint16_t b1 = this->expand[*ptr2];
+		
+
+		// The postion of greyscale MSB can varied from 14 to 12th depending of chip
+		// You can additionally shift it down as low as 8th bit by <dimming_factor>
+		// to adjust color and brightness
+		uint8_t gclk_msb = this->gclk_bits + this->dimming_factor;
+
+		// Exctract pixel data from bitplanes buffer
+		// bitplanes 1 - 3
+		uint16_t b1 = this->expand[*ptr2]; 
 		uint16_t b2 = this->expand[*(ptr2 + factor_l)];
 		uint16_t b3 = this->expand[*(ptr2 + factor_l * 2)];
-
-		byte b0 =
+		byte b0 =		// plane 0
 			(((*ptr2) >> 2) & 0x30) |
 			((*(ptr2 + factor_l)) & 0x0C) |
 			(((*(ptr2 + factor_l * 2)) >> 6) & 0x03);
 		uint16_t b = this->expand[b0];
-		pew_6353_2(b3) pew_6353_2(b2) pew_6353_2(b1) pew_6353_2(b) return b;
+		uint8_t bit_ptr = 16;
+		
+		// Zerofill upper bits above greyscale MSB (14-12th ) 
+		while (bit_ptr != gclk_msb)
+		{
+			pew_6353_2(0)
+			bit_ptr--;
+		}
+
+		// load 4 color bits
+        bit_ptr-=4;
+		pew_6353_2(b3) pew_6353_2(b2) pew_6353_2(b1) pew_6353_2(b) 
+		
+		// zerofill the remaining bits to make a total of 12
+		b = 0;
+		while (bit_ptr != (this-> min_gclk - 4 ))
+		{
+			pew_6353_2(b)
+			bit_ptr--;
+		}
+		return b;
 	}
 };
 
@@ -486,7 +567,7 @@ public:
 	}
 
 protected:
-	// CLK levels table for DMA
+	// CLK levels table for DMA (see "Timer setup" below)
 	uint32_t dclk_strobe[2] = {0};
 	uint8_t CLK_PERIOD;
 	// uint32_t CLK_TIMER_reload, CLK_TIMER_cc;
@@ -587,6 +668,36 @@ protected:
 #endif
 		this->start_DCLK();
 	}
+
+	void stop_GCLK() override
+	{
+		// if timer is running
+		if (this->oe_scan_flag)
+		{
+			noInterrupts();
+			// set stopping GCLK (OE) flag
+			this->oe_scan_flag = false;
+			this->oe_scan_res = true;
+
+			interrupts();
+			// wait for GCLK stop flag change
+			while (this->oe_scan_res)
+			{
+			};
+			delayMicroseconds(5);
+		}
+
+		timer_pause(this->MAIN_TIMER);
+		timer_pause(this->CLK_TIMER);
+        // clear all RGB & CLK lines
+		*(this->datasetreg) = this->clk_clrmask;
+		// switch to row 0
+		this->row = 0;
+		this->Mux->set_mux(this->row);
+		this->row++;
+		delayMicroseconds(10);
+		this->oe_scan_flag = true;
+	}
 };
 
 /*--------------------------------------------------------------------------------------*/
@@ -596,7 +707,8 @@ protected:
  * In this driver type, the PWM pulse source and the row switching are separated.
  * The PWM is uses a CLK, and the minimum number of pulses must be generated for each row
  * specified by the configuration registers.
- * Row switching is achieved by a single OE pulse.
+ * Row switching signal for driver is generated by a single OE pulse.
+ * Hardware row switching is achieved by selecting ABCDE lines in interrupt routine.
  * While using a CLK signal during the data loading, it is necessary to supply an OE pulses and
  * switch the rows accordingly to avoid image flickering.
  * So we need to rewrite of the <data_transfer> method.
@@ -628,7 +740,8 @@ protected:
 		timer_pause(this->OE_TIMER);
 		timer_generate_update(this->MAIN_TIMER);
 		timer_generate_update(this->OE_TIMER);
-		timer_set_count(this->MAIN_TIMER, this->MAIN_TIMER_reload - 2); // set counter just before update to be sure CC1 output is inactive
+		//timer_set_count(this->MAIN_TIMER, this->MAIN_TIMER_reload - 2); // set counter just before update to be sure CC1 output is inactive
+		timer_set_count(this->MAIN_TIMER, this->MAIN_TIMER_cc1+ 2); // set counter just after CC1 to start first loop right after 12x CLK OE pulse
 		timer_set_compare(this->MAIN_TIMER, 1, this->MAIN_TIMER_cc1);	// restore OC1 compare value
 	}
 
@@ -644,7 +757,7 @@ protected:
 	}
 
 	// Load new greyscale data
-	// Driver expext 16 bits per pixel = 14 bits grayscale + 2 dummy bits
+	// Driver expext 16 bits per pixel = 12-14 bits grayscale + 2-4 dummy bits
 	// Since the library used only 4 bits per color, we load them to 4 MSB driver bits
 	// and filled the others by copy of our data LSB bit
 	//
@@ -655,8 +768,11 @@ protected:
 		this->buffptr = this->matrixbuff[1 - this->backindex];
 		volatile uint8_t *ptr = this->buffptr;
 		volatile uint8_t *ptr2 = this->buffptr;
+
+		// each driver controls 16 leds
+		// calculate a number of chips in one row
 		const uint8_t num_sect = this->x_len / 16;
-		uint16_t clk_count = 0;
+		
 
 		pinMode(this->pin_DMD_nOE, OUTPUT);
 
@@ -664,7 +780,8 @@ protected:
 		*(this->oesetreg) = this->oemask;
 		this->send_clocks(12);
 		*(this->oesetreg) = this->oemask << 16;
-
+		
+		uint16_t clk_count = 16;
 		//  iterate each scan line
 		for (uint8_t y = 0; y < this->nRows; y++)
 		{
@@ -679,13 +796,10 @@ protected:
 
 				ptr2 = ptr + x;
 
+				// loop each driver in the row
 				for (uint8_t sect = 0; sect < num_sect; sect++)
 				{
-					// switch OE on to generate 4 clocks OE pulse every 128 clocks
-					if (clk_count == 128)
-					{
-						*(this->oesetreg) = this->oemask;
-					}
+					
 
 					// switch the row at 112 clocks
 					if (clk_count == 112)
@@ -696,10 +810,38 @@ protected:
 							this->row = 0;
 					}
 
-					// 16 greyscale bits for each pixel MSB first
-					// 4 most significant bits are loaded from buffer
+					// Load 16 greyscale bits for each pixel MSB first
+					// 14,13 or 12 bits are used by driver, 
+					// 2 - 4 MSB bits MUST be leave empty
+
+					// 4 of 12 MSB bits are loaded from buffer
+					// the others filled by zero
+					// 0{2..4}-data{4}-0{up to 12}  (for 14bit frame)
 					uint16_t b = this->expand_planes(ptr2);
 
+					
+
+					// switch OE on to generate 4 clocks OE pulse every 128 clocks
+					if (clk_count == 128)
+					{
+						*(this->oesetreg) = this->oemask;
+					}
+
+					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
+
+					// The last bit in serie must latched
+					if (sect < num_sect - 1)
+					{
+						pew_6353_4(b)
+						ptr2 += 16;
+					}
+					else
+					{
+						*(this->latsetreg) = this->latmask;			// LAT - HIGH
+						pew_6353_4(b) 
+						* (this->latsetreg) = this->latmask << 16; // LAT - LOW
+					}
+                    
 					// switch OE off finishing generating 4 clocks OE pulse
 					if (clk_count == 128)
 					{
@@ -707,40 +849,11 @@ protected:
 						*(this->oesetreg) = this->oemask << 16;
 						clk_count = 0;
 					}
-
-// the others are copied from 4th bit
-
-// on STM32F1 unroll the loop for speed
-#if defined(__STM32F1__)
-
-					pew_6353_2(b) pew_6353_2(b)
-					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
-					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
-					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
-
-#elif defined(__STM32F4__)
-
-					for (auto i = 0; i < 11; i++)
-					{
-						pew_6353_2(b)
-					}
-
-#endif
-
-						// The last bit in serie must latched
-						if (sect < num_sect - 1)
-					{
-						pew_6353_4(b)
-						ptr2 += 16;
-					}
-					else
-					{
-						*(this->latsetreg) = this->latmask;			// switch LE ON
-						pew_6353_4(b) 
-						* (this->latsetreg) = this->latmask << 16; // LAT - LOW
-					}
-
-					clk_count += 16;
+					 // yes, we increment clk counter just after clearing it
+					 // it make it consistent to 128 bits loading process
+						clk_count += 16;
+					
+					
 				}
 			}
 		}
@@ -775,6 +888,7 @@ public:
 	virtual void init(uint16_t scan_interval = 200) override
 	{
 
+		
 		this->TIM3_PERIOD = 8;
 		this->GCLK_NUM = 138; // GCLK pulses in packet, 6353 - 138, 6363 - 74
 #if defined(__STM32F1__)
@@ -782,9 +896,11 @@ public:
 #elif defined(__STM32F4__)
 		this->ADD_NUM = 22;
 #endif
+        // MAIN loop duration = (GCLK_NUM) x OE pulses + additional delay (ADD_NUM) for line switching
 		this->MAIN_TIMER_reload = this->GCLK_NUM * this->TIM3_PERIOD + 8 * this->ADD_NUM - 1;
-		this->MAIN_TIMER_cc1 = this->GCLK_NUM * this->TIM3_PERIOD;
-		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + 2 * this->ADD_NUM;
+
+		this->MAIN_TIMER_cc1 = this->GCLK_NUM * this->TIM3_PERIOD;	   // CH1: control OE_TIMER counting
+		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + 2; // CH2: line switching interrupt
 		this->OE_TIMER_reload = this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = this->TIM3_PERIOD / 2;
 		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
@@ -815,18 +931,21 @@ public:
 
 	virtual void init(uint16_t scan_interval = 200) override
 	{
-
+        // MSB greyscale position for color bits
+		this->gclk_bits = 12;
+		
 		this->CLK_PERIOD = 8;
 		this->TIM3_PERIOD = 8;
 		this->GCLK_NUM = 74; // GCLK pulses in packet, 6353 - 138, 6363 - 74
 #if defined(__STM32F1__)
 		this->ADD_NUM = 32; // Dummy timer ticks to finish the lines switching, can cause glitches if too short
 #elif defined(__STM32F4__)
-		this->ADD_NUM = 22;
+		this->ADD_NUM = 32;
 #endif
+		 // MAIN loop duration = (GCLK_NUM) x OE pulses + additional delay (ADD_NUM) for line switching
 		this->MAIN_TIMER_reload = this->GCLK_NUM * this->TIM3_PERIOD + 8 * this->ADD_NUM - 1;
-		this->MAIN_TIMER_cc1 = this->GCLK_NUM * this->TIM3_PERIOD;
-		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + 2 * this->ADD_NUM;
+		this->MAIN_TIMER_cc1 = this->GCLK_NUM * this->TIM3_PERIOD; 		// CH1: control OE_TIMER counting
+		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + 2;	// CH2: line switching interrupt
 		this->OE_TIMER_reload = this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = this->TIM3_PERIOD / 2;
 		DMD_RGB_FM6363_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
@@ -856,20 +975,27 @@ public:
 
 	void init(uint16_t scan_interval = 200) override
 	{
-
+		// MSB greyscale position for color bits
+		this->gclk_bits = 13;
+		
 		this->GCLK_NUM = 1; // GCLK pulses in packet, 6353 - 138, 6363 - 74
 #if defined(__STM32F1__)
 		this->ADD_NUM = 235; // Dummy timer ticks to finish the lines switching, can cause glitches if too short
 		this->CLK_PERIOD = 12;
 		this->TIM3_PERIOD = 12;
 #elif defined(__STM32F4__)
-		this->ADD_NUM = 228;
+		this->ADD_NUM = 232;
 		this->CLK_PERIOD = 8;
 		this->TIM3_PERIOD = 8;
 #endif
+		 // MAIN loop duration = (1) x OE pulse + 96 CLK pulses + delay for line switching
+		 // Experimental: minimum loop duration about 112 - 116 CLK pulses
 		this->MAIN_TIMER_reload = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * this->ADD_NUM + 4;
-		this->MAIN_TIMER_cc1 = 12 * this->GCLK_NUM * this->TIM3_PERIOD;
-		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 35);
+		// switch off OE timer to make 4x CLK OE pulse
+		this->MAIN_TIMER_cc1 = 12 * this->GCLK_NUM * this->TIM3_PERIOD;   
+		// CH2 interrupt for line switching (about 95-105 CLK from OE)
+		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 40);
+		// 4x CLK OE pulse
 		this->OE_TIMER_reload = 12 * this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
 		DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
@@ -922,7 +1048,9 @@ public:
 
 	void init(uint16_t scan_interval = 200) override
 	{
-
+		// MSB greyscale position for color bits
+		this->gclk_bits = 12;
+		
 		this->GCLK_NUM = 1; // GCLK pulses in packet, 6353 - 138, 6363 - 74
 #if defined(__STM32F1__)
 		this->CLK_PERIOD = 12;
@@ -933,6 +1061,7 @@ public:
 		this->TIM3_PERIOD = 8;
 		this->ADD_NUM = 228;
 #endif
+        // Timer settings (see DP3264 class for details)
 		this->MAIN_TIMER_reload = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * this->ADD_NUM + 4;
 		this->MAIN_TIMER_cc1 = 12 * this->GCLK_NUM * this->TIM3_PERIOD;
 		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 35);
@@ -1008,6 +1137,7 @@ public:
 		this->CLK_PERIOD = 8;
 		this->TIM3_PERIOD = 8;
 #endif
+		// Timer settings (see DP3264 class for details)
 		this->MAIN_TIMER_reload = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * this->ADD_NUM + 4;
 		this->MAIN_TIMER_cc1 = 12 * this->GCLK_NUM * this->TIM3_PERIOD;
 		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 35);

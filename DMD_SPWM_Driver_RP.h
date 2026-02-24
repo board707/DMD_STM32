@@ -92,10 +92,10 @@ public:
 protected:
     volatile bool oe_scan_flag = false;
 	volatile bool oe_scan_res = false;
-	uint8_t max_clk_freq = 15;  // 15 MHz
+	uint8_t max_clk_freq = 15;  // 15 MHz (most HUB75 panels has max CLK about 20-25MHz )
 
     // Most driver chips only receives the lower 14 bits of 16 bits transmitted data.
-	// Some drivers needs 13 bits.
+	// Some drivers needs 13 or 12 bits.
 	uint8_t gclk_bits = 14;
 
 	// Clk_Lat SM
@@ -359,7 +359,7 @@ protected:
 		// Format of `control_par' parameter:
 		// clock loop:
 		// MUX IRQ | ==== d1 ==== | OE pulse = d2 | ==== d3 ==== | MUX IRQ |
-		// bits of control par: 
+		// bits of control par: (8 MS bits - duration by CLKs, 1 LS bit - is OE switched ON (1) or OFF (0))
 		// 26:19 - d3 , 18 - 0
 		// 17:10 - d2, 9 - 1
 		// 8:1 - d1, 0 - 0
@@ -422,13 +422,15 @@ protected:
  				uint16_t i = 0;
 				for (uint8_t sect = 0; sect < num_sect; sect++)
 				{
-					// get 4 msb greyscale bytes
+					// get 4 color bits
 					// and put them to dma_buffer
 					uint32_t greyscale = this->expand_planes(ptr2);  
+					// Zerofill upper bits above greyscale MSB (14-12th ) 
 					memset(backward_ptr + i,(uint8_t)0,16-gclk_bits); 
 					memcpy(backward_ptr + i + 16-gclk_bits, (uint8_t*)&greyscale, sizeof(greyscale));  
-					// copy a most lsb byte to all other 12 planes of greyscale
-					uint8_t lsb = greyscale & 0xff;  
+					
+					// zerofill the remaining bits to make a total of 16
+					uint8_t lsb = 0;
 					memset(backward_ptr + i + 20-gclk_bits, lsb,gclk_bits -4);
 					ptr2+=16;
 					i+=16;
@@ -577,7 +579,8 @@ public:
 
 	void init(uint16_t scan_interval = 200) override
 	{
-
+		// MSB greyscale position for color bits
+		this->gclk_bits = 13;
 		
 		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
 
@@ -638,7 +641,8 @@ public:
 	
 		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
 		
-		this->gclk_bits = 13;
+		// MSB greyscale position for color bits
+		this->gclk_bits = 12;
 		
 		uint16_t icn2055_conf[] = {
 			0x021f, 0x0317, 0x0400, 0x0507, 0x0603, 0x0720, 0x0820, 0x0908, 0x0a08, 0x0b00,
@@ -859,7 +863,8 @@ public:
 		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
 		
 		this->clk_after_upload  = true;
-		this->gclk_bits = 13;
+		// MSB greyscale position for color bits
+		this->gclk_bits = 12;
 		
 		uint16_t conf_6363[] = {0x7e08, 0x0fb0, 0xe79d, 0x60b6, 0x5a70};
 

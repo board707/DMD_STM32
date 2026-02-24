@@ -89,6 +89,8 @@ public:
 		Color333(uint8_t r, uint8_t g, uint8_t b),
 		Color444(uint8_t r, uint8_t g, uint8_t b),
 		Color888(uint8_t r, uint8_t g, uint8_t b);
+		
+	uint16_t HSVtoRGB(int hue, uint8_t sat, uint8_t val);
 	
 	void setColorOrder(DMD_Color_order color_order) {
 		Color_order = color_order;

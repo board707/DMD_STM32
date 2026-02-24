@@ -1,4 +1,9 @@
 # ChangeLog
+## [1.2.6] - 2026-02-24
+ - Fix bug #190 (SPWM driver panels displays 4bit color as 1bit) 
+   for RP2040 and STM32 boards
+ - Rewrite part of SPWM support code to eliminate distortions
+   
 ## [1.2.5] - 2026-01-30
  - SPWM driver supporting code for RP2040 boards.
  - RP2040: Rewrite SHIFT_REG multiplexor code with direct GPIO access.   

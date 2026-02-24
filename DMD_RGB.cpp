@@ -831,6 +831,63 @@ uint16_t DMD_RGB_BASE::Color444(uint8_t r, uint8_t g, uint8_t b) {
 uint16_t DMD_RGB_BASE::Color888(uint8_t r, uint8_t g, uint8_t b) {
 	return ((uint16_t)(r & 0xF8) << 8) | ((uint16_t)(g & 0xFC) << 3) | (b >> 3);
 }
+
+/*--------------------------------------------------------------------------------------*/
+// HSV to Adafruit_GFX 5/6/5
+// hue: 0-359, sat: 0-255, val (lightness): 0-255
+// Adapted from: https://github.com/danasf/attiny_pixel_switch/blob/master/attiny_pixel_switch.ino#L326
+
+uint16_t DMD_RGB_BASE::HSVtoRGB(int hue, uint8_t sat, uint8_t val) {
+    const uint16_t hue_range = 360;
+    const uint16_t hue_sect = hue_range/6;
+    uint16_t r, g, b, base;
+    if (sat == 0) { // Achromatic color (gray).
+        r = val;
+        g = val;
+        b = val;
+    } else {
+        base = ((255 - sat) * val) >> 8;
+        hue = hue % hue_range;
+        if (hue < 0) hue = hue_range + hue;
+        switch (hue / hue_sect) {
+        case 0:
+            r = val;
+            g = (((val - base) * hue) / hue_sect) + base;
+            b = base;
+            break;
+        case 1:
+            r = (((val - base) * (hue_sect - (hue % hue_sect))) / hue_sect) + base;
+            g = val;
+            b = base;
+            break;
+        case 2:
+            r = base;
+            g = val;
+            b = (((val - base) * (hue % hue_sect)) / hue_sect) + base;
+            break;
+        case 3:
+            r = base;
+            g = (((val - base) * (hue_sect - (hue % hue_sect))) / hue_sect) + base;
+            b = val;
+            break;
+        case 4:
+            r = (((val - base) * (hue % hue_sect)) / hue_sect) + base;
+            g = base;
+            b = val;
+            break;
+        case 5:
+            r = val;
+            g = base;
+            b = (((val - base) * (hue_sect - (hue % hue_sect))) / hue_sect) + base;
+            break;
+        }
+
+    }
+
+  return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);   
+
+}
+
 #if defined(DEBUG2)
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::dumpMask(void) {
