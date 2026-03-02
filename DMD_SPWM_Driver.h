@@ -27,6 +27,7 @@ The chips supported:
 		+ FM6373
 		+ ICN2055
 		+ DP3264
+		+ SM16380SH
 
 
  https://github.com/board707/DMD_STM32
@@ -39,6 +40,13 @@ The chips supported:
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
 #define CLOCK_SETTINGS  CLK_AFTER_DATA   // options: CLK_WITH_DATA / CLK_AFTER_DATA
+
+#if defined(__STM32F1__)
+#define DUAL_CLK_PULSE  false           // options: true / false
+#elif defined(__STM32F4__)
+#define DUAL_CLK_PULSE  true            // options: true / false
+#endif
+
 
 #include "DMD_RGB.h"
 
@@ -65,6 +73,12 @@ The chips supported:
 	*(this->datasetreg) = this->clkmask;     \
 	*(this->datasetreg) = this->clkmask;	 \
 	*(this->datasetreg) = this->clk_clrmask;
+#endif
+
+#if (DUAL_CLK_PULSE)
+#define pew_SPWM(x) pew_6353_4(x)
+#else
+#define pew_SPWM(x) pew_6353_2(x) 
 #endif
 
 #define ADD_CONFIG_REGS(arr) this->add_config_regs((arr), sizeof(arr) / sizeof((arr)[0]))
@@ -110,6 +124,14 @@ public:
 
 		this->refresh_greyscale_data();
 	}
+	
+	uint8_t shiftColorBrightnessDown(uint8_t shift) {
+		if (shift > this->gclk_bits - min_gclk) {
+			dimming_factor = this->gclk_bits - min_gclk;
+		}
+		else dimming_factor = shift;
+		return dimming_factor;
+	}
 
 protected:
 	volatile bool oe_scan_flag = false;
@@ -127,17 +149,14 @@ protected:
 	uint16_t *config_registers;
 	uint8_t conf_reg_cnt;
 
+	
+
 	uint32_t MAIN_TIMER_reload, MAIN_TIMER_cc1, MAIN_TIMER_cc2;
 	uint32_t OE_TIMER_reload, OE_TIMER_cc;
 
 	void generate_rgbtable() override { DMD_RGB_BASE::generate_rgbtable_default(CLOCK_SETTINGS); }
 
-	void set_Dimming(uint8_t factor) {
-		if (factor > this->gclk_bits - min_gclk) {
-			dimming_factor = this->gclk_bits - min_gclk;
-		}
-		else dimming_factor = factor;
-	}
+	
 
 	// placeholder for color mode specialization
 	virtual uint16_t expand_planes(volatile uint8_t *ptr3) = 0;
@@ -353,34 +372,20 @@ protected:
 					uint16_t b = this->expand_planes(ptr2);
 
 					// unused lower bits are filled by zeros
-#if defined(__STM32F1__)
-
-					// on STM32F1 unroll the loop for speed
-					//pew_6353_2(b) 
-					//pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
-					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
 					
-
-#elif defined(__STM32F4__)
-
-					for (auto i = 0; i < 3; i++)
-					{
-						pew_6353_2(b)
-					}
-
-#endif
-
-
+					// on STM32F1 unroll the loop for speed
+					pew_SPWM(b) pew_SPWM(b) pew_SPWM(b)
+					
 					// The last bit in serie must latched
 					if (sect < num_sect - 1)
 					{
-						pew_6353_2(b)
+						pew_SPWM(b)
 						ptr2 += 16;
 					}
 					else
 					{
 						*(this->latsetreg) = this->latmask;			// LAT - HIGH
-						pew_6353_2(b) 
+						pew_SPWM(b)
 						* (this->latsetreg) = this->latmask << 16;   // LAT - LOW
 					}
 				}
@@ -432,12 +437,12 @@ protected:
 		// The postion of greyscale MSB can varied from 14 to 12th depending of chip
 		// You can additionally shift it down as low as 8th bit by <dimming_factor>
 		// to adjust color and brightness
-		uint8_t gclk_msb = this->gclk_bits + this->dimming_factor;
+		uint8_t gclk_msb = this->gclk_bits - this->dimming_factor;
 
 		// Zerofill upper bits above greyscale MSB (14-12th ) 
 		while (bit_ptr != gclk_msb)
 		{
-			pew_6353_2(b)
+			pew_SPWM(b)
 			bit_ptr--;
 		}
 		// Exctract pixel data from bitplanes buffer
@@ -454,7 +459,7 @@ protected:
 		do 
 		{
 			b = this->expand[bits[i-1]];
-			pew_6353_2(b)
+			pew_SPWM(b)
 			bit_ptr--;
 			i--;
 		} 
@@ -464,7 +469,7 @@ protected:
 		b = 0;
 		while (bit_ptr != (this-> min_gclk - 4 ))
 		{
-			pew_6353_2(b)
+			pew_SPWM(b)
 			bit_ptr--;
 		}
 		return b;
@@ -498,7 +503,7 @@ protected:
 		// The postion of greyscale MSB can varied from 14 to 12th depending of chip
 		// You can additionally shift it down as low as 8th bit by <dimming_factor>
 		// to adjust color and brightness
-		uint8_t gclk_msb = this->gclk_bits + this->dimming_factor;
+		uint8_t gclk_msb = this->gclk_bits - this->dimming_factor;
 
 		// Exctract pixel data from bitplanes buffer
 		// bitplanes 1 - 3
@@ -515,19 +520,19 @@ protected:
 		// Zerofill upper bits above greyscale MSB (14-12th ) 
 		while (bit_ptr != gclk_msb)
 		{
-			pew_6353_2(0)
+			pew_SPWM(0)
 			bit_ptr--;
 		}
 
 		// load 4 color bits
         bit_ptr-=4;
-		pew_6353_2(b3) pew_6353_2(b2) pew_6353_2(b1) pew_6353_2(b) 
+		pew_SPWM(b3) pew_SPWM(b2) pew_SPWM(b1) pew_SPWM(b)
 		
 		// zerofill the remaining bits to make a total of 12
 		b = 0;
 		while (bit_ptr != (this-> min_gclk - 4 ))
 		{
-			pew_6353_2(b)
+			pew_SPWM(b)
 			bit_ptr--;
 		}
 		return b;
@@ -684,7 +689,7 @@ protected:
 			while (this->oe_scan_res)
 			{
 			};
-			delayMicroseconds(5);
+			//delayMicroseconds(5);
 		}
 
 		timer_pause(this->MAIN_TIMER);
@@ -734,6 +739,16 @@ public:
 	}
 
 protected:
+
+    virtual void spwm_chip_init() 
+	{
+		 this->clearScreen(true);
+         for (uint8_t i = 0; i < this->conf_reg_cnt; i++) 
+		 { 
+			this->refresh_greyscale_data();
+			delay(30);
+		}
+	}
 	// part of greyscale loading process  -  restart GCLK generation
 	void start_GCLK() override
 	{
@@ -827,18 +842,18 @@ protected:
 						*(this->oesetreg) = this->oemask;
 					}
 
-					pew_6353_2(b) pew_6353_2(b) pew_6353_2(b)
+					pew_SPWM(b) pew_SPWM(b) pew_SPWM(b)
 
 					// The last bit in serie must latched
 					if (sect < num_sect - 1)
 					{
-						pew_6353_4(b)
+						pew_SPWM(b)
 						ptr2 += 16;
 					}
 					else
 					{
 						*(this->latsetreg) = this->latmask;			// LAT - HIGH
-						pew_6353_4(b) 
+						pew_SPWM(b)
 						* (this->latsetreg) = this->latmask << 16; // LAT - LOW
 					}
                     
@@ -868,6 +883,7 @@ protected:
 //	* DP3264
 //	* ICN2055
 //	* FM6373
+//  * SM16380sh
 /*--------------------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------------------*/
@@ -1004,6 +1020,7 @@ public:
 
 		conf_3264[1] = 0x0200 | (SCAN - 1); /// panel scan
 		ADD_CONFIG_REGS(conf_3264);
+		this->spwm_chip_init();
 	}
 
 protected:
@@ -1076,6 +1093,7 @@ public:
 		icn2055_conf[0] = 0x200 | (SCAN - 1); /// panel scan
 
 		ADD_CONFIG_REGS(icn2055_conf);
+		this->spwm_chip_init();
 	}
 
 protected:
@@ -1145,13 +1163,14 @@ public:
 		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
 		DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
 
-		uint16_t icn2055_conf[] = {
+		uint16_t fm6373_conf[] = {
 			0x021f, 0x033f, 0x0402, 0x0507, 0x0603, 0x0720, 0x0820, 0x0900, 0x0a00, 0x0b00,
 			0x0c01, 0x0d01, 0x0e04, 0x0f01, 0x10c2, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1900,
 			0x1a1f, 0x1b10, 0x1cc1, 0x1d0a, 0x1e42, 0x1f04, 0x2008, 0x2101, 0x221c};
 
-		icn2055_conf[0] = 0x200 | (SCAN - 1); /// panel scan
-		ADD_CONFIG_REGS(icn2055_conf);
+		fm6373_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		ADD_CONFIG_REGS(fm6373_conf);
+		this->spwm_chip_init();
 	}
 
 protected:
@@ -1181,6 +1200,92 @@ protected:
 		this->send_to_allRGB(0x0055, 5);
 		this->send_to_allRGB(0x0155, 5);
 		this->send_clocks(8);
+	}
+};
+/*--------------------------------------------------------------------------------------*/
+// SM16380sh driver class
+/*--------------------------------------------------------------------------------------*/
+template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
+
+class DMD_RGB_SM16380SH : public DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+{
+
+public:
+	DMD_RGB_SM16380SH(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
+				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
+				   DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
+	{
+	}
+
+
+
+	void init(uint16_t scan_interval = 200) override
+	{
+		// MSB greyscale position for color bits
+		this->gclk_bits = 13;
+		
+		this->GCLK_NUM = 1; // GCLK pulses in packet, 6353 - 138, 6363 - 74
+#if defined(__STM32F1__)
+		this->ADD_NUM = 232; // Dummy timer ticks to finish the lines switching, can cause glitches if too short
+		this->CLK_PERIOD = 12;
+		this->TIM3_PERIOD = 12;
+#elif defined(__STM32F4__)
+		this->ADD_NUM = 232;
+		this->CLK_PERIOD = 8;
+		this->TIM3_PERIOD = 8;
+#endif
+		// Timer settings (see DP3264 class for details)
+		this->MAIN_TIMER_reload = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * this->ADD_NUM + 4;
+		this->MAIN_TIMER_cc1 = 12 * this->GCLK_NUM * this->TIM3_PERIOD;
+		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 35);
+		this->OE_TIMER_reload = 12 * this->TIM3_PERIOD - 1;
+		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
+		DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+
+		uint16_t sm16380sh_conf[] = {
+			0x021f, 0x0300, 0x0400, 0x0500, 0x0600, 
+			0x0750, 0x0800, 0x0900, 
+			0x0a02, 0x0b0c,
+			0x0c08, 0x0d00, 0x0e05, 0x0f00, 0x1000, 0x1100, 0x1200, 0x1300, 
+			0x1414, 0x1500,
+			0x1630, 0x1700, 
+			0x1801, 0x1904,0x1a03, 0x1b14, 0x1c12, 0x1d00, 0x1e00, 0x1f0c};
+
+		sm16380sh_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		ADD_CONFIG_REGS(sm16380sh_conf);
+		this->spwm_chip_init();
+	}
+
+protected:
+	void load_config_regs(uint16_t *conf_reg) override
+	{
+		static uint8_t r = this->conf_reg_cnt;
+		r++;
+		if (r >= this->conf_reg_cnt)
+		{
+
+			r = 0;
+		}
+
+		this->send_vsync(); // vsync
+		//this->send_clocks(8);
+		//this->send_latches(11); // pre-active command
+		//*(this->oesetreg) = this->oemask << 16;
+		this->send_clocks(8);
+		//*(this->oesetreg) = this->oemask;
+		this->send_latches(14); // pre-active command
+		//*(this->oesetreg) = this->oemask << 16;
+		this->send_clocks(8);
+		
+		this->send_to_allRGB(0x00aa, 5);
+		this->send_to_allRGB(0x01aa, 5);
+		this->send_to_allRGB(conf_reg[r], 5); // send config registers
+		//this->send_to_allRGB(0xF003, 5);
+		this->send_to_allRGB(0x0055, 5);
+		this->send_to_allRGB(0x0155, 5);
+		//this->send_clocks(8);
+		
 	}
 };
 #endif // STM32F1 & F4

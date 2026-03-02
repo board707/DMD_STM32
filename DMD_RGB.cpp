@@ -837,7 +837,7 @@ uint16_t DMD_RGB_BASE::Color888(uint8_t r, uint8_t g, uint8_t b) {
 // hue: 0-359, sat: 0-255, val (lightness): 0-255
 // Adapted from: https://github.com/danasf/attiny_pixel_switch/blob/master/attiny_pixel_switch.ino#L326
 
-uint16_t DMD_RGB_BASE::HSVtoRGB(int hue, uint8_t sat, uint8_t val) {
+uint16_t DMD_RGB_BASE::ColorHSV(int hue, uint8_t sat, uint8_t val) {
     const uint16_t hue_range = 360;
     const uint16_t hue_sect = hue_range/6;
     uint16_t r, g, b, base;

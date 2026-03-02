@@ -1,4 +1,11 @@
 # ChangeLog
+## [1.2.7] - 2026-03-03
+ - Add support of new SPWM driver - SM16380SH. 
+ - Add limited brightness control for SPWM driver classes. 
+ - New color conversion from HSV to RGB444.
+ - Making SPWM driver code more stable.
+ - Other minor changes.
+
 ## [1.2.6] - 2026-02-24
  - Fix bug #190 (SPWM driver panels displays 4bit color as 1bit) 
    for RP2040 and STM32 boards

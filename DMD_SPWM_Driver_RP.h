@@ -83,12 +83,20 @@ public:
 		dma_buffs[1] = dma_buffer + this->x_len;
 	}
 
+ 	
 	// load user data buffer to matrix
 	void swapBuffers(boolean copy) override
 	{
 		this->refresh_greyscale_data();
 	}
 
+	uint8_t shiftColorBrightnessDown(uint8_t shift) {
+		if (shift > this->gclk_bits - min_gclk) {
+			dimming_factor = this->gclk_bits - min_gclk;
+		}
+		else dimming_factor = shift;
+		return dimming_factor;
+	}
 protected:
     volatile bool oe_scan_flag = false;
 	volatile bool oe_scan_res = false;
@@ -97,6 +105,8 @@ protected:
     // Most driver chips only receives the lower 14 bits of 16 bits transmitted data.
 	// Some drivers needs 13 or 12 bits.
 	uint8_t gclk_bits = 14;
+	uint8_t dimming_factor = 0;
+	const uint8_t min_gclk = 8;
 
 	// Clk_Lat SM
     uint8_t sm_clk_lat = 0;
@@ -134,6 +144,16 @@ protected:
 		memcpy(this->config_registers, cfg_regs, (this->conf_reg_cnt * sizeof(uint16_t)));
 	}
 
+	virtual void spwm_chip_init() 
+	{
+		 this->clearScreen(true);
+         for (uint8_t i = 0; i < this->conf_reg_cnt; i++) 
+		 { 
+			this->refresh_greyscale_data();
+			delay(30);
+		}
+	}
+	
 	// Hold LAT line HIGH while generating given number of CLK pulses
     void send_latches(uint16_t latches)
 	{
@@ -399,6 +419,11 @@ protected:
 		uint32_t control_par1 = this->x_len - 1;
 		uint32_t control_par2 = this->x_len - 2;
 		
+		// The postion of greyscale MSB can varied from 14 to 12th depending of chip
+		// You can additionally shift it down as low as 8th bit by <dimming_factor>
+		// to adjust color and brightness
+		uint8_t gclk_msb = this->gclk_bits - this->dimming_factor;
+
 		// generate 12 clocks OE pulse to start the data group (see the datasheet)
 		//this->send_oe(12);  moved to init_mux()
 		
@@ -426,12 +451,12 @@ protected:
 					// and put them to dma_buffer
 					uint32_t greyscale = this->expand_planes(ptr2);  
 					// Zerofill upper bits above greyscale MSB (14-12th ) 
-					memset(backward_ptr + i,(uint8_t)0,16-gclk_bits); 
-					memcpy(backward_ptr + i + 16-gclk_bits, (uint8_t*)&greyscale, sizeof(greyscale));  
+					memset(backward_ptr + i,(uint8_t)0,16-gclk_msb); 
+					memcpy(backward_ptr + i + 16-gclk_msb, (uint8_t*)&greyscale, sizeof(greyscale));  
 					
 					// zerofill the remaining bits to make a total of 16
 					uint8_t lsb = 0;
-					memset(backward_ptr + i + 20-gclk_bits, lsb,gclk_bits -4);
+					memset(backward_ptr + i + 20-gclk_msb, lsb, gclk_msb -4);
 					ptr2+=16;
 					i+=16;
 				}
@@ -588,6 +613,7 @@ public:
 
 		conf_3264[1] = 0x0200 | (SCAN - 1); /// panel scan
 		ADD_CONFIG_REGS(conf_3264);
+		this->spwm_chip_init();
 	}
 
 protected:
@@ -652,6 +678,7 @@ public:
 		icn2055_conf[0] = 0x200 | (SCAN - 1); /// panel scan
 
 		ADD_CONFIG_REGS(icn2055_conf);
+		this->spwm_chip_init();
 	}
 
 protected:
@@ -716,6 +743,7 @@ public:
 
 		fm6373_conf[0] = 0x200 | (SCAN - 1); /// panel scan
 		ADD_CONFIG_REGS(fm6373_conf);
+		this->spwm_chip_init();
 	}
 
 protected:
@@ -752,6 +780,71 @@ protected:
 	}
 };
 
+/*--------------------------------------------------------------------------------------*/
+// SM16380SH driver class
+/*--------------------------------------------------------------------------------------*/
+template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
+
+class DMD_RGB_SM16380SH : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+{
+
+public:
+	DMD_RGB_SM16380SH(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
+				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
+				  DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
+	{
+	}
+
+	void init(uint16_t scan_interval = 200) override
+	{
+
+		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+
+		uint16_t sm16380sh_conf[] = {
+			0x021f, 0x0300, 0x0400, 0x0500, 0x0600, 0x0750, 0x0800, 0x0900, 0x0a02, 0x0b0c,
+			0x0c08, 0x0d00, 0x0e05, 0x0f00, 0x1000, 0x1100, 0x1200, 0x1300, 0x1414, 0x1500,
+			0x1630, 0x1700, 0x1801, 0x1904,
+			0x1a03, 0x1b14, 0x1c12, 0x1d00, 0x1e00, 0x1f0c};
+
+		sm16380sh_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		ADD_CONFIG_REGS(sm16380sh_conf);
+		this->spwm_chip_init();
+	}
+
+protected:
+	void load_config_regs(uint16_t *conf_reg) override
+	{
+		// send next config register in each call
+		static uint8_t r = this->conf_reg_cnt;
+		r++;
+		if (r >= this->conf_reg_cnt)
+		{
+
+			r = 0;
+		}
+
+		this->send_vsync(); // vsync
+		this->send_clocks(8);
+		this->send_latches(11); // pre-active command
+		this->send_clocks(8);
+		this->send_latches(14); // pre-active command
+		this->send_clocks(8);
+		this->init_mux();
+		pio_sm_set_enabled(this->pio, this->sm_clk_lat, false);
+		
+		// config and start clk_cnt SM
+		this->start_DCLK();
+		
+		// in order to send config data we need 0x00AA 0x01AA before
+		// and 0x0055,0x0155 after config value
+		this->send_to_allRGB(0x00aa, 5);
+		this->send_to_allRGB(0x01aa, 5);
+		this->send_to_allRGB(conf_reg[r], 5); // send config register
+		this->send_to_allRGB(0x0055, 5);
+		this->send_to_allRGB(0x0155, 5);
+	}
+};
 
 /*--------------------------------------------------------------------------------------*/
 // FM6353 driver class

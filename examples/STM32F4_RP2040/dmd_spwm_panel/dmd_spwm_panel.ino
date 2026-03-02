@@ -75,11 +75,13 @@ uint8_t custom_rgbpins[] = { 11, 0,1,2,3,4,5 }; // CLK, R0, G0, B0, R1, G1, B1
 
 // Fire up the specific PWM driver object as dmd<MATRIX_TYPE, COLOR_DEPTH>
 
-//DMD_RGB_FM6363 <RGB64x32plainS16, COLOR_4BITS>  dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
-//DMD_RGB_ICN2055 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
-//DMD_RGB_FM6373 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 //DMD_RGB_FM6353 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
-DMD_RGB_DP3264 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
+//DMD_RGB_FM6363 <RGB64x32plainS16, COLOR_4BITS>  dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
+//DMD_RGB_FM6373 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
+//DMD_RGB_ICN2055 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
+//DMD_RGB_DP3264 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
+
+DMD_RGB_SM16380SH <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 
 // *** DMD_RGB_SHIFTREG_ABC multiplexor type is not supported for SPWM driver classes.
 // To select a SHIFT_REG multiplexor type uncomment the line 
@@ -173,14 +175,20 @@ void loop(void)
     // shift steps in pixels for running text (positive - shift right, negative - left)
     int8_t step[] = { 1,-1,-2,2 };
     // running text shift interval
-    uint32_t interval = 50;
+    uint32_t interval = 30;
     
     uint32_t prev_step = millis();
     uint8_t col_ptr = 0;
     uint8_t i = 0, b = 0;
     uint8_t test = 255;
     uint8_t test_cnt = 4;
-    dmd.setBrightness(200);
+    
+    // Note: setBrightness() is not implemented for SPWM driver,
+    // so the next line do nothing.  Leave for compatibility.
+    // Instead of it, we use a color bit shift to control brightness.
+    // See below.
+    //dmd.setBrightness(200);
+    
 
     // Cycle for tests:
     // -- running texts moving at x and y axis with single and double speed
@@ -213,6 +221,12 @@ void loop(void)
                         // go to next stage
                         i = 0;
                         test++;
+                        // Prepare to brightness control test.
+                        // Shift color bits maximum down to set brightness to minimum value.
+                        // We try to set an impossible big shift (16) so the method returns 
+                        // maximum shift value available for current driver.
+                        b = dmd.shiftColorBrightnessDown(16);  
+                        interval *= 10;
                         dmd.drawMarqueeX(m, 0, (dmd.height() > 16)? 8 : 0);
                     }
                     else {
@@ -225,13 +239,18 @@ void loop(void)
                 dmd.swapBuffers(true);
                 break;
             case 1:
-                b++;
-                dmd.setBrightness(b);
-                if (b > 250) {
+                // Control brightness by shift color bits up & down.
+                // Decrement bit shift by 1 means 
+                // move brightness 2 times up.
+                // Bit shift = 0 is a default (maximum) brightness.
+                b--;     
+                dmd.shiftColorBrightnessDown(b);
+                //dmd.setBrightness(b);   // do nothing
+                if (b == 0) {  // maximum brightness reached?
+                    // go to next stage
                     test++;
-                    b = 80;
                     i = 0;
-                    dmd.setBrightness(b);
+                    interval /= 10;
                     dmd.drawMarqueeX(m, 0, 0);
                 }
                 dmd.swapBuffers(true);
@@ -276,4 +295,3 @@ void loop(void)
         }
     }
 }
-
