@@ -6,12 +6,12 @@
 
 ### New in v1.2.7  - Additional SPWM driver - SM16380SH. 
 
-The new release introduces comprehensive support for a set of new "PWM-type" LED drivers previously unsupported by most known libraries. The supported chips represents a three distinct PWM driver control architectures:
+Since v1.2.5 release the library introduces comprehensive support for a set of new "PWM-type" LED drivers previously unsupported by most known libraries. The supported chips represents a three distinct PWM driver control architectures:
   * Unified Signal Control - both PWM timing and row switching managed by a single GCLK ( OE ) control signal  (supported: **ICN2153**, **FM6353**)
   * Dual Signal Synchronization - PWM timing coordinated through combined GCLK (OE -Output Enable) and  DCLK signals  ( driver model: **FM6363** )
-  * Fully Decoupled Control Mechanism - PWM timing (DCLK) and row switching ( GCLK ) operated through completely independent signals (chips: **DP3264**, **ICND2055**, **FM6373** )
+  * Fully Decoupled Control Mechanism - PWM timing (DCLK) and row switching ( GCLK ) operated through completely independent signals (chips: **DP3264**, **ICND2055**, **FM6373** and **SM16380SH** )
 
-Compatibility and Requirements: In case of STM32 core using a STM32F4 boards is strongly recommended. See dmd_spwm_panel example for details.
+Compatibility and Requirements: In case of STM32 core using a STM32F4 boards is strongly recommended. See [Notes about using a SPWM Drivers](https://github.com/board707/DMD_STM32/wiki/quick_start#notes-about-using-spwm-driver-classes) for details. Recommended to use a dmd_spwm_panel example as a starting point.
 
 > Attention! Recent versions are incompatible with code prior v1.0.0 
 > The main difference from 0.x.x versions is a new panel template format. You can see a brief explanation in the [Wiki/About matrix patterns](https://github.com/board707/DMD_STM32/wiki/Reference#appendix-a) and in the comments of the [DMD_Panel_Templates.h](https://github.com/board707/DMD_STM32/blob/dev-V2/DMD_Panel_Templates.h) file.  
