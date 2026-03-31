@@ -137,7 +137,7 @@ public:
 		// pio configs
 
 		// try increase this in case of ghostings on the panel
-		this->pio_clkdiv = 5;
+		this->pio_clkdiv = this->pio_clkdiv + 1;
 
 		// setup a PIO machine to output data to RGB pins
 		this->sm_data = pio_claim_unused_sm(this->pio, true);

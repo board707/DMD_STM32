@@ -1,4 +1,9 @@
 # ChangeLog
+## [1.2.8] - 2026-03-31
+ - Change some configs for FM6363 and ICND2055 drivers.
+ - Fix MUX_595 timings.
+ - Other minor changes.
+
 ## [1.2.7] - 2026-03-03
  - Add support of new SPWM driver - SM16380SH. 
  - Add limited brightness control for SPWM driver classes. 

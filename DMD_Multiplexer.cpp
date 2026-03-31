@@ -2,7 +2,7 @@
 
 //#if (defined(ARDUINO_ARCH_RP2040))
 // short delay for tune MUX595 CLK pulse
-static inline void busyWaitDelay(volatile uint32_t cycles) {
+static inline __attribute__((always_inline)) void busyWaitDelay(volatile uint32_t cycles) {
     while (cycles--) {
         __asm volatile ("nop");  // No-operation instruction
     }
@@ -148,6 +148,7 @@ if (new_row != last_row) {
 	else {
 		*this->muxsetreg = (mux_sdi_mask << 16);			
 	}
+	busyWaitDelay(1);
 	*this->muxsetreg = mux_clk_mask ;
 	busyWaitDelay(1);
 	*this->muxsetreg = (mux_clk_mask  << 16);
@@ -155,6 +156,14 @@ if (new_row != last_row) {
 	last_row = new_row;
 }
 #elif (defined(ARDUINO_ARCH_RP2040))
+
+// Add extra delay to avoid flickering
+#if (CYCLES_PER_MICROSECOND > 133)
+#define MUX595_DELAY 2
+#else
+#define MUX595_DELAY 1
+#endif
+
 	const byte pin_DMD_A = this->mux_pins->list[0];
 	const byte pin_DMD_B = this->mux_pins->list[1];
 	const byte pin_DMD_C = this->mux_pins->list[2];
@@ -162,9 +171,9 @@ if (new_row != last_row) {
 	if (new_row != last_row) {
 		gpio_put(pin_DMD_B, HIGH);  // LAT - HIGH
 		gpio_put(pin_DMD_C, (new_row == 0));
-		busyWaitDelay(1); 		   // hold SDI before CLK
-		gpio_put(pin_DMD_A, HIGH); // Clock out this bit
-		busyWaitDelay(2);		   // hold CLK HIGH
+		busyWaitDelay(MUX595_DELAY); 	// hold SDI before CLK
+		gpio_put(pin_DMD_A, HIGH); 		// Clock out this bit
+		busyWaitDelay(2*MUX595_DELAY);	// hold CLK HIGH
 		gpio_put(pin_DMD_A, LOW);	
 		gpio_put(pin_DMD_B, LOW);  // LAT - LOW 
 		last_row = new_row;
