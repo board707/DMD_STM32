@@ -1062,11 +1062,13 @@ public:
 	}
 
 protected:
-  uint16_t get_base_addr(int16_t& x, int16_t& y) override {
+uint16_t get_base_addr(int16_t& x, int16_t& y) override {
     this->transform_XY(x, y);
     uint16_t base_addr = (y % this->pol_displ) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
-	  
-    if(x>=145) //skip non-existing lines in case of 1065
+    
+    if(x>=172) //put rightmost extra pixels  to non-used 20th bit
+    x = 20;
+    else if(x>=145) //skip non-existing pixels
     x+=4;
     else if(x>=98)
     x+=3;
@@ -1074,7 +1076,7 @@ protected:
     x+=2;
     else if(x>=20)
     x+=1;
-	  
+
     base_addr += x;
     return base_addr;
   }
