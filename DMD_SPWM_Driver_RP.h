@@ -30,7 +30,8 @@
 	* DMD_RGB_FM6363 class
 		+ FM6363
 
-
+	* DMD_RGB_ICN1065 class
+		+ ICND1065
 
  https://github.com/board707/DMD_STM32
  Dmitry Dmitriev (c) 2019-2026
@@ -1022,9 +1023,78 @@ protected:
 		pio_sm_put_blocking(this->pio, this->sm_clk_cnt, control_par);
 		this->oe_scan_flag = true;
 	}
-
-	
-
 };
+
+/*--------------------------------------------------------------------------------------*/
+// ICN1065 driver class
+/*--------------------------------------------------------------------------------------*/
+template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
+
+class DMD_RGB_ICN1065 : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+{
+
+public:
+	DMD_RGB_ICN1065(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
+					byte panelsWide, byte panelsHigh, bool d_buf = false) : 
+					DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+					(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
+	{
+	}
+	  // Fast text shift is disabled for complex patterns, so we don't need the method
+  	void disableFastTextShift(bool shift) override {}
+
+	void init(uint16_t scan_interval = 200) override
+	{
+		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		this->fast_Hbyte = false;
+    	this->use_shift = false;
+		// MSB greyscale position for color bits
+		this->gclk_bits = 12;
+		
+		uint16_t icn1065_conf[] = {
+			0x00aa, 0x01aa, 0x022a, 0x0335, 0x0412, 0x0500, 0x0601, 0x0720, 0x0c18, 0x0d01, 0x0e86, 0x0f01, //00-12
+			0x1040, 0x1127, 0x1200, 0x1300, 0x1400, 0x1500, 0x1600, 0x1800, 0x1906, 0x1c60, 0x1dca, 0x1e73, //13-24
+			0x1f00, 0x2000, 0x2100, 0x2200, 0x2300, 0x2400, 0x2500, 0x2600, 0x2700, 0x7000, 0x7100, 0x7200, 0x7300, 0x74A0 //25-38
+			};
+		icn1065_conf[2] = 0x200 | (SCAN - 1); //Special register location is 2
+		ADD_CONFIG_REGS(icn1065_conf);
+		this->spwm_chip_init();
+	}
+
+protected:
+  
+	void load_config_regs(uint16_t *conf_reg) override
+	{
+		// send next config register in each call
+		static uint8_t r = this->conf_reg_cnt;
+		r++;
+		if (r >= this->conf_reg_cnt)
+		{
+			r = 0;
+		}
+
+		this->send_vsync(); // vsync
+		this->send_clocks(8);
+		this->send_latches(11); // pre-active command
+		this->send_clocks(8);
+		this->send_latches(14); // pre-active command
+		this->send_clocks(8);
+		this->init_mux();
+		pio_sm_set_enabled(this->pio, this->sm_clk_lat, false);
+		
+		// config and start clk_cnt SM
+		this->start_DCLK();
+		
+		// in order to send config data we need 0x00AA 0x01AA before
+		// and 0x0055,0x0155 after config value
+		this->send_to_allRGB(0x00aa, 5);
+		this->send_to_allRGB(0x01aa, 5);
+		this->send_to_allRGB(conf_reg[r], 5); // send config register
+		this->send_to_allRGB(0x0055, 5);
+		this->send_to_allRGB(0x0155, 5);
+		
+	}
+};
+
 #endif  // ARCH_RP2040
 #endif
