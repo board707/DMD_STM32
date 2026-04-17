@@ -31,7 +31,7 @@
 		+ FM6363
 
 	* DMD_RGB_ICN1065 class
-		+ ICN1065
+		+ ICND1065
 
  https://github.com/board707/DMD_STM32
  Dmitry Dmitriev (c) 2019-2026
@@ -669,10 +669,10 @@ public:
 		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
 		
 		// MSB greyscale position for color bits
-		this->gclk_bits = 12;
+		this->gclk_bits = 13;
 		
 		uint16_t icn2055_conf[] = {
-			0x021f, 0x0317, 0x0400, 0x0507, 0x0603, 0x0720, 0x0820, 0x0908, 0x0a08, 0x0b00,
+			0x021f, 0x033f, 0x0400, 0x0507, 0x0603, 0x0720, 0x0820, 0x0908, 0x0a08, 0x0b00,
 			0x0c08, 0x0d01, 0x0e04, 0x0f01, 0x1082, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1950,
 			0x1a1f, 0x1b10, 0x1ccf, 0x1d0a, 0x1e4c, 0x1f20, 0x2008, 0x2101, 0x221c};
 
@@ -958,9 +958,9 @@ public:
 		
 		this->clk_after_upload  = true;
 		// MSB greyscale position for color bits
-		this->gclk_bits = 12;
+		this->gclk_bits = 13;
 		
-		uint16_t conf_6363[] = {0x7e08, 0x0fb0, 0xe79d, 0x60b6, 0x5a70};
+		uint16_t conf_6363[] = {0x7e08, 0x0fb0, 0xe6fc, 0x60b6,  0x5a70};
 
 		// Config value for 4 latches depends on number of scans
 		conf_6363[1] = ((SCAN - 1) << 8) | (conf_6363[1] & 0xFF);
@@ -1062,24 +1062,7 @@ public:
 	}
 
 protected:
-uint16_t get_base_addr(int16_t& x, int16_t& y) override {
-    this->transform_XY(x, y);
-    uint16_t base_addr = (y % this->pol_displ) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
-    
-    if(x>=172) //put rightmost extra pixels  to non-used 20th bit
-    x = 20;
-    else if(x>=145) //skip non-existing pixels
-    x+=4;
-    else if(x>=98)
-    x+=3;
-    else if(x>=51)
-    x+=2;
-    else if(x>=20)
-    x+=1;
-
-    base_addr += x;
-    return base_addr;
-  }
+  
 	void load_config_regs(uint16_t *conf_reg) override
 	{
 		// send next config register in each call
