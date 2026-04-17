@@ -93,7 +93,7 @@
 #define RGB80x40_S10_ShiPC123 		3,80,40,10,102,4,PATTERN_UPS	// 80x40 s10 4 pixbase, SHIFT_REG, from ShiPC123, issue #104
 #define RGB80x40s10SR_digi55 		3,80,40,10,122,16,1             // 80x40 s10, pixbase 16, SHIFT_REG from @digi55, issue #121
 #define RGB104x52_S13_funnymind   	4,104,52,13,64                 // 104x52 s13 pixbase 4, SHIFT_REG, from funnymind, issue #145
-#define RGB172x86_s43_shadowpho     33,172+4,86,43,65               // 172x86 s43, SHIFT_REG, from shadowpho, issue #192
+#define RGB172x86_s43_shadowpho     33,176,86,43,65               // 172x86 s43, SHIFT_REG, from shadowpho, issue #192
 
 /*--------------------------------------------------------------------------------------*/
 template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int... Pars>
@@ -946,7 +946,7 @@ class DMD_RGB<RGB32x16_s2_boba7, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
 //
 // Drivers DP5135 + RUL5158c
 //
-// Pixbase 4, 595 mux
+// Pixbase 4
 //
 /* Very weird pattern
 //
@@ -993,6 +993,59 @@ class DMD_RGB<RGB104x52_S13_funnymind, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEP
 			}
 
 	};
+
+//--------------------------------------------------------------------------------------
+// 172x86 s43 panel from shadowpho (issue 195)
+//
+// Drivers ICND1065 + DP32020 (595 mux)
+//
+// Very weird panel. Each row has a 11 x 16bit drivers, which gives 176 pixels.
+// Since the panel is only 172 pixels wide, the 4 pxs in the middle of the driver chain 
+// are not connected to anything. When loading data, you have to insert zeros into each row.
+//--------------------------------------------------------------------------------------/
+template<int COL_DEPTH>
+class DMD_RGB<RGB172x86_s43_shadowpho, COL_DEPTH> : public DMD_RGB_BASE2<COL_DEPTH>
+	{
+	public:
+		DMD_RGB(uint8_t* mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t* pinlist,
+			byte panelsWide, byte panelsHigh, bool d_buf = false) :
+			DMD_RGB_BASE2<COL_DEPTH>(33, mux_list, _pin_nOE, _pin_SCLK, pinlist,
+				panelsWide, panelsHigh, d_buf, COL_DEPTH, 43, 176, 86)
+			{
+			this->fast_Hbyte = false;
+			this->use_shift = false;
+			}
+		// Fast text shift is disabled for complex patterns, so we don't 
+		// need the method
+			void disableFastTextShift(bool shift) override {UNUSED1(shift);}
+
+	protected:
+		uint16_t get_base_addr(int16_t &x, int16_t &y) override
+		{
+			this->transform_XY(x, y);
+			uint16_t base_addr = (y % this->pol_displ) * this->WIDTH * this->DisplaysHigh + (y / this->DMD_PIXELS_DOWN) * this->WIDTH;
+
+			if (x >= this->DisplaysWide * 172)
+			{ // put rightmost extra pixels to non-used 20th bit
+				x = 20;
+			}
+			else
+			{
+				x += (x / 172) * 4;
+				uint x0 = x % 176;
+				if (x0 >= 145) // skip non-existing pixels
+					x += 4;
+				else if (x0 >= 98)
+					x += 3;
+				else if (x0 >= 51)
+					x += 2;
+				else if (x0 >= 20)
+					x += 1;
+			}
+			base_addr += x;
+			return base_addr;
+		}
+	};	
 //--------------------------------------------------------------------------------------
 /*template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
 class DMD_RGB_SHIFTREG_ABC : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE,  COL_DEPTH>
