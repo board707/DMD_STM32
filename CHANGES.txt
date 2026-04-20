@@ -1,4 +1,8 @@
 # ChangeLog
+## [1.2.9] - 2026-04-20
+ - Merge pull request #199 from shadowpho
+ - Add ICND1065 driver support for RP & STM
+
 ## [1.2.8] - 2026-03-31
  - Change some configs for FM6363 and ICND2055 drivers.
  - Fix MUX_595 timings.

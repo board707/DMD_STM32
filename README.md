@@ -4,7 +4,7 @@
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
 
-### New in v1.2.7  - Additional SPWM driver - SM16380SH. 
+### New in v1.2.7 - 1.2.9 - Additional SPWM drivers - ICND1065 and SM16380SH. 
 
 Since v1.2.5 release the library introduces comprehensive support for a set of new "PWM-type" LED drivers previously unsupported by most known libraries. The supported chips represents a three distinct PWM driver control architectures:
   * Unified Signal Control - both PWM timing and row switching managed by a single GCLK ( OE ) control signal  (supported: **ICN2153**, **FM6353**)
@@ -48,7 +48,7 @@ LED panels supported
 | | | | | |
 | RGB S-PWM driver panels         |     HUB75    |   128x64   |     1/32    | DMD_SPWM_Driver.h                             |
 |  supports FM6353/6363/6373      |              |    64x32   |     1/16    |                                              |
-|  ICND2153/2055, DP3264, SM16380sh          | | | | |
+|  ICND1065/2153/2055, DP3264, SM16380sh          | | | | |
 
 Read more about supported panels in the [Wiki/Supported panels](https://github.com/board707/DMD_STM32/wiki/quick_start#supported-panels). The set of supported matrices is constantly updated.
 

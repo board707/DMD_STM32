@@ -78,6 +78,7 @@ uint8_t custom_rgbpins[] = { 11, 0,1,2,3,4,5 }; // CLK, R0, G0, B0, R1, G1, B1
 //DMD_RGB_FM6353 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 //DMD_RGB_FM6363 <RGB64x32plainS16, COLOR_4BITS>  dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 //DMD_RGB_FM6373 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
+//DMD_RGB_ICN1065 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 //DMD_RGB_ICN2055 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 //DMD_RGB_DP3264 <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DMD_PIN_SCLK, custom_rgbpins, DISPLAYS_ACROSS, DISPLAYS_DOWN, ENABLE_DUAL_BUFFER);
 
@@ -85,7 +86,7 @@ DMD_RGB_SM16380SH <RGB128x64plainS32, COLOR_4BITS> dmd(mux_list, DMD_PIN_nOE, DM
 
 // *** DMD_RGB_SHIFTREG_ABC multiplexor type is not supported for SPWM driver classes.
 // To select a SHIFT_REG multiplexor type uncomment the line 
-// dmd.setMultiplexerType(DMD_Multiplexer_type :: SHIFTREG);
+// dmd.configure_multiplexer(DMD_MUX_TYPE_SHIFTREG);
 // in setup().
 
 // *** for other panel options see DMD_Panel_Templates.h file.
