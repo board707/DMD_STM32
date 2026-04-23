@@ -72,6 +72,10 @@
 #define RGB32x16_S4_variable		2,32,16,4,32	// 32x16 1/4 variable pattern for 3216_s4 example
 
 //  *** User panels ***
+/*
+ * Please note that extended patterns (7 parameters) cannot be used for sPWM drivers on the STM32 platform. 
+ * In this case, it is necessary to convert the extended pattern to a standard one.*/
+ 
 #define RGB32x16_S4			2,32,16,4,112,8,PATTERN_LPD	// 32x16 1/4 ZIGGII pattern matrix, BINARY mux								
 #define RGB32x16_S4_bilalibrir		4,32,16,4,112,8,PATTERN_UND		// 32x16 1/4 ZAGGIZ pattern, DIRECT mux
 #define RGB32x16_S2			2,32,16,2,52    // 32x16 1/2 complex pattern, DIRECT mux
@@ -81,7 +85,7 @@
 #define RGB40x20_S5_LNikon		3,40,20,5,102,4,PATTERN_LPS 	// 40x20 1/5 4pixels pattern, BINARY mux from @LNikon
 #define RGB80x40_S10_LNikon     	4,80,40,10,102,4,PATTERN_UPS 	// 80x40 1/10 4pixels pattern, BINARY mux from @LNikon
 #define RGB64x32_S8_Eu057 		3,64,32,8,102,32,PATTERN_LPS 	// 64x32 1/8 32pix pattern, SHIFT_REG mux from Eugene057
-#define RGB104x52_S13_Craftish	 4,104,52,13,59   //104x52 s13 from Craftish, arduino.ru
+#define RGB104x52_S13_Craftish	 4,104,52,13,59   //104x52 s13 from Craftish, arduino.ru (STM32 only!!)
 #define RGB32x16_S4_VitaliyDKZ    	2,32,16,4,102,1,PATTERN_LPS 	// 32x16 1/4, BINARY mux
 #define RGB32x16_S2_VitaliyDKZ		1,32,16,2,61	// 32x16 1/2, BINARY mux
 #define RGB32_16_S4_DIRECT_LNikon	4,32,16,4,62	// 32x16 1/4 DIRECT

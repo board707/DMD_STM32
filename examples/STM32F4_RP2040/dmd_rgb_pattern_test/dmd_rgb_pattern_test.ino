@@ -91,9 +91,11 @@ void loop(void) {
     for (int i = 0; i < dmd.height(); i++) {
         for (int j = 0; j < dmd.width(); j++) {
             dmd.drawPixel(j,i, fg);
+            dmd.swapBuffers(true);
             delay(30);
         }
     }
     // clear the screen
     dmd.fillScreen(bg);
+    dmd.swapBuffers(true);
 }

@@ -54,13 +54,15 @@
  * Row switching is synchronized based on GCLK (OE) pulses after fixed number of CLK pulses.
  */
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-class DMD_RGB_SPWM_DRIVER_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+
+
+template <int... Pars>
+class DMD_RGB_SPWM_DRIVER_BASE : public DMD_RGB<Pars...>
 {
 public:
 	DMD_RGB_SPWM_DRIVER_BASE(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 							 byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-							 DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+							 DMD_RGB<Pars...>
 							 (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, false)
 	{
 	}
@@ -359,7 +361,7 @@ protected:
 		uint32_t res = 0;
 		for (byte i = 0; i < 4; i++)
 		{
-			if (i < COL_DEPTH)
+			if (i < this->nPlanes)
 			{
 				b = *ptr3;
 				// b = *ptr3;
@@ -590,15 +592,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // DP3264 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_DP3264 : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_DP3264 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_DP3264(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false)
-		: DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+		: DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 		(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -608,11 +609,11 @@ public:
 		// MSB greyscale position for color bits
 		this->gclk_bits = 13;
 		
-		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
 
 		uint16_t conf_3264[] = {0x1100, 0x020f, 0x033f, 0x043f, 0x0504, 0x0642, 0x0700, 0x08BF, 0x0960, 0x0ABE, 0x0B8B, 0x0C88, 0x0D12};
 
-		conf_3264[1] = 0x0200 | (SCAN - 1); /// panel scan
+		conf_3264[1] = 0x0200 | (this->nRows - 1); /// panel scan
 		ADD_CONFIG_REGS(conf_3264);
 		this->spwm_chip_init();
 	}
@@ -649,15 +650,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // ICN2055 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_ICN2055 : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_ICN2055 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_ICN2055(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 					byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-					DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+					DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 					(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -666,7 +666,7 @@ public:
 	{
 
 	
-		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
 		
 		// MSB greyscale position for color bits
 		this->gclk_bits = 13;
@@ -676,7 +676,7 @@ public:
 			0x0c08, 0x0d01, 0x0e04, 0x0f01, 0x1082, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1950,
 			0x1a1f, 0x1b10, 0x1ccf, 0x1d0a, 0x1e4c, 0x1f20, 0x2008, 0x2101, 0x221c};
 
-		icn2055_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		icn2055_conf[0] = 0x200 | (this->nRows - 1); /// panel scan
 
 		ADD_CONFIG_REGS(icn2055_conf);
 		this->spwm_chip_init();
@@ -719,15 +719,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // FM6373 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_FM6373 : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_FM6373 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_FM6373(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				  DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				  DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -735,14 +734,14 @@ public:
 	void init(uint16_t scan_interval = 200) override
 	{
 
-		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
 
 		uint16_t fm6373_conf[] = {
 			0x021f, 0x033f, 0x0402, 0x0507, 0x0603, 0x0720, 0x0820, 0x0900, 0x0a00, 0x0b00,
 			0x0c01, 0x0d01, 0x0e04, 0x0f01, 0x10c2, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1900,
 			0x1a1f, 0x1b10, 0x1cc1, 0x1d0a, 0x1e42, 0x1f04, 0x2008, 0x2101, 0x221c};
 
-		fm6373_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		fm6373_conf[0] = 0x200 | (this->nRows - 1); /// panel scan
 		ADD_CONFIG_REGS(fm6373_conf);
 		this->spwm_chip_init();
 	}
@@ -784,15 +783,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // SM16380SH driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_SM16380SH : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_SM16380SH : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_SM16380SH(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				  DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				  DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -800,7 +798,7 @@ public:
 	void init(uint16_t scan_interval = 200) override
 	{
 
-		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
 
 		uint16_t sm16380sh_conf[] = {
 			0x021f, 0x0300, 0x0400, 0x0500, 0x0600, 0x0750, 0x0800, 0x0900, 0x0a02, 0x0b0c,
@@ -808,7 +806,7 @@ public:
 			0x1630, 0x1700, 0x1801, 0x1904,
 			0x1a03, 0x1b14, 0x1c12, 0x1d00, 0x1e00, 0x1f0c};
 
-		sm16380sh_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		sm16380sh_conf[0] = 0x200 | (this->nRows - 1); /// panel scan
 		ADD_CONFIG_REGS(sm16380sh_conf);
 		this->spwm_chip_init();
 	}
@@ -850,15 +848,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // FM6353 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_FM6353 : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template<int... Pars> 
+class DMD_RGB_FM6353 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_FM6353(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				  DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				  DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -866,14 +863,14 @@ public:
 	void init(uint16_t scan_interval = 200) override
 	{
 
-		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
 		
 		this->clk_after_upload  = false;
 		
 		uint16_t conf_6353[] = {0x0008, 0x1f70, 0x6707, 0x40f7, 0x0040};
 
 		// Config value for 4 latches depends on number of scans
-		conf_6353[1] = ((SCAN - 1) << 8) | (conf_6353[1] & 0xFF);
+		conf_6353[1] = ((this->nRows - 1) << 8) | (conf_6353[1] & 0xFF);
 		ADD_CONFIG_REGS(conf_6353);
 	}
 
@@ -938,15 +935,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // FM6353 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_FM6363 : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int ...Pars>
+class DMD_RGB_FM6363 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_FM6363(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				  DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				  DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -954,7 +950,7 @@ public:
 	void init(uint16_t scan_interval = 200) override
 	{
 
-		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
 		
 		this->clk_after_upload  = true;
 		// MSB greyscale position for color bits
@@ -963,7 +959,7 @@ public:
 		uint16_t conf_6363[] = {0x7e08, 0x0fb0, 0xe6fc, 0x60b6,  0x5a70};
 
 		// Config value for 4 latches depends on number of scans
-		conf_6363[1] = ((SCAN - 1) << 8) | (conf_6363[1] & 0xFF);
+		conf_6363[1] = ((this->nRows - 1) << 8) | (conf_6363[1] & 0xFF);
 		ADD_CONFIG_REGS(conf_6363);
 	}
 
@@ -1028,15 +1024,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // ICN1065 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_ICN1065 : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int ...Pars>
+class DMD_RGB_ICN1065 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_ICN1065(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 					byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-					DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+					DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 					(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -1045,7 +1040,7 @@ public:
 
 	void init(uint16_t scan_interval = 200) override
 	{
-		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
 		this->fast_Hbyte = false;
     	this->use_shift = false;
 		// MSB greyscale position for color bits
@@ -1056,7 +1051,7 @@ public:
 			0x1040, 0x1127, 0x1200, 0x1300, 0x1400, 0x1500, 0x1600, 0x1800, 0x1906, 0x1c60, 0x1dca, 0x1e73, //13-24
 			0x1f00, 0x2000, 0x2100, 0x2200, 0x2300, 0x2400, 0x2500, 0x2600, 0x2700, 0x7000, 0x7100, 0x7200, 0x7300, 0x74A0 //25-38
 			};
-		icn1065_conf[2] = 0x200 | (SCAN - 1); //Special register location is 2
+		icn1065_conf[2] = 0x200 | (this->nRows - 1); //Special register location is 2
 		ADD_CONFIG_REGS(icn1065_conf);
 		this->spwm_chip_init();
 	}

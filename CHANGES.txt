@@ -1,4 +1,8 @@
 # ChangeLog
+## [1.2.10] - 2026-04-23
+ - Make extended patterns compatible with SPWM classes
+ - other minor changes
+
 ## [1.2.9] - 2026-04-20
  - Merge pull request #199 from shadowpho
  - Add ICND1065 driver support for RP & STM
