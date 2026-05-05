@@ -93,13 +93,13 @@ The chips supported:
  *		The CLK is used only with SDI when loading data and is not synchronized with the PWM generation.
  */
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-class DMD_RGB_SPWM_DRIVER_BASE : public DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_SPWM_DRIVER_BASE : public DMD_RGB<Pars...>
 {
 public:
 	DMD_RGB_SPWM_DRIVER_BASE(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 							 byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-							 DMD_RGB<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+							 DMD_RGB<Pars...>
 							 (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, false)
 	{
 	}
@@ -415,14 +415,13 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // Color template for COLOR_1BIT and COLOR_4BITS modes
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_SPWM_DRIVER : public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_SPWM_DRIVER : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 public:
 	DMD_RGB_SPWM_DRIVER(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 						byte panelsWide, byte panelsHigh, bool d_buf = false)
-		       : DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+	       : DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 			   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -434,7 +433,7 @@ protected:
 	{
 		uint16_t b = 0;
 		uint8_t bit_ptr = 16;
-		uint8_t bits[COL_DEPTH] = {0};
+		uint8_t bits[4] = {0};
 		// The postion of greyscale MSB can varied from 14 to 12th depending of chip
 		// You can additionally shift it down as low as 8th bit by <dimming_factor>
 		// to adjust color and brightness
@@ -449,14 +448,14 @@ protected:
 		// Exctract pixel data from bitplanes buffer
         // Since the bitplanes are stored from LSB to MSB, we first read them into the array
 		int8_t i = 0;
-		for (i = 0; i < COL_DEPTH; i++)
+		for (i = 0; i < this->nPlanes; i++)
 		{
 		    bits[i] = *ptr3;
 			ptr3 += this->displ_len;
 		}
         
 		// and than load it in reverse order - MSB to LSB
-		i = COL_DEPTH;
+		i = this->nPlanes;
 		do 
 		{
 			b = this->expand[bits[i-1]];
@@ -477,7 +476,74 @@ protected:
 	}
 };
 /*--------------------------------------------------------------------------------------*/
-// Color template for COLOR_4BITS_Packed mode
+// Color templates for COLOR_4BITS_Packed mode
+//
+// Extended pattern
+/*--------------------------------------------------------------------------------------*/
+template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int Pixbase, int Pattern>
+class DMD_RGB_SPWM_DRIVER<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, Pixbase, Pattern, COLOR_4BITS_Packed> : 
+public DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, Pixbase, Pattern, COLOR_4BITS_Packed>
+{
+public:
+	DMD_RGB_SPWM_DRIVER(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
+						byte panelsWide, byte panelsHigh, bool d_buf = false) : 
+				DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, Pixbase, Pattern, COLOR_4BITS_Packed>
+				(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
+
+	{
+	}
+
+protected:
+ 	// Extract color bits from bitplanes buffer
+	// and fill 12 MSB grayscale bits  
+	uint16_t expand_planes(volatile uint8_t *ptr2) override
+	{
+
+		uint16_t factor_l = this->displ_len;
+		
+
+		// The postion of greyscale MSB can varied from 14 to 12th depending of chip
+		// You can additionally shift it down as low as 8th bit by <dimming_factor>
+		// to adjust color and brightness
+		uint8_t gclk_msb = this->gclk_bits - this->dimming_factor;
+
+		// Exctract pixel data from bitplanes buffer
+		// bitplanes 1 - 3
+		uint16_t b1 = this->expand[*ptr2]; 
+		uint16_t b2 = this->expand[*(ptr2 + factor_l)];
+		uint16_t b3 = this->expand[*(ptr2 + factor_l * 2)];
+		byte b0 =		// plane 0
+			(((*ptr2) >> 2) & 0x30) |
+			((*(ptr2 + factor_l)) & 0x0C) |
+			(((*(ptr2 + factor_l * 2)) >> 6) & 0x03);
+		uint16_t b = this->expand[b0];
+		uint8_t bit_ptr = 16;
+		
+		// Zerofill upper bits above greyscale MSB (14-12th ) 
+		while (bit_ptr != gclk_msb)
+		{
+			pew_SPWM(0)
+			bit_ptr--;
+		}
+
+		// load 4 color bits
+        bit_ptr-=4;
+		pew_SPWM(b3) pew_SPWM(b2) pew_SPWM(b1) pew_SPWM(b)
+		
+		// zerofill the remaining bits to make a total of 12
+		b = 0;
+		while (bit_ptr != (this-> min_gclk - 4 ))
+		{
+			pew_SPWM(b)
+			bit_ptr--;
+		}
+		return b;
+	}
+};
+/*--------------------------------------------------------------------------------------*/
+// Color templates for COLOR_4BITS_Packed mode
+//
+// Standard pattern
 /*--------------------------------------------------------------------------------------*/
 template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE>
 class DMD_RGB_SPWM_DRIVER<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COLOR_4BITS_Packed> : 
@@ -551,13 +617,13 @@ protected:
  */
 /*--------------------------------------------------------------------------------------*/
 
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-class DMD_RGB_FM6363_BASE : public DMD_RGB_SPWM_DRIVER<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_FM6363_BASE : public DMD_RGB_SPWM_DRIVER<Pars...>
 {
 public:
 	DMD_RGB_FM6363_BASE(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 						byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-						DMD_RGB_SPWM_DRIVER<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+						DMD_RGB_SPWM_DRIVER<Pars...>
 						(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, false)
 
 	{
@@ -569,7 +635,7 @@ public:
 		this->dclk_strobe[0] = this->clkmask;		  // CLK high
 		this->dclk_strobe[1] = (this->clkmask) << 16; // CLK low
 
-		DMD_RGB_SPWM_DRIVER<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER<Pars...>::init(scan_interval);
 	}
 
 protected:
@@ -602,7 +668,7 @@ protected:
 	virtual void initialize_timers(voidFuncPtr handler) override
 	{
 
-		DMD_RGB_SPWM_DRIVER<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::initialize_timers(handler);
+		DMD_RGB_SPWM_DRIVER<Pars...>::initialize_timers(handler);
 
 		timer_init(this->CLK_TIMER);
 		timer_pause(this->CLK_TIMER);
@@ -720,15 +786,14 @@ protected:
  * So we need to rewrite of the <data_transfer> method.
  */
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_DP3264_BASE : public DMD_RGB_FM6363_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_DP3264_BASE : public DMD_RGB_FM6363_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_DP3264_BASE(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 						byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-						DMD_RGB_FM6363_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+						DMD_RGB_FM6363_BASE<Pars...>
 						(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -736,7 +801,7 @@ public:
 	void init(uint16_t scan_interval = 200) override
 	{
 
-		DMD_RGB_FM6363_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_FM6363_BASE<Pars...>::init(scan_interval);
 	}
 
 protected:
@@ -890,13 +955,13 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // FM6353 driver class  (also compatible with ICN2153 chips)
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-class DMD_RGB_FM6353 : public DMD_RGB_SPWM_DRIVER<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_FM6353 : public DMD_RGB_SPWM_DRIVER<Pars...>
 {
 public:
 	DMD_RGB_FM6353(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				   DMD_RGB_SPWM_DRIVER<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				   DMD_RGB_SPWM_DRIVER<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, false)
 
 	{
@@ -920,27 +985,26 @@ public:
 		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + 2; // CH2: line switching interrupt
 		this->OE_TIMER_reload = this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = this->TIM3_PERIOD / 2;
-		DMD_RGB_SPWM_DRIVER_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
 
 		uint16_t conf_6353[] = {0x0008, 0x1f70, 0x6707, 0x40f7, 0x0040};
 
 		// Config value for 4 latches depends on number of scans
-		conf_6353[1] = ((SCAN - 1) << 8) | (conf_6353[1] & 0xFF);
+		conf_6353[1] = ((this->nRows - 1) << 8) | (conf_6353[1] & 0xFF);
 		ADD_CONFIG_REGS(conf_6353);
 	}
 };
 /*--------------------------------------------------------------------------------------*/
 // FM6363 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_FM6363 : public DMD_RGB_FM6363_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_FM6363 : public DMD_RGB_FM6363_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_FM6363(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				   DMD_RGB_FM6363_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				   DMD_RGB_FM6363_BASE<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 
 	{
@@ -965,27 +1029,26 @@ public:
 		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + 2;	// CH2: line switching interrupt
 		this->OE_TIMER_reload = this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = this->TIM3_PERIOD / 2;
-		DMD_RGB_FM6363_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_FM6363_BASE<Pars...>::init(scan_interval);
 
 		uint16_t conf_6363[] = {0x7e08, 0x0fb0, 0xe6fc, 0x60b6, 0x5a70};
 
 		// Config value for 4 latches depends on number of scans
-		conf_6363[1] = ((SCAN - 1) << 8) | (conf_6363[1] & 0xFF);
+		conf_6363[1] = ((this->nRows - 1) << 8) | (conf_6363[1] & 0xFF);
 		ADD_CONFIG_REGS(conf_6363);
 	}
 };
 /*--------------------------------------------------------------------------------------*/
 // DP3264 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_DP3264 : public DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_DP3264 : public DMD_RGB_DP3264_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_DP3264(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false)
-		: DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+		: DMD_RGB_DP3264_BASE<Pars...>
 		(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -1015,11 +1078,11 @@ public:
 		// 4x CLK OE pulse
 		this->OE_TIMER_reload = 12 * this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
-		DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_DP3264_BASE<Pars...>::init(scan_interval);
 
 		uint16_t conf_3264[] = {0x1100, 0x020f, 0x033f, 0x043f, 0x0504, 0x0642, 0x0700, 0x08BF, 0x0960, 0x0ABE, 0x0B8B, 0x0C88, 0x0D12};
 
-		conf_3264[1] = 0x0200 | (SCAN - 1); /// panel scan
+		conf_3264[1] = 0x0200 | (this->nRows - 1); /// panel scan
 		ADD_CONFIG_REGS(conf_3264);
 		this->spwm_chip_init();
 	}
@@ -1051,15 +1114,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // ICN2055 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_ICN2055 : public DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_ICN2055 : public DMD_RGB_DP3264_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_ICN2055(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 					byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-					DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+					DMD_RGB_DP3264_BASE<Pars...>
 					(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -1085,13 +1147,13 @@ public:
 		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 35);
 		this->OE_TIMER_reload = 12 * this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
-		DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_DP3264_BASE<Pars...>::init(scan_interval);
 		uint16_t icn2055_conf[] = {
 			0x021f, 0x033f, 0x0400, 0x0507, 0x0603, 0x0720, 0x0820, 0x0908, 0x0a08, 0x0b00,
 			0x0c08, 0x0d01, 0x0e04, 0x0f01, 0x1082, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1950,
 			0x1a1f, 0x1b10, 0x1ccf, 0x1d0a, 0x1e4c, 0x1f20, 0x2008, 0x2101, 0x221c};
 
-		icn2055_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		icn2055_conf[0] = 0x200 | (this->nRows - 1); /// panel scan
 
 		ADD_CONFIG_REGS(icn2055_conf);
 		this->spwm_chip_init();
@@ -1130,15 +1192,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // FM6373 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_FM6373 : public DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_FM6373 : public DMD_RGB_DP3264_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_FM6373(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				   DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				   DMD_RGB_DP3264_BASE<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -1162,14 +1223,14 @@ public:
 		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 35);
 		this->OE_TIMER_reload = 12 * this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
-		DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_DP3264_BASE<Pars...>::init(scan_interval);
 
 		uint16_t fm6373_conf[] = {
 			0x021f, 0x033f, 0x0402, 0x0507, 0x0603, 0x0720, 0x0820, 0x0900, 0x0a00, 0x0b00,
 			0x0c01, 0x0d01, 0x0e04, 0x0f01, 0x10c2, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1900,
 			0x1a1f, 0x1b10, 0x1cc1, 0x1d0a, 0x1e42, 0x1f04, 0x2008, 0x2101, 0x221c};
 
-		fm6373_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		fm6373_conf[0] = 0x200 | (this->nRows - 1); /// panel scan
 		ADD_CONFIG_REGS(fm6373_conf);
 		this->spwm_chip_init();
 	}
@@ -1206,15 +1267,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // SM16380sh driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_SM16380SH : public DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_SM16380SH : public DMD_RGB_DP3264_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_SM16380SH(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				   DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				   DMD_RGB_DP3264_BASE<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -1242,7 +1302,7 @@ public:
 		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 35);
 		this->OE_TIMER_reload = 12 * this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
-		DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_DP3264_BASE<Pars...>::init(scan_interval);
 
 		uint16_t sm16380sh_conf[] = {
 			0x021f, 0x0300, 0x0400, 0x0500, 0x0600, 
@@ -1253,7 +1313,7 @@ public:
 			0x1630, 0x1700, 
 			0x1801, 0x1904,0x1a03, 0x1b14, 0x1c12, 0x1d00, 0x1e00, 0x1f0c};
 
-		sm16380sh_conf[0] = 0x200 | (SCAN - 1); /// panel scan
+		sm16380sh_conf[0] = 0x200 | (this->nRows - 1); /// panel scan
 		ADD_CONFIG_REGS(sm16380sh_conf);
 		this->spwm_chip_init();
 	}
@@ -1293,15 +1353,14 @@ protected:
 /*--------------------------------------------------------------------------------------*/
 // ICND1065 driver class
 /*--------------------------------------------------------------------------------------*/
-template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int COL_DEPTH>
-
-class DMD_RGB_ICN1065 : public DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+template <int... Pars>
+class DMD_RGB_ICN1065 : public DMD_RGB_DP3264_BASE<Pars...>
 {
 
 public:
 	DMD_RGB_ICN1065(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
 				   byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-				   DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>
+				   DMD_RGB_DP3264_BASE<Pars...>
 				   (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
@@ -1327,14 +1386,14 @@ public:
 		this->MAIN_TIMER_cc2 = this->GCLK_NUM * this->TIM3_PERIOD + this->TIM3_PERIOD * (this->ADD_NUM - 35);
 		this->OE_TIMER_reload = 12 * this->TIM3_PERIOD - 1;
 		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
-		DMD_RGB_DP3264_BASE<MUX_CNT, P_Width, P_Height, SCAN, SCAN_TYPE, COL_DEPTH>::init(scan_interval);
+		DMD_RGB_DP3264_BASE<Pars...>::init(scan_interval);
 
 		uint16_t icn1065_conf[] = {
 			0x00aa, 0x01aa, 0x022a, 0x0335, 0x0412, 0x0500, 0x0601, 0x0720, 0x0c18, 0x0d01, 0x0e86, 0x0f01, //00-12
 			0x1040, 0x1127, 0x1200, 0x1300, 0x1400, 0x1500, 0x1600, 0x1800, 0x1906, 0x1c60, 0x1dca, 0x1e73, //13-24
 			0x1f00, 0x2000, 0x2100, 0x2200, 0x2300, 0x2400, 0x2500, 0x2600, 0x2700, 0x7000, 0x7100, 0x7200, 0x7300, 0x74A0 //25-38
 			};
-		icn1065_conf[2] = 0x200 | (SCAN - 1); //Special register location is 2
+		icn1065_conf[2] = 0x200 | (this->nRows - 1); //Special register location is 2
 		ADD_CONFIG_REGS(icn1065_conf);
 		this->spwm_chip_init();
 	}

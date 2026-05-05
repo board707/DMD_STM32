@@ -1,6 +1,9 @@
 # ChangeLog
+## [1.2.11] - 2026-05-05
+ - Make extended patterns compatible with SPWM classes (STM32)
+
 ## [1.2.10] - 2026-04-23
- - Make extended patterns compatible with SPWM classes
+ - Make extended patterns compatible with SPWM classes (RP2040)
  - other minor changes
 
 ## [1.2.9] - 2026-04-20
