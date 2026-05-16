@@ -33,7 +33,7 @@ DMD_RGB_BASE::DMD_RGB_BASE(byte mux_cnt, uint8_t* mux_list, byte _pin_nOE, byte 
 	OE_polarity = OE_PWM_NEGATIVE;
 
 	// Allocate and initialize matrix buffer:
-	mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * nPlanes / 2;
+	mem_Buffer_Size = panelsWide * panelsHigh * DMD_PIXELS_ACROSS * DMD_PIXELS_DOWN * nPlanes / (n_Rows < DMD_PIXELS_DOWN ? 2 : 1);
 	col_bytes_cnt = nPlanes;
 	// x3 = 3 bytes holds 4 planes "packed"
 	if (nPlanes == 3) nPlanes = 4;

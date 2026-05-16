@@ -163,7 +163,7 @@ uint16_t           expand[256];           // 6-to-32 bit converter table
 	volatile uint8_t row, plane;
 	volatile uint8_t* buffptr;
 	uint8_t nPlanes = 4;
-	const uint8_t pol_displ = DMD_PIXELS_DOWN / 2;
+	const uint8_t pol_displ = nRows < DMD_PIXELS_DOWN ? DMD_PIXELS_DOWN / 2 : DMD_PIXELS_DOWN;
 	const uint8_t multiplex = pol_displ / nRows;
 	const uint16_t displ_len = WIDTH * pol_displ * DisplaysHigh;
     uint8_t col_bytes_cnt = nPlanes;
