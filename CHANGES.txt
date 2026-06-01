@@ -1,4 +1,11 @@
 # ChangeLog
+## [1.2.12] - 2026-06-01
+ - Add optional STM32duino (Arduino Core STM32) support alongside Roger Clark libmaple core.
+ - Auto-detect core via `ARDUINO_ARCH_STM32` → `DMD_STM32DUINO`; compatibility layer in `DMD_STM32duino.h/cpp`.
+ - STM32duino: `DMD_RGB` on F103/F401/F411 (bit-bang RGB, no RGB DMA; OE PWM via timer shim).
+ - Roger Clark path unchanged (`stm_int.h`, DMA per `DMD_Config.h`).
+ - Example: `examples/STM32duino/dmd_rgb_effects`.
+
 ## [1.2.11] - 2026-05-05
  - Make extended patterns compatible with SPWM classes (STM32)
 
