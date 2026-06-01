@@ -22,7 +22,7 @@
 #define DMD_RGB_H
 
 #include "DMD_STM32a.h"
-#if (defined(__STM32F1__))
+#if (defined(__STM32F1__) && !defined(DMD_STM32DUINO))
 #include <dma_private.h>
 #endif
 
@@ -97,6 +97,7 @@ public:
 	}
 
 	void configure_multiplexer(MUX_TYPE mux);
+	void panelResync();
 	
 	~DMD_RGB_BASE();
 
@@ -119,6 +120,7 @@ protected:
 		
 #endif
     virtual void send_to_allRGB(uint16_t data, uint16_t latches);
+    void flushPanelShiftRegs();
     virtual void chip_init() {};
 	virtual void setCycleLen();
 	virtual uint16_t get_base_addr(int16_t& x, int16_t& y);

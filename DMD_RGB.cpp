@@ -72,6 +72,9 @@ void DMD_RGB_BASE::generate_rgbtable_default(uint8_t options) {
 
 	for (uint8_t i = 0; i < 6; i++) {
 		pinMode(rgbpins[i], OUTPUT);
+#if defined(DMD_STM32DUINO)
+		dmd_set_pin_high_speed(rgbpins[i]);
+#endif
 		rgbmask[i] = digitalPinToBitMask(rgbpins[i]); // Pin bit mask
 		clk_clrmask |= rgbmask[i];   // Add to RGB+CLK bit mask
 		rgbmask_all |= rgbmask[i];
@@ -152,7 +155,28 @@ void DMD_RGB_BASE::initialize_timers(voidFuncPtr handler) {
 #endif
 
 /*--------------------------------------------------------------------------------------*/
+#if (defined(__STM32F1__) || defined(__STM32F4__))
+void DMD_RGB_BASE::flushPanelShiftRegs() {
+	for (uint8_t pass = 0; pass < 4; pass++) {
+		for (uint8_t row = 0; row < nRows; row++) {
+			Mux->set_mux(row);
+			send_to_allRGB(0, 3);
+			send_to_allRGB(0, 3);
+		}
+	}
+	Mux->set_mux(0);
+}
+
+void DMD_RGB_BASE::panelResync() {
+}
+#endif
+
+/*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::init(uint16_t user_fps) {
+
+#if defined(DMD_STM32DUINO)
+	dmd_force_timers_stop();
+#endif
 
 	if (user_fps) this->default_fps = user_fps;
 	this->setCycleLen();
@@ -161,6 +185,9 @@ void DMD_RGB_BASE::init(uint16_t user_fps) {
 	set_pin_modes();
 	//generate_muxmask();
 	generate_rgbtable();
+#if defined(DMD_STM32DUINO)
+	flushPanelShiftRegs();
+#endif
 	chip_init();
 #elif (defined(ARDUINO_ARCH_RP2040))
 	// generate_muxmask();
@@ -168,6 +195,11 @@ void DMD_RGB_BASE::init(uint16_t user_fps) {
 	initialize_timers(scan_running_dmd_R);
 	setBrightness(200);
 	clearScreen(true);
+#if defined(DMD_STM32DUINO)
+	plane = 0;
+	row = 0;
+	buffptr = matrixbuff[1 - backindex];
+#endif
 
 }
 /*--------------------------------------------------------------------------------------*/
@@ -337,6 +369,8 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 			if (swapflag == true) {    // Swap front/back buffers if requested
 				backindex = 1 - backindex;
 				swapflag = false;
+				bDMDScreenRAM = matrixbuff[backindex];
+				front_buff = matrixbuff[1 - backindex];
 				}
 			}
 		buffptr = matrixbuff[1 - backindex]; // Reset into front buffer

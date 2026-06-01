@@ -69,8 +69,8 @@ Other features
 Compatible boards
 -----------------
 
-* STM32F1 - STM32F103C8 (bluepill) and STM32F103C6 boards tested 
-* STM32F4 - STM32F401CC and STM32F411CE boards 
+* STM32F1 — STM32F103C8/C6 (Roger Clark); STM32F103CBT (STM32duino, verified)
+* STM32F4 — STM32F401CC, STM32F411CE (Roger Clark and STM32duino, verified)
 * Raspberry Pi Pico and other RP2040-based boards. 
 * RP2350 based boards should works as well, but not fully tested yet.
 
@@ -90,12 +90,22 @@ There are two ways to install the library:
    
 #### Arduino support packages for STM32 and Raspberry Pi Pico
 
-* STM32
+* STM32 — two cores, selected automatically at compile time:
 
-    The only Roger Clarks's repo https://github.com/rogerclarkmelbourne/Arduino_STM32 is supported for STM32 based boards on Arduino IDE.
-  
-  > Please note that Clark's repo versions prior [d05a128](https://github.com/rogerclarkmelbourne/Arduino_STM32/commit/d05a1289f1e2eaa5127a4bfed9602e2cd48c6ffe) (28 Apr 2024) is incompatible with recent Adafruit GFX library. Use Adafruit GFX version prior to 1.8.0 (v1.7.0 is OK) https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0
+  | Core | Arduino package | When active |
+  |------|-----------------|-------------|
+  | **Roger Clark (libmaple)** | [Arduino_STM32](https://github.com/rogerclarkmelbourne/Arduino_STM32) | `__STM32F1__` / `__STM32F4__`, without `ARDUINO_ARCH_STM32` |
+  | **STM32duino** | [Arduino Core STM32](https://github.com/stm32duino/Arduino_Core_STM32) | `ARDUINO_ARCH_STM32` → `DMD_STM32DUINO` |
 
+  Roger Clark uses the original path (`stm_int.h`, libmaple timers/GPIO). STM32duino uses a compatibility layer (`DMD_STM32duino.h` / `DMD_STM32duino.cpp`). Paths are split with `#if defined(DMD_STM32DUINO)`; building for one core does not replace the other.
+
+  Upstream [board707/DMD_STM32](https://github.com/board707/DMD_STM32) documents Roger Clark only. STM32duino support is present in this tree as an additional port.
+
+  > Roger Clark: core versions before [d05a128](https://github.com/rogerclarkmelbourne/Arduino_STM32/commit/d05a1289f1e2eaa5127a4bfed9602e2cd48c6ffe) (28 Apr 2024) are incompatible with recent Adafruit GFX. Use core ≥ d05a128 or Adafruit GFX ≤ 1.7.0 ([v1.7.0](https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0)).
+
+  > STM32duino: RGB DMA and Monochrome SPI DMA are disabled; RGB uses bit-bang, Monochrome SPI uses polling. OE PWM via `DMD_STM32duino` shim.
+
+  **STM32duino port verified on:** STM32F103 (CBT), STM32F401, STM32F411 — RGB panels (`DMD_RGB`), dual buffer, GFX/Cyrillic fonts. Example: `examples/STM32duino/dmd_rgb_effects`.
 
 * Raspberry Pi Pico/ Pico2
 

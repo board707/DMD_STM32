@@ -81,13 +81,22 @@ void DMD::set_pin_modes() {
 
 	digitalWrite(pin_DMD_SCLK, LOW);
 	pinMode(pin_DMD_SCLK, OUTPUT);
-#if defined(__STM32F1__) 
+#if defined(DMD_STM32DUINO)
+	oe_channel = dmd_get_oe_channel(pin_DMD_nOE);
+#elif defined(__STM32F1__) 
 	oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
 #elif defined(__STM32F4__) 
 	oe_channel = timer_map[pin_DMD_nOE].channel;
 #endif
 
+#if defined(DMD_STM32DUINO)
+	dmd_set_pin_high_speed(pin_DMD_CLK);
+	dmd_set_pin_high_speed(pin_DMD_SCLK);
+	dmd_set_pin_high_speed(pin_DMD_nOE);
+	dmd_oe_blank_gpio(pin_DMD_nOE);
+#else
 	pinMode(pin_DMD_nOE, PWM);  // setup the pin as PWM
+#endif
 #endif
 }
 
@@ -123,6 +132,10 @@ void DMD::init(uint16_t scan_interval) {
 /*--------------------------------------------------------------------------------------*/
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 void DMD::initialize_timers(voidFuncPtr handler) {
+
+#if defined(DMD_STM32DUINO)
+	dmd_init_oe_pwm(pin_DMD_nOE, oe_channel);
+#endif
 
 	if (handler != NULL) this->setup_main_timer(this->scan_cycle_len, handler);
 	uint16 prescaler = timer_get_prescaler(MAIN_TIMER) + 1;
@@ -214,6 +227,12 @@ void DMD::initialize_timers(voidFuncPtr handler) {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 uint16_t DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
 
+#if defined(DMD_STM32DUINO)
+	if (handler != NULL) {
+		timer_attach_interrupt(MAIN_TIMER, TIMER_UPDATE_INTERRUPT, handler);
+	}
+#endif
+
 	timer_init(MAIN_TIMER);
 	timer_pause(MAIN_TIMER);
 	uint16 prescaler = (uint16)(cycles / TIM_MAX_RELOAD ) + 1;
@@ -221,7 +240,9 @@ uint16_t DMD::setup_main_timer(uint32_t cycles, voidFuncPtr handler) {
 	
 	timer_set_prescaler(MAIN_TIMER, prescaler - 1);
 	timer_set_reload(MAIN_TIMER, this->scan_cycle_len);
+#if !defined(DMD_STM32DUINO)
 	timer_attach_interrupt(MAIN_TIMER, TIMER_UPDATE_INTERRUPT, handler);
+#endif
 	timer_generate_update(MAIN_TIMER);
 	timer_resume(MAIN_TIMER);
 	return prescaler;
