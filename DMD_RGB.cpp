@@ -150,11 +150,6 @@ void DMD_RGB_BASE::initialize_timers(voidFuncPtr handler) {
 		dma_enable(rgbDmaDev, clkTxDmaStream);
 #endif
 #endif
-
-}
-#endif
-
-
 }
 #endif
 
