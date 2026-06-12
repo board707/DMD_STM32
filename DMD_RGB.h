@@ -97,7 +97,6 @@ public:
 	}
 
 	void configure_multiplexer(MUX_TYPE mux);
-	void panelResync();
 	
 	~DMD_RGB_BASE();
 
@@ -120,7 +119,7 @@ protected:
 		
 #endif
     virtual void send_to_allRGB(uint16_t data, uint16_t latches);
-    void flushPanelShiftRegs();
+    
     virtual void chip_init() {};
 	virtual void setCycleLen();
 	virtual uint16_t get_base_addr(int16_t& x, int16_t& y);
