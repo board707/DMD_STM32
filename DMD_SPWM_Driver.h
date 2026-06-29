@@ -120,7 +120,7 @@ public:
 	}
 
 	// load user data buffer to matrix
-	void swapBuffers(boolean copy) override
+	void swapBuffers(bool copy) override
 	{
 
 		this->refresh_greyscale_data();

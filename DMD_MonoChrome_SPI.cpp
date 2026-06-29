@@ -1,6 +1,9 @@
-#if (defined(__STM32F1__) || defined(__STM32F4__))
+//#if (defined(__STM32F1__) || defined(__STM32F4__))
+#if ( !defined(ARDUINO_ARCH_RP2040))
 #include "DMD_MonoChrome_SPI.h"
+//#if !defined(DMD_STM32DUINO)
 #include "SPI_DMA.h"
+//#endif
 
 //lookup table for DMD::writePixel to make the pixel indexing routine faster
 static byte bPixelLookupTable[8] =
@@ -15,12 +18,19 @@ static byte bPixelLookupTable[8] =
    0x01    //7, bit 0
 };
 
+#if ((defined(__STM32F1__) || defined(__STM32F4__)) && !defined(DMD_STM32DUINO))
+#define DMD_SPI_SPI_SCK _spi.sckPin()
+#define DMD_SPI_SPI_MOSI _spi.mosiPin()
+#elif (defined(DMD_STM32DUINO))
+#define DMD_SPI_SPI_SCK SCK
+#define DMD_SPI_SPI_MOSI MOSI
+#endif
 /*--------------------------------------------------------------------------------------*/
 DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, byte _pin_SCLK,
-	byte panelsWide, byte panelsHigh, SPIClass _spi,
+	byte panelsWide, byte panelsHigh, SPIClass& _spi,
 	bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
 	:DMD(_pin_nOE, _pin_SCLK, panelsWide, panelsHigh,
-		DMD_MONO_SCAN, new DMD_Pinlist(_spi.sckPin(), _spi.mosiPin()), d_buf, dmd_pixel_x, dmd_pixel_y), SPI_DMD(_spi)
+		DMD_MONO_SCAN, new DMD_Pinlist(DMD_SPI_SPI_SCK, DMD_SPI_SPI_MOSI), d_buf, dmd_pixel_x, dmd_pixel_y), SPI_DMD(_spi)
 {
 	mem_Buffer_Size = DisplaysTotal * ((DMD_PIXELS_ACROSS * DMD_BITSPERPIXEL / 8) * DMD_PIXELS_DOWN);
 	row1 = DisplaysTotal << 4;
@@ -41,9 +51,13 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	Mux = new DMD_Mux3to8(new DMD_Pinlist(_pin_A, _pin_B), DMD_MONO_SCAN);
 
 
+#if defined(DMD_STM32DUINO)
+	spi_num = 1;
+#endif
+
 #if ( DMD_USE_DMA )	
 	dmd_dma_buf = (byte*)malloc(mem_Buffer_Size / DMD_MONO_SCAN);
-#endif
+
 #if defined(__STM32F1__) 
 	spiDmaDev = DMA1;
 	if (SPI_DMD.dev() == SPI1) {
@@ -76,7 +90,7 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	}
 
 #endif
-
+#endif
 }
 /*--------------------------------------------------------------------------------------*/
 DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
@@ -90,7 +104,7 @@ DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
 void DMD_MonoChrome_SPI::set_pin_modes() {
 
 	DMD::set_pin_modes();
-	pin_DMD_R_DATA = SPI_DMD.mosiPin();
+	pin_DMD_R_DATA = data_pins[0];
 	digitalWrite(pin_DMD_R_DATA, HIGH);	
 	pinMode(pin_DMD_R_DATA, OUTPUT);
 
@@ -259,7 +273,7 @@ void DMD_MonoChrome_SPI::scanDisplayBySPI()
 {
 	uint16_t offset = rowsize * bDMDByte;
 
-#if (defined(__STM32F1__) || defined(__STM32F4__))
+#if ((defined(__STM32F1__) || defined(__STM32F4__)) && !defined(DMD_STM32DUINO))
 	//pwmWrite(pin_DMD_nOE, 0);
 
 	for (int i = 0;i < rowsize;i++) {
@@ -269,12 +283,12 @@ void DMD_MonoChrome_SPI::scanDisplayBySPI()
 		SPI_DMD.write(bDMDScreenRAM[offset + i]);
 	}
 
-#elif defined(__AVR_ATmega328P__)
+#elif (defined(__AVR_ATmega328P__) || defined(DMD_STM32DUINO))
 	for (int i = 0;i < rowsize;i++) {
-		SPI.transfer(bDMDScreenRAM[offset + i + row3]);
-		SPI.transfer(bDMDScreenRAM[offset + i + row2]);
-		SPI.transfer(bDMDScreenRAM[offset + i + row1]);
-		SPI.transfer(bDMDScreenRAM[offset + i]);
+		SPI_DMD.transfer(bDMDScreenRAM[offset + i + row3]);
+		SPI_DMD.transfer(bDMDScreenRAM[offset + i + row2]);
+		SPI_DMD.transfer(bDMDScreenRAM[offset + i + row1]);
+		SPI_DMD.transfer(bDMDScreenRAM[offset + i]);
 	}
 	//OE_DMD_ROWS_OFF();
 #endif

@@ -2,13 +2,12 @@
 
 #if defined(ARDUINO_ARCH_STM32)
 
+#include "DMD_STM32duino_defs.h"
 #include <Arduino.h>
 #include <HardwareTimer.h>
 #include "PinNamesTypes.h"
 #include "pinmap.h"
 #include "PeripheralPins.h"
-
-#define DMD_STM32DUINO 1
 
 typedef void (*voidFuncPtr)(void);
 typedef TIM_TypeDef timer_dev;

@@ -1,4 +1,10 @@
 # ChangeLog
+## [1.2.13] - 2026-06-30
+ - STM32duino (Arduino Core STM32): add support for DMD_Monochrome_SPI class.
+ - STM32duino: Rewrite timer methods to avoid explicit timer numbers.
+ - Example: `examples/STM32duino/dmd_monochrome`.
+ - Many other minor changes.
+
 ## [1.2.12] - 2026-06-01
  - Add optional STM32duino (Arduino Core STM32) support alongside Roger Clark libmaple core.
  - Auto-detect core via `ARDUINO_ARCH_STM32` → `DMD_STM32DUINO`; compatibility layer in `DMD_STM32duino.h/cpp`.

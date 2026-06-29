@@ -238,7 +238,7 @@ public:
 	inline void inverseAll(uint8_t flag) { this->inverse_ALL_flag = flag; };
 	
 	//Exchange drawing and output buffers (in dual_buf mode)
-	virtual void swapBuffers(boolean copy);
+	virtual void swapBuffers(bool copy);
 
 #if defined(DEBUG2)
 	void dumpDDbuf(void);
@@ -311,7 +311,7 @@ protected:
 
 	uint8_t* matrixbuff[2];
 	volatile uint8_t backindex = 0;
-	volatile boolean swapflag = false;
+	volatile bool swapflag = false;
 	volatile uint8_t* front_buff;
 	uint16_t mem_Buffer_Size;
 	uint16_t x_len;

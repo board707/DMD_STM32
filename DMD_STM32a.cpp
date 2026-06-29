@@ -83,9 +83,6 @@ void DMD::set_pin_modes() {
 	pinMode(pin_DMD_SCLK, OUTPUT);
 #if defined(DMD_STM32DUINO)
 	//oe_channel = dmd_get_oe_channel(pin_DMD_nOE);
-	
-	
-
 #elif defined(__STM32F1__) 
 	oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
 #elif defined(__STM32F4__) 
@@ -111,10 +108,8 @@ void DMD::init(uint16_t scan_interval) {
 	// calculate update interval
 	 scan_cycle_len = (uint32_t) scan_interval * CYCLES_PER_MICROSECOND;
    
-   // here will be initialize_timers() call in child classes 
+    // here will be initialize_timers() call in child classes 
 
-
-	
 
     // clean both buffers
 	if (matrixbuff[0] != matrixbuff[1]) {
@@ -804,7 +799,7 @@ void DMD::dumpDDbuf(void) {
 
 #endif	
 /*--------------------------------------------------------------------------------------*/
-void DMD::swapBuffers(boolean copy) {
+void DMD::swapBuffers(bool copy) {
 	if (matrixbuff[0] != matrixbuff[1]) {
 		// To avoid 'tearing' display, actual swap takes place in the interrupt
 		// handler, at the end of a complete screen refresh cycle.

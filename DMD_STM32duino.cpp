@@ -253,8 +253,8 @@ void timer_attach_interrupt(const timer_dev *dev, uint8_t type, voidFuncPtr hand
   dmdMainHandler = handler;
 
   if (dmdMainTimer) {
-    dmdMainTimer->pause();
-    dmdMainTimer->detachInterrupt();
+    //dmdMainTimer->pause();
+   // dmdMainTimer->detachInterrupt();
     delete dmdMainTimer;
     dmdMainTimer = nullptr;
   }

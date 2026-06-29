@@ -6,10 +6,15 @@
  https://github.com/board707/DMD_STM32
  Dmitry Dmitriev (c) 2019-2023
  /--------------------------------------------------------------------------------------*/
-
+#if defined(ARDUINO_ARCH_STM32)
+#include "DMD_STM32duino_defs.h"
+#endif
+#if (defined(__STM32F1__) || defined(__STM32F4__)) || defined(DMD_STM32DUINO)
 #include "SPI_DMA.h"
-#if (defined(__STM32F1__)|| defined(__STM32F4__)) 
-#if defined(__STM32F1__)
+
+#if defined(DMD_STM32DUINO)
+#define DMD_SPI_CNT 1
+#elif defined(__STM32F1__)
 #define DMD_SPI_CNT 2
 #elif defined(__STM32F4__)
 #define DMD_SPI_CNT 3
@@ -58,6 +63,8 @@ void inline __attribute__((always_inline)) scan_running_dmds()
 #endif
 	}
 }
+
+#if defined( DMD_USE_DMA )
 /*--------------------------------------------------------------------------------------*/
 #if defined(__STM32F1__) 
 void SPI1_DMA_callback() {
@@ -83,5 +90,6 @@ void SPI3_DMA_callback(uint32_t spi) {
 	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[2];
 	next->latchDMA();
 }
+#endif
 #endif
 #endif
