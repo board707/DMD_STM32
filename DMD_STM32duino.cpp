@@ -28,27 +28,20 @@ static TIM_TypeDef *dmd_tim(const timer_dev *dev) {
   return (TIM_TypeDef *)dev;
 }
 
-static bool dmd_find_tim3_mapping(uint32_t pin, PinName *outPin, uint8_t *channel) {
-  PinName base = digitalPinToPinName(pin);
+static bool dmd_find_oe_tim_mapping(uint32_t pin, TIM_TypeDef *tim, PinName *outPin, uint8_t *channel) {
+  PinName base = (PinName)(digitalPinToPinName(pin) & PNUM_MASK);
   if (base == NC) {
     return false;
   }
 
-  const PinName variants[] = {
-    base,
-    (PinName)(base | ALT1),
-    (PinName)(base | ALT2),
-  };
-
-  for (PinName variant : variants) {
     for (const PinMap *map = PinMap_TIM; map->pin != NC; map++) {
-      if (map->pin == variant && map->peripheral == TIM3) {
-        *outPin = variant;
+      if ((PinName)(map->pin & PNUM_MASK) == base && map->peripheral == tim) {
+        *outPin = (PinName)map->pin;
         *channel = STM_PIN_CHANNEL(map->function);
         return true;
       }
     }
-  }
+  
   return false;
 }
 
@@ -110,13 +103,21 @@ void dmd_hw_timer_prepare(TIM_TypeDef *tim) {
   }
 }
 
-uint8_t dmd_get_oe_channel(uint32_t pin) {
+// Note: After rewriting the code, the functionality of the method is duplicated with
+// dmd_init_oe_pwm() method. Leave it for compatibility.
+uint8_t dmd_get_oe_channel(uint32_t pin, const timer_dev *dev)
+{
+  dmdOePin = pin;
+  TIM_TypeDef *tim = dmd_tim(dev);
   PinName timPin;
   uint8_t channel;
-  if (dmd_find_tim3_mapping(pin, &timPin, &channel)) {
+  if (dmd_find_oe_tim_mapping(pin, tim, &timPin, &channel))
+  {
+    dmdOePinName = timPin;
+    dmdOeChannel = channel;
     return channel;
   }
-
+  
   uint32_t function = pinmap_function(digitalPinToPinName(pin), PinMap_TIM);
   if (function == NP) {
     return 1;
@@ -124,36 +125,47 @@ uint8_t dmd_get_oe_channel(uint32_t pin) {
   return STM_PIN_CHANNEL(function);
 }
 
-void dmd_init_oe_pwm(uint32_t pin, uint8_t channel) {
+uint8_t dmd_init_oe_pwm(uint32_t pin, const timer_dev *dev)
+{
   dmdOePin = pin;
-  dmdOeChannel = channel;
-
+  dmdOeChannel = 0;
+  TIM_TypeDef *tim = dmd_tim(dev);
   PinName timPin;
   uint8_t timCh;
-  if (dmd_find_tim3_mapping(pin, &timPin, &timCh)) {
+  if (dmd_find_oe_tim_mapping(pin, tim, &timPin, &timCh))
+  {
     dmdOePinName = timPin;
     dmdOeChannel = timCh;
-  } else {
-    dmdOePinName = digitalPinToPinName(pin);
+
+    dmd_hw_timer_prepare(tim);
+    pinmap_pinout(dmdOePinName, PinMap_TIM);
+
+    LL_TIM_DisableCounter(tim);
+    LL_TIM_SetPrescaler(tim, 0);
+    LL_TIM_SetAutoReload(tim, TIM_MAX_RELOAD);
+    LL_TIM_SetCounter(tim, 0);
+
+    uint32_t ll_ch = dmd_ll_channel(dmdOeChannel);
+    LL_TIM_OC_SetMode(tim, ll_ch, LL_TIM_OCMODE_PWM2);
+    LL_TIM_CC_EnableChannel(tim, ll_ch);
+    switch (dmdOeChannel)
+    {
+    case 1:
+      LL_TIM_OC_SetCompareCH1(tim, 0);
+      break;
+    case 2:
+      LL_TIM_OC_SetCompareCH2(tim, 0);
+      break;
+    case 3:
+      LL_TIM_OC_SetCompareCH3(tim, 0);
+      break;
+    case 4:
+      LL_TIM_OC_SetCompareCH4(tim, 0);
+      break;
+    }
   }
 
-  dmd_hw_timer_prepare(TIM3);
-  pinmap_pinout(dmdOePinName, PinMap_TIM);
-
-  LL_TIM_DisableCounter(TIM3);
-  LL_TIM_SetPrescaler(TIM3, 0);
-  LL_TIM_SetAutoReload(TIM3, TIM_MAX_RELOAD);
-  LL_TIM_SetCounter(TIM3, 0);
-
-  uint32_t ll_ch = dmd_ll_channel(dmdOeChannel);
-  LL_TIM_OC_SetMode(TIM3, ll_ch, LL_TIM_OCMODE_PWM2);
-  LL_TIM_CC_EnableChannel(TIM3, ll_ch);
-  switch (dmdOeChannel) {
-    case 1: LL_TIM_OC_SetCompareCH1(TIM3, 0); break;
-    case 2: LL_TIM_OC_SetCompareCH2(TIM3, 0); break;
-    case 3: LL_TIM_OC_SetCompareCH3(TIM3, 0); break;
-    case 4: LL_TIM_OC_SetCompareCH4(TIM3, 0); break;
-  }
+  return dmdOeChannel;
 }
 
 void timer_init(const timer_dev *dev) {
@@ -234,7 +246,7 @@ void timer_cc_enable(const timer_dev *dev, uint8_t channel) {
 
 void timer_attach_interrupt(const timer_dev *dev, uint8_t type, voidFuncPtr handler) {
   (void)type;
-  if (dev != TIMER4 || !handler) {
+  if (!handler) {
     return;
   }
 
@@ -247,12 +259,12 @@ void timer_attach_interrupt(const timer_dev *dev, uint8_t type, voidFuncPtr hand
     dmdMainTimer = nullptr;
   }
 
-  timer_index_t index = get_timer_index(TIM4);
+  timer_index_t index = get_timer_index(dmd_tim(dev));
   if (HardwareTimer_Handle[index] != nullptr) {
     HardwareTimer_Handle[index] = nullptr;
   }
 
-  dmdMainTimer = new HardwareTimer(TIM4);
+  dmdMainTimer = new HardwareTimer(dmd_tim(dev));
   dmdMainTimer->setPreloadEnable(true);
   dmdMainTimer->attachInterrupt(dmd_main_timer_isr);
 }

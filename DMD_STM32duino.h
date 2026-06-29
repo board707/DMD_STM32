@@ -43,8 +43,8 @@ static inline volatile uint32_t *dmd_portSetRegister(uint32_t pin) {
 }
 #define portSetRegister(pin) dmd_portSetRegister(pin)
 
-uint8_t dmd_get_oe_channel(uint32_t pin);
-void dmd_init_oe_pwm(uint32_t pin, uint8_t channel);
+uint8_t dmd_get_oe_channel(uint32_t pin, const timer_dev *dev);
+uint8_t dmd_init_oe_pwm(uint32_t pin, const timer_dev *dev);
 void dmd_set_pin_high_speed(uint32_t pin);
 void dmd_oe_blank_gpio(uint32_t pin);
 void dmd_hw_timer_prepare(TIM_TypeDef *tim);

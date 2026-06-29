@@ -82,7 +82,10 @@ void DMD::set_pin_modes() {
 	digitalWrite(pin_DMD_SCLK, LOW);
 	pinMode(pin_DMD_SCLK, OUTPUT);
 #if defined(DMD_STM32DUINO)
-	oe_channel = dmd_get_oe_channel(pin_DMD_nOE);
+	//oe_channel = dmd_get_oe_channel(pin_DMD_nOE);
+	
+	
+
 #elif defined(__STM32F1__) 
 	oe_channel = PIN_MAP[pin_DMD_nOE].timer_channel;
 #elif defined(__STM32F4__) 
@@ -134,8 +137,9 @@ void DMD::init(uint16_t scan_interval) {
 void DMD::initialize_timers(voidFuncPtr handler) {
 
 #if defined(DMD_STM32DUINO)
-	dmd_init_oe_pwm(pin_DMD_nOE, oe_channel);
-#endif
+	/* TO_DO: Rise an error if oe_channel == 0 */
+	oe_channel = dmd_init_oe_pwm(pin_DMD_nOE, OE_TIMER);
+#endif 
 
 	if (handler != NULL) this->setup_main_timer(this->scan_cycle_len, handler);
 	uint16 prescaler = timer_get_prescaler(MAIN_TIMER) + 1;
