@@ -1,6 +1,5 @@
 #ifndef DMD_DEFS_H_
 #define DMD_DEFS_H_
-#include "stm_int.h"
 //#define DEBUG2		1
 #define DEBUG_PRINT( x )   Serial1.print( #x );Serial1.print(" = ");Serial1.println( x )
 
@@ -14,6 +13,17 @@
 #include "WProgram.h"
 #endif
 
+#if defined(ARDUINO_ARCH_STM32)
+#include "DMD_STM32duino.h"
+#if defined(STM32F4xx) && !defined(__STM32F4__)
+#define __STM32F4__ 1
+#endif
+#if defined(STM32F1xx) && !defined(__STM32F1__)
+#define __STM32F1__ 1
+#endif
+#else
+#include "stm_int.h"
+#endif
 
 #if (defined(ARDUINO_ARCH_RP2040))
 #include <hardware/irq.h>
@@ -29,7 +39,7 @@
 #define CYCLES_PER_MICROSECOND (F_CPU / 1000000ul)
 #endif
 
-#if (defined(__STM32F1__) || defined(__STM32F4__))
+#if (defined(__STM32F1__) || defined(__STM32F4__)) && !defined(DMD_STM32DUINO)
 typedef uint32 PortType;
 #define TIM_MAX_RELOAD ((1 << 16) - 1)
 enum OE_PWM_Polarity{ OE_PWM_POSITIVE = TIMER_OC_MODE_PWM_1, OE_PWM_NEGATIVE = TIMER_OC_MODE_PWM_2 };

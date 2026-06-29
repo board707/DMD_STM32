@@ -23,6 +23,9 @@ void DMD_Multiplexer::init() {
 #endif
     for (uint8_t i = 0; i < mux_pins->count; i++) {
         pinMode(mux_pins->list[i], OUTPUT);
+#if defined(DMD_STM32DUINO)
+        dmd_set_pin_high_speed(mux_pins->list[i]);
+#endif
         digitalWrite(mux_pins->list[i], LOW);
     }
 }

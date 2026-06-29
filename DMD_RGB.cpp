@@ -72,6 +72,9 @@ void DMD_RGB_BASE::generate_rgbtable_default(uint8_t options) {
 
 	for (uint8_t i = 0; i < 6; i++) {
 		pinMode(rgbpins[i], OUTPUT);
+#if defined(DMD_STM32DUINO)
+		dmd_set_pin_high_speed(rgbpins[i]);
+#endif
 		rgbmask[i] = digitalPinToBitMask(rgbpins[i]); // Pin bit mask
 		clk_clrmask |= rgbmask[i];   // Add to RGB+CLK bit mask
 		rgbmask_all |= rgbmask[i];
@@ -147,12 +150,15 @@ void DMD_RGB_BASE::initialize_timers(voidFuncPtr handler) {
 		dma_enable(rgbDmaDev, clkTxDmaStream);
 #endif
 #endif
-
 }
 #endif
 
 /*--------------------------------------------------------------------------------------*/
 void DMD_RGB_BASE::init(uint16_t user_fps) {
+
+#if defined(DMD_STM32DUINO)
+	dmd_force_timers_stop();
+#endif
 
 	if (user_fps) this->default_fps = user_fps;
 	this->setCycleLen();
@@ -168,6 +174,7 @@ void DMD_RGB_BASE::init(uint16_t user_fps) {
 	initialize_timers(scan_running_dmd_R);
 	setBrightness(200);
 	clearScreen(true);
+
 
 }
 /*--------------------------------------------------------------------------------------*/
@@ -337,6 +344,7 @@ void DMD_RGB_BASE::scan_dmd_p1() {
 			if (swapflag == true) {    // Swap front/back buffers if requested
 				backindex = 1 - backindex;
 				swapflag = false;
+				
 				}
 			}
 		buffptr = matrixbuff[1 - backindex]; // Reset into front buffer

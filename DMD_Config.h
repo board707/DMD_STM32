@@ -21,8 +21,8 @@
 //comment line below if you need free selections of RGB pins for 1bit color mode
 #define DIRECT_OUTPUT
 
-// with STM32F4 use DMA where available
-#if ((defined(__STM32F4__)) && ( defined(DIRECT_OUTPUT)))
+// with STM32F4 use DMA where available (libmaple core only; STM32duino uses bit-bang path)
+#if ((defined(__STM32F4__)) && (defined(DIRECT_OUTPUT)) && !defined(DMD_STM32DUINO))
 #define RGB_DMA
 #endif
 
@@ -31,8 +31,10 @@
 // OE PWM period in us (for Monochrome)
 #define OE_PWM_PERIOD  30
 
-// === for Monochrome SPI ===
+// Monochrome SPI DMA (libmaple core only)
+#if (defined(__STM32F1__) || defined(__STM32F4__)) && !defined(DMD_STM32DUINO)
 #define DMD_USE_DMA	1
+#endif
 
 // === for Monochrome Parallel ===
 /* Normally, CLK pin and DATA pins for all parallel matrix rows 
