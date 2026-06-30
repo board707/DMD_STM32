@@ -4,12 +4,32 @@
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
 
-### New in v1.2.7 - 1.2.9 - Additional SPWM drivers - ICND1065 and SM16380SH. 
+Brief introduction
+------------------
+
+This is a library that supports almost all types of monochrome and RGB LED panels using the HUB08, HUB12, and HUB75 interfaces. It runs on the STM32 and RP2040-based controllers in the Arduino environment.
+
+The library’s main purpose is to collect knowledge about LED panel types and protocols. Please note: this project is not a finished product. It is an experimental platform for testing and implementing different software and hardware approaches for working with matrix panels.
+
+There is no strict development plan. The project evolves in directions that interest the author and users. The project does not receive commercial support. The author would be grateful for your ideas, links to documentation, and samples of unusual panels and controllers for study.
+
+If you find this library interesting, please consider starring it.
+
+Latest updates
+--------------
+
+### Support for STMicroelectronics packages
+
+Starting with v1.2.12, we began gradually adding support for STMicroelectronics (STM32duino) package for STM32. The Monochrome and RGB classes are partially implemented. DMA mode and sPWM drivers are not yet supported.
+
+The latest library versions are experimental and are not included in the official release. Please use the GitHub "Download" button to update. If you are using RP2040 or an STM32 with the old RogerClark add-on, we recommend still using release 1.2.11.
+
+### Panels with a new SPWM drivers 
 
 Since v1.2.5 release the library introduces comprehensive support for a set of new "PWM-type" LED drivers previously unsupported by most known libraries. The supported chips represents a three distinct PWM driver control architectures:
   * Unified Signal Control - both PWM timing and row switching managed by a single GCLK ( OE ) control signal  (supported: **ICN2153**, **FM6353**)
   * Dual Signal Synchronization - PWM timing coordinated through combined GCLK (OE -Output Enable) and  DCLK signals  ( driver model: **FM6363** )
-  * Fully Decoupled Control Mechanism - PWM timing (DCLK) and row switching ( GCLK ) operated through completely independent signals (chips: **DP3264**, **ICND2055**, **FM6373** and **SM16380SH** )
+  * Fully Decoupled Control Mechanism - PWM timing (DCLK) and row switching ( GCLK ) operated through completely independent signals (chips: **DP3264**, **ICND1065**,**ICND2055**, **FM6373** and **SM16380SH** )
 
 Compatibility and Requirements: In case of STM32 core using a STM32F4 boards is strongly recommended. See [Notes about using a SPWM Drivers](https://github.com/board707/DMD_STM32/wiki/quick_start#notes-about-using-spwm-driver-classes) for details. Recommended to use a dmd_spwm_panel example as a starting point.
 
@@ -103,7 +123,7 @@ There are two ways to install the library:
 
   > Roger Clark: core versions before [d05a128](https://github.com/rogerclarkmelbourne/Arduino_STM32/commit/d05a1289f1e2eaa5127a4bfed9602e2cd48c6ffe) (28 Apr 2024) are incompatible with recent Adafruit GFX. Use core ≥ d05a128 or Adafruit GFX ≤ 1.7.0 ([v1.7.0](https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0)).
 
-  > STM32duino: RGB DMA and Monochrome SPI DMA are disabled; RGB uses bit-bang, Monochrome SPI uses polling. OE PWM via `DMD_STM32duino` shim.
+  > STM32duino: using DMA in RGB and Monochrome modes are disabled; RGB uses bit-bang, Monochrome SPI uses polling. OE PWM via `DMD_STM32duino` shim.
 
   **STM32duino port verified on:** STM32F103 (CBT), STM32F401, STM32F411 — RGB panels (`DMD_RGB`), dual buffer, GFX/Cyrillic fonts. Example: `examples/STM32duino/dmd_rgb_effects`.
 
