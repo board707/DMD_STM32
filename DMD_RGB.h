@@ -363,6 +363,7 @@ void getColorBytes(uint8_t* cbytes, uint16_t color) override {
 
 	if ((colors[last_color] == color) || (colors[last_color = !last_color] == color)) {
 		ptr = col_cache + last_color * 3;
+		if (cbytes == nullptr) return;
 		memcpy(cbytes, ptr, 3); return;
 		}
 
