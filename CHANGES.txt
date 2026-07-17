@@ -1,4 +1,10 @@
 # ChangeLog
+## [1.2.14] - 2026-07-17
+ - STM32duino (Arduino Core STM32): add DMA mode for DMD_Monochrome_SPI class.
+ - STM32 Clark's core: fix issue #218
+ - Tuning example: `examples/STM32duino/dmd_monochrome`.
+ - Many other minor changes.
+
 ## [1.2.13] - 2026-06-30
  - STM32duino (Arduino Core STM32): add support for DMD_Monochrome_SPI class.
  - STM32duino: Rewrite timer methods to avoid explicit timer numbers.

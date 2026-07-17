@@ -9,16 +9,16 @@
 #if defined(ARDUINO_ARCH_STM32)
 #include "DMD_STM32duino_defs.h"
 #endif
-#if (defined(__STM32F1__) || defined(__STM32F4__)) || defined(DMD_STM32DUINO)
+#if (defined(__STM32F1__) || defined(__STM32F4__)) 
 #include "SPI_DMA.h"
 
-#if defined(DMD_STM32DUINO)
-#define DMD_SPI_CNT 1
-#elif defined(__STM32F1__)
+
+#if defined(__STM32F1__)
 #define DMD_SPI_CNT 2
 #elif defined(__STM32F4__)
 #define DMD_SPI_CNT 3
 #endif
+
 static volatile DMD_MonoChrome_SPI* running_dmds[DMD_SPI_CNT];
 static volatile uint8_t running_dmd_len = 0;
 
@@ -27,6 +27,7 @@ void register_running_dmd(DMD_MonoChrome_SPI* dmd, uint16_t scan_int)
 {
 	UNUSED1(scan_int);
 	uint8_t spi_num = dmd->spi_num;
+	
 	if (!spi_num) return;
 	
 	if (running_dmd_len == 0) {
@@ -66,29 +67,48 @@ void inline __attribute__((always_inline)) scan_running_dmds()
 
 #if defined( DMD_USE_DMA )
 /*--------------------------------------------------------------------------------------*/
-#if defined(__STM32F1__) 
-void SPI1_DMA_callback() {
-	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[0];
-	next->latchDMA();
-}
-/*--------------------------------------------------------------------------------------*/
-void SPI2_DMA_callback() {
-	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[1];
-	next->latchDMA();
-}
-/*--------------------------------------------------------------------------------------*/
-#elif defined(__STM32F4__) 
+#if defined(DMD_STM32DUINO)
 void SPI1_DMA_callback(uint32_t spi) {
+	UNUSED1(spi);
 	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[0];
-	next->latchDMA();
+	if (next) next->latchDMA();
 }
 void SPI2_DMA_callback(uint32_t spi) {
+	UNUSED1(spi);
 	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[1];
-	next->latchDMA();
+	if (next) next->latchDMA();
+}
+#if defined(__STM32F4__)
+void SPI3_DMA_callback(uint32_t spi) {
+	UNUSED1(spi);
+	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[2];
+	if (next) next->latchDMA();
+}
+#endif
+#elif defined(__STM32F1__)
+void SPI1_DMA_callback() {
+	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[0];
+	if (next) next->latchDMA();
+}
+void SPI2_DMA_callback() {
+	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[1];
+	if (next) next->latchDMA();
+}
+#elif defined(__STM32F4__)
+void SPI1_DMA_callback(uint32_t spi) {
+	UNUSED1(spi);
+	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[0];
+	if (next) next->latchDMA();
+}
+void SPI2_DMA_callback(uint32_t spi) {
+	UNUSED1(spi);
+	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[1];
+	if (next) next->latchDMA();
 }
 void SPI3_DMA_callback(uint32_t spi) {
+	UNUSED1(spi);
 	DMD_MonoChrome_SPI* next = (DMD_MonoChrome_SPI*)running_dmds[2];
-	next->latchDMA();
+	if (next) next->latchDMA();
 }
 #endif
 #endif

@@ -1,9 +1,8 @@
 //#if (defined(__STM32F1__) || defined(__STM32F4__))
 #if ( !defined(ARDUINO_ARCH_RP2040))
 #include "DMD_MonoChrome_SPI.h"
-//#if !defined(DMD_STM32DUINO)
 #include "SPI_DMA.h"
-//#endif
+
 
 //lookup table for DMD::writePixel to make the pixel indexing routine faster
 static byte bPixelLookupTable[8] =
@@ -31,6 +30,7 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	bool d_buf, byte dmd_pixel_x, byte dmd_pixel_y)
 	:DMD(_pin_nOE, _pin_SCLK, panelsWide, panelsHigh,
 		DMD_MONO_SCAN, new DMD_Pinlist(DMD_SPI_SPI_SCK, DMD_SPI_SPI_MOSI), d_buf, dmd_pixel_x, dmd_pixel_y), SPI_DMD(_spi)
+
 {
 	mem_Buffer_Size = DisplaysTotal * ((DMD_PIXELS_ACROSS * DMD_BITSPERPIXEL / 8) * DMD_PIXELS_DOWN);
 	row1 = DisplaysTotal << 4;
@@ -51,14 +51,16 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	Mux = new DMD_Mux3to8(new DMD_Pinlist(_pin_A, _pin_B), DMD_MONO_SCAN);
 
 
-#if defined(DMD_STM32DUINO)
-	spi_num = 1;
-#endif
+
 
 #if ( DMD_USE_DMA )	
 	dmd_dma_buf = (byte*)malloc(mem_Buffer_Size / DMD_MONO_SCAN);
 
-#if defined(__STM32F1__) 
+#if defined(DMD_STM32DUINO)
+	// DMA channels configured inside SPIDMAClass::begin()
+	
+	
+#elif defined(__STM32F1__) 
 	spiDmaDev = DMA1;
 	if (SPI_DMD.dev() == SPI1) {
 		spiTxDmaChannel = DMA_CH3;
@@ -91,6 +93,7 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 
 #endif
 #else
+#if !defined(DMD_STM32DUINO)
 if (SPI_DMD.dev() == SPI1) {
 		
 		spi_num = 1;
@@ -106,6 +109,7 @@ if (SPI_DMD.dev() == SPI1) {
 	}
 #endif	
 #endif
+#endif
 }
 /*--------------------------------------------------------------------------------------*/
 DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
@@ -113,15 +117,20 @@ DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
 	free(matrixbuff[0]);
 #if ( DMD_USE_DMA )	
 	free(dmd_dma_buf);
+#if defined(DMD_STM32DUINO)
+	if (spi_dma) delete spi_dma;
+#endif
 #endif
 }
 /*--------------------------------------------------------------------------------------*/
 void DMD_MonoChrome_SPI::set_pin_modes() {
 
 	DMD::set_pin_modes();
+#if !defined(DMD_STM32DUINO)
 	pin_DMD_R_DATA = data_pins[0];
 	digitalWrite(pin_DMD_R_DATA, HIGH);	
 	pinMode(pin_DMD_R_DATA, OUTPUT);
+#endif
 
 }
 /*--------------------------------------------------------------------------------------*/
@@ -133,10 +142,32 @@ void DMD_MonoChrome_SPI::init(uint16_t scan_interval) {
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
 	SPI_DMD.begin(); //Initialize the SPI port.
-	SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI bit order
+#if defined(DMD_STM32DUINO) 
+#if( DMD_USE_DMA )	
+	this->spi_dma = new SPIDMAClass(SPI_DMD);
+    this->spi_dma->begin();
+	this->spi_num = spi_dma->spiIndex();
+#else	
+    SPI_TypeDef *_hwspi = SPI_DMD.getHandle()->Instance;
+	if (_hwspi == SPI1) {
+  		this->spi_num = 1;
+	} else if (_hwspi == SPI2) {
+		this->spi_num = 2;
+	} 
+#if defined(__STM32F4__)	
+	else if (_hwspi == SPI3) {
+		this->spi_num = 3;
+	}
+#endif
+#endif
+#endif	
+  
+    SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI bit order
 	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI data mode 0
+	
 	//SPI_DMD.setClockDivider(SPI_CLOCK_DIV16);  // Use a different speed to SPI 1 */
 	SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
+	
 	register_running_dmd(this, scan_interval);
 
 #elif  (defined(ARDUINO_ARCH_RP2040))
@@ -213,6 +244,10 @@ void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 
 void DMD_MonoChrome_SPI::latchDMA() {
 
+#if defined(DMD_STM32DUINO)
+	
+	spi_dma->finishDmaTx();
+#else
 	while (spi_is_tx_empty(SPI_DMD.dev()) == 0); // "5. Wait until TXE=1 ..."
 	while (spi_is_busy(SPI_DMD.dev()) != 0); // "... and then wait until BSY=0 before disabling the SPI." 
 	spi_tx_dma_disable(SPI_DMD.dev());
@@ -224,9 +259,8 @@ void DMD_MonoChrome_SPI::latchDMA() {
 	dma_disable(spiDmaDev, spiTxDmaStream);
 	dma_clear_isr_bits(spiDmaDev, spiTxDmaStream);
 #endif
-	DEBUG_TIME_MARK;
-	//switch_row();   // move to scanDisplay
-	DEBUG_TIME_MARK;
+#endif
+	
 }
 
 /*--------------------------------------------------------------------------------------*/
@@ -249,7 +283,28 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 		*buf_ptr++ = *(row1_ptr++);
 		*buf_ptr++ = *(offset_ptr++);
 	}
-#if defined(__STM32F1__) 
+#if defined(DMD_STM32DUINO)
+	
+	switch (spi_num) {
+	case 1:
+		spi_dma->onTransmit(SPI1_DMA_callback);
+		break;
+	case 2:
+		spi_dma->onTransmit(SPI2_DMA_callback);
+		break;
+#if defined(__STM32F4__)
+	case 3:
+		spi_dma->onTransmit(SPI3_DMA_callback);
+		break;
+#endif
+	default:
+		//dmd_dma_debug_val("invalid spi_num", spi_num);
+		return;
+	}
+	while (spi_dma->dmaBusy()) {}
+		
+	spi_dma->dmaSend(dmd_dma_buf, rowsize * 4, DMD_SPI_DMA_ASYNC);
+#elif defined(__STM32F1__) 
 	if (SPI_DMD.dev() == SPI1) {
 		SPI_DMD.onTransmit(SPI1_DMA_callback);
 		dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI1_DMA_callback);
@@ -258,8 +313,9 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 		SPI_DMD.onTransmit(SPI2_DMA_callback);
 		dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI2_DMA_callback);
 	}
+	SPI_DMD.dmaSend(dmd_dma_buf, rowsize * 4, 1);
 #elif defined(__STM32F4__) 
-	//SPI_DMD.onTransmit(SPI_DMA_callback);
+
 
 	if (SPI_DMD.dev() == SPI1) {
 		SPI_DMD.onTransmit(SPI1_DMA_callback);
@@ -272,9 +328,9 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 	else if (SPI_DMD.dev() == SPI3) {
 		SPI_DMD.onTransmit(SPI3_DMA_callback);
 	}
-#endif
 	SPI_DMD.dmaSend(dmd_dma_buf, rowsize * 4, 1);
-	DEBUG_TIME_MARK;
+#endif
+	
 }
 
 #else

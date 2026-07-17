@@ -32,7 +32,7 @@
 #define OE_PWM_PERIOD  30
 
 // Monochrome SPI DMA (libmaple core only)
-#if (defined(__STM32F1__) || defined(__STM32F4__)) && !defined(DMD_STM32DUINO)
+#if (defined(__STM32F1__) || defined(__STM32F4__)) 
 #define DMD_USE_DMA	1
 #endif
 

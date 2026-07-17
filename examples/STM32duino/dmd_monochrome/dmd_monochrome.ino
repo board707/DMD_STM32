@@ -26,7 +26,15 @@
 
 //Number of panels in x and y axis
 #define DISPLAYS_ACROSS 1
+
+#if defined(DMD_PARA)
+// Parallel mode is mostly effective when you have more than one row of panels.
+#define DISPLAYS_DOWN 2
+#else
+// SPI mode test is developed for a single row of panels
 #define DISPLAYS_DOWN 1
+#endif
+
 
 // Enable of output buffering
 // if true, changes only outputs to matrix after
@@ -65,8 +73,14 @@ DMD_Monochrome_Parallel dmd(DMD_PIN_A, DMD_PIN_B, DMD_PIN_nOE, DMD_PIN_SCLK, pin
 
 //=== Config for SPI connect ====
 #if ( defined(DMD_STM32DUINO))
+// uncomment two lines below if you using a second SPI instance
+// SPIClass SPI_DMD2 = SPIClass(PB15, PB14, PB13);  // (mosi, miso, sclk)
+// #define dmd_spi SPI_DMD2
+
+// or use the default SPI instance
 #define dmd_spi SPI
-#else
+
+#else  // for RogerClark's core
 SPIClass dmd_spi(1);
 #endif
 

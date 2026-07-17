@@ -20,7 +20,7 @@ Latest updates
 
 ### Support for STMicroelectronics packages
 
-Starting with v1.2.12, we began gradually adding support for STMicroelectronics (STM32duino) package for STM32. The Monochrome and RGB classes are partially implemented. DMA mode and sPWM drivers are not yet supported.
+Starting with v1.2.12, we began gradually adding support for STMicroelectronics (STM32duino) package for STM32. The Monochrome and RGB classes are partially implemented. RGB DMA mode and sPWM drivers are not yet supported.
 
 The latest library versions are experimental and are not included in the official release. Please use the GitHub "Download" button to update. If you are using RP2040 or an STM32 with the old RogerClark add-on, we recommend still using release 1.2.11.
 

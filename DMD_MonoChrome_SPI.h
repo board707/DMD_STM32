@@ -11,6 +11,9 @@
 #error Monochrome_SPI mode unsupported for Rasberry Pico RP2040 
 //#elif (defined(__STM32F1__) || defined(__STM32F4__))
 #else
+#if defined(ARDUINO_ARCH_STM32)
+#include "DMD_STM32duino_defs.h"
+#endif
 #include "DMD_STM32a.h"
 #include <SPI.h>
 #define DMD_SPI_CLOCK_18MHZ     18000000
@@ -21,14 +24,15 @@
 #define DMD_SPI_CLOCK_1MHZ     1000000
 
 
-
 #if defined(__STM32F1__)
 #define DMD_SPI_CLOCK DMD_SPI_CLOCK_9MHZ
 #elif defined(__STM32F4__)
 #define DMD_SPI_CLOCK DMD_SPI_CLOCK_10_5MHZ
 #endif
-#if ( !defined(DMD_STM32DUINO))
-#define DMD_USE_DMA	1
+
+
+#if defined(DMD_STM32DUINO) && (DMD_USE_DMA)
+#include "STM32_SPI_DMA.h"
 #endif
 
 
@@ -67,7 +71,9 @@ private:
 
 #if (DMD_USE_DMA)
 
-#if defined(__STM32F1__) 
+#if defined(DMD_STM32DUINO)
+    SPIDMAClass* spi_dma = nullptr;
+#elif defined(__STM32F1__) 
 	dma_dev* spiDmaDev;
 	dma_channel  spiTxDmaChannel;
 #elif defined(__STM32F4__) 
@@ -75,9 +81,7 @@ private:
 	dma_channel  spiTxDmaChannel;
 	dma_stream   spiTxDmaStream;
 #endif
-
 	uint8_t* dmd_dma_buf;
-
 #endif
 
 };
