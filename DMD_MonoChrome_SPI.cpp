@@ -90,6 +90,21 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	}
 
 #endif
+#else
+if (SPI_DMD.dev() == SPI1) {
+		
+		spi_num = 1;
+	}
+	else if (SPI_DMD.dev() == SPI2) {
+		
+		spi_num = 2;
+	}
+#if defined(__STM32F4__) 	
+	else if (SPI_DMD.dev() == SPI3) {
+		
+		spi_num = 3;
+	}
+#endif	
 #endif
 }
 /*--------------------------------------------------------------------------------------*/
