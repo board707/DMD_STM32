@@ -33,10 +33,7 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 
 {
 	mem_Buffer_Size = DisplaysTotal * ((DMD_PIXELS_ACROSS * DMD_BITSPERPIXEL / 8) * DMD_PIXELS_DOWN);
-	row1 = DisplaysTotal << 4;
-	row2 = DisplaysTotal << 5;
-	row3 = ((DisplaysTotal << 2) * 3) << 2;
-	rowsize = DisplaysTotal << 2;
+	x_len = mem_Buffer_Size / DMD_MONO_SCAN;
 
 	// Allocate and initialize matrix buffer:
 	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
@@ -51,14 +48,10 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	Mux = new DMD_Mux3to8(new DMD_Pinlist(_pin_A, _pin_B), DMD_MONO_SCAN);
 
 
-
-
 #if ( DMD_USE_DMA )	
-	dmd_dma_buf = (byte*)malloc(mem_Buffer_Size / DMD_MONO_SCAN);
-
+	
 #if defined(DMD_STM32DUINO)
 	// DMA channels configured inside SPIDMAClass::begin()
-	
 	
 #elif defined(__STM32F1__) 
 	spiDmaDev = DMA1;
@@ -116,7 +109,7 @@ DMD_MonoChrome_SPI::~DMD_MonoChrome_SPI()
 {
 	free(matrixbuff[0]);
 #if ( DMD_USE_DMA )	
-	free(dmd_dma_buf);
+	//free(dmd_dma_buf);
 #if defined(DMD_STM32DUINO)
 	if (spi_dma) delete spi_dma;
 #endif
@@ -193,11 +186,12 @@ void DMD_MonoChrome_SPI::drawPixel(int16_t x, int16_t y, uint16_t color)
 	// inverse data bits for some panels
 	bPixel = bPixel ^ inverse_ALL_flag;
 
-	//byte panel = (bX / DMD_PIXELS_ACROSS) + (DisplaysWide*(bY / DMD_PIXELS_DOWN));
 	bX += (this->WIDTH * (bY / DMD_PIXELS_DOWN));
 	bY = bY % DMD_PIXELS_DOWN;
 	//set pointer to DMD RAM byte to be modified
-	uiDMDRAMPointer = bX / 8 + bY * (DisplaysTotal << 2);
+    byte mux = bY % 4;
+	byte mux_byte_cnt = bY / 4;
+	uiDMDRAMPointer = mux * x_len + (bX / 8) * column_size + (3 - mux_byte_cnt);
 
 	byte lookup = bPixelLookupTable[bX & 0x07];
 	/*if (bPixel == true)
@@ -268,21 +262,10 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 {
 
 	switch_row();
-
+    uint16_t offset = x_len * bDMDByte;
 	uint8_t* fr_buff = matrixbuff[1 - backindex]; // -> front buffer
-	//uint16_t offset = rowsize * bDMDByte;
-	uint8_t* offset_ptr = fr_buff + rowsize * bDMDByte;
-	uint8_t* row1_ptr = offset_ptr + row1;
-	uint8_t* row2_ptr = offset_ptr + row2;
-	uint8_t* row3_ptr = offset_ptr + row3;
-	uint8_t* buf_ptr = dmd_dma_buf;
+	dmd_dma_ptr = fr_buff + offset;
 
-	for (int i = 0;i < rowsize;i++) {
-		*buf_ptr++ = *(row3_ptr++);
-		*buf_ptr++ = *(row2_ptr++);
-		*buf_ptr++ = *(row1_ptr++);
-		*buf_ptr++ = *(offset_ptr++);
-	}
 #if defined(DMD_STM32DUINO)
 	
 	switch (spi_num) {
@@ -298,12 +281,12 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 		break;
 #endif
 	default:
-		//dmd_dma_debug_val("invalid spi_num", spi_num);
+		
 		return;
 	}
 	while (spi_dma->dmaBusy()) {}
 		
-	spi_dma->dmaSend(dmd_dma_buf, rowsize * 4, DMD_SPI_DMA_ASYNC);
+	spi_dma->dmaSend(dmd_dma_ptr, x_len, DMD_SPI_DMA_ASYNC);
 #elif defined(__STM32F1__) 
 	if (SPI_DMD.dev() == SPI1) {
 		SPI_DMD.onTransmit(SPI1_DMA_callback);
@@ -313,7 +296,7 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 		SPI_DMD.onTransmit(SPI2_DMA_callback);
 		dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI2_DMA_callback);
 	}
-	SPI_DMD.dmaSend(dmd_dma_buf, rowsize * 4, 1);
+	SPI_DMD.dmaSend(dmd_dma_ptr, x_len, 1);
 #elif defined(__STM32F4__) 
 
 
@@ -328,7 +311,7 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 	else if (SPI_DMD.dev() == SPI3) {
 		SPI_DMD.onTransmit(SPI3_DMA_callback);
 	}
-	SPI_DMD.dmaSend(dmd_dma_buf, rowsize * 4, 1);
+	SPI_DMD.dmaSend(dmd_dma_ptr, x_len, 1);
 #endif
 	
 }
@@ -342,32 +325,26 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 //int i = 0;
 void DMD_MonoChrome_SPI::scanDisplayBySPI()
 {
-	uint16_t offset = rowsize * bDMDByte;
+	
+	uint16_t offset = x_len * bDMDByte;
+	uint8_t* fr_buff = matrixbuff[1 - backindex]; // -> front buffer
+	uint8_t* ptr = fr_buff + offset;
 
 #if ((defined(__STM32F1__) || defined(__STM32F4__)) && !defined(DMD_STM32DUINO))
-	//pwmWrite(pin_DMD_nOE, 0);
-
-	for (int i = 0;i < rowsize;i++) {
-		SPI_DMD.write(bDMDScreenRAM[offset + i + row3]);
-		SPI_DMD.write(bDMDScreenRAM[offset + i + row2]);
-		SPI_DMD.write(bDMDScreenRAM[offset + i + row1]);
-		SPI_DMD.write(bDMDScreenRAM[offset + i]);
-	}
+	
+	SPI_DMD.write(ptr, x_len);
 
 #elif (defined(__AVR_ATmega328P__) || defined(DMD_STM32DUINO))
-	for (int i = 0;i < rowsize;i++) {
-		SPI_DMD.transfer(bDMDScreenRAM[offset + i + row3]);
-		SPI_DMD.transfer(bDMDScreenRAM[offset + i + row2]);
-		SPI_DMD.transfer(bDMDScreenRAM[offset + i + row1]);
-		SPI_DMD.transfer(bDMDScreenRAM[offset + i]);
-	}
-	//OE_DMD_ROWS_OFF();
+		
+	SPI_DMD.transfer(ptr, x_len, SPI_TRANSMITONLY);
+	
 #endif
 	switch_row();
 }
-// Shift entire screen one pixel
+
 #endif
 /*--------------------------------------------------------------------------------------*/
+// Shift entire screen one pixel by X axis
 void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 	uint8_t msb_bit = 0x80;
 	uint8_t lsb_bit = 0x01;
@@ -376,25 +353,39 @@ void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 		msb_bit = 0;
 		lsb_bit = 0;
 	}
-	if (step < 0) {
-		for (int i = 0; i < mem_Buffer_Size;i++) {
-			if ((i % (DisplaysWide * 4)) == (DisplaysWide * 4) - 1) {
-				bDMDScreenRAM[i] = (bDMDScreenRAM[i] << 1) + lsb_bit;
-			}
-			else {
-				bDMDScreenRAM[i] = (bDMDScreenRAM[i] << 1) + ((bDMDScreenRAM[i + 1] & 0x80) >> 7);
+	uint8_t *ptr = bDMDScreenRAM;
+	for (int mux = 0; mux < DMD_MONO_SCAN; mux++)
+	{
+
+		if (step < 0)
+		{
+			for (int i = 0; i < x_len; i++)
+			{
+				if (i > x_len - 5)
+				{
+					ptr[i] = (ptr[i] << 1) + lsb_bit;
+				}
+				else
+				{
+					ptr[i] = (ptr[i] << 1) + ((ptr[i + 4] & 0x80) >> 7);
+				}
 			}
 		}
-	}
-	else if (step > 0) {
-		for (int i = (mem_Buffer_Size)-1; i >= 0;i--) {
-			if ((i % (DisplaysWide * 4)) == 0) {
-				bDMDScreenRAM[i] = (bDMDScreenRAM[i] >> 1) + msb_bit;
-			}
-			else {
-				bDMDScreenRAM[i] = (bDMDScreenRAM[i] >> 1) + ((bDMDScreenRAM[i - 1] & 1) << 7);
+		else if (step > 0)
+		{
+			for (int i = (x_len)-1; i >= 0; i--)
+			{
+				if (i < 4)
+				{
+					ptr[i] = (ptr[i] >> 1) + msb_bit;
+				}
+				else
+				{
+					ptr[i] = (ptr[i] >> 1) + ((ptr[i - 4] & 1) << 7);
+				}
 			}
 		}
+		ptr += x_len;
 	}
 }
 

@@ -23,13 +23,25 @@
 #define DMD_SPI_CLOCK_2_2MHZ    2300000
 #define DMD_SPI_CLOCK_1MHZ     1000000
 
-
+#if defined(DMD_STM32DUINO) 
 #if defined(__STM32F1__)
 #define DMD_SPI_CLOCK DMD_SPI_CLOCK_9MHZ
 #elif defined(__STM32F4__)
-#define DMD_SPI_CLOCK DMD_SPI_CLOCK_10_5MHZ
+/* STM32duino core waits for RXNE after every transmitted byte, 
+   so the effective SPI frequency will be lower than the configured one.*/
+#define DMD_SPI_CLOCK DMD_SPI_CLOCK_10_5MHZ 
+#endif
+#else  // libmaple core
+#if defined(__STM32F1__)
+#define DMD_SPI_CLOCK DMD_SPI_CLOCK_9MHZ
+#elif defined(__STM32F4__)
+/* The Maple F4 code has a bug that causes the SPI frequency to be 2 * Settings for certain dividers; 
+   therefore, we choose a value that is not too high.
+*/
+#define DMD_SPI_CLOCK DMD_SPI_CLOCK_9MHZ
 #endif
 
+#endif
 
 #if defined(DMD_STM32DUINO) && (DMD_USE_DMA)
 #include "STM32_SPI_DMA.h"
@@ -65,8 +77,8 @@ protected:
 	void set_pin_modes() override;
 private:
 	byte pin_DMD_R_DATA;   // is SPI Master Out 
-	uint16_t rowsize, row1, row2, row3;
-
+	const uint8_t column_size = DMD_MONO_SCAN;
+	uint8_t* dmd_dma_ptr = nullptr;
 	SPIClass& SPI_DMD;
 
 #if (DMD_USE_DMA)
@@ -81,7 +93,7 @@ private:
 	dma_channel  spiTxDmaChannel;
 	dma_stream   spiTxDmaStream;
 #endif
-	uint8_t* dmd_dma_buf;
+	
 #endif
 
 };
