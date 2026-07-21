@@ -36,7 +36,7 @@ DMD_MonoChrome_SPI::DMD_MonoChrome_SPI(byte _pin_A, byte _pin_B, byte _pin_nOE, 
 	x_len = mem_Buffer_Size / DMD_MONO_SCAN;
 
 	// Allocate and initialize matrix buffer:
-	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
+	uint32_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
 	matrixbuff[0] = (uint8_t*)malloc(allocsize);
 
 	// If not double-buffered, both buffers then point to the same address:
@@ -262,12 +262,17 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 {
 
 	switch_row();
+
     uint16_t offset = x_len * bDMDByte;
 	uint8_t* fr_buff = matrixbuff[1 - backindex]; // -> front buffer
 	dmd_dma_ptr = fr_buff + offset;
 
-#if defined(DMD_STM32DUINO)
 	
+#if defined(DMD_STM32DUINO)
+	if (!spi_dma || !spi_dma->dmaReady()) {
+		return;
+	}
+
 	switch (spi_num) {
 	case 1:
 		spi_dma->onTransmit(SPI1_DMA_callback);
@@ -281,13 +286,16 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 		break;
 #endif
 	default:
-		
 		return;
 	}
+	
 	while (spi_dma->dmaBusy()) {}
-		
+
 	spi_dma->dmaSend(dmd_dma_ptr, x_len, DMD_SPI_DMA_ASYNC);
+
+
 #elif defined(__STM32F1__) 
+    while (dma_is_enabled(spiDmaDev, spiTxDmaChannel)) {}
 	if (SPI_DMD.dev() == SPI1) {
 		SPI_DMD.onTransmit(SPI1_DMA_callback);
 		dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI1_DMA_callback);
@@ -297,8 +305,9 @@ void DMD_MonoChrome_SPI::scanDisplayByDMA()
 		dma_attach_interrupt(spiDmaDev, spiTxDmaChannel, SPI2_DMA_callback);
 	}
 	SPI_DMD.dmaSend(dmd_dma_ptr, x_len, 1);
-#elif defined(__STM32F4__) 
 
+#elif defined(__STM32F4__) 
+    while (!SPI_DMD.dmaSendReady()) {}
 
 	if (SPI_DMD.dev() == SPI1) {
 		SPI_DMD.onTransmit(SPI1_DMA_callback);
@@ -359,7 +368,7 @@ void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 
 		if (step < 0)
 		{
-			for (int i = 0; i < x_len; i++)
+			for (uint16_t i = 0; i < x_len; i++)
 			{
 				if (i > x_len - 5)
 				{
@@ -373,7 +382,7 @@ void DMD_MonoChrome_SPI::shiftScreen(int8_t step) {
 		}
 		else if (step > 0)
 		{
-			for (int i = (x_len)-1; i >= 0; i--)
+			for (int16_t i = (x_len)-1; i >= 0; i--)
 			{
 				if (i < 4)
 				{

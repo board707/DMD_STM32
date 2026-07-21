@@ -32,7 +32,7 @@ DMD_Monochrome_Parallel::DMD_Monochrome_Parallel(byte _pin_A, byte _pin_B, byte 
 	x_len = mem_Buffer_Size / DMD_MONO_SCAN;
 	
 	// Allocate and initialize matrix buffer:
-	uint16_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
+	uint32_t allocsize = (dbuf == true) ? (mem_Buffer_Size * 2) : mem_Buffer_Size;
 	matrixbuff[0] = (uint8_t*)malloc(allocsize);
 
 	// If not double-buffered, both buffers then point to the same address:

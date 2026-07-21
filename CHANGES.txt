@@ -3,6 +3,7 @@
  - Both STM32duino & Clark's core:MonoSPI class optimization:
    * DMA intermediate buffer removed;
    * Added packet transfer to SPI.
+ - Some sanity changes.  
 
 ## [1.2.14] - 2026-07-17
  - STM32duino (Arduino Core STM32): add DMA mode for DMD_Monochrome_SPI class.

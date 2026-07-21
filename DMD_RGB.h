@@ -119,7 +119,6 @@ protected:
 		
 #endif
     virtual void send_to_allRGB(uint16_t data, uint16_t latches);
-    
     virtual void chip_init() {};
 	virtual void setCycleLen();
 	virtual uint16_t get_base_addr(int16_t& x, int16_t& y);
@@ -335,7 +334,7 @@ virtual void scan_dmd_p3() override {
 	}
 	else { // 920 ticks from TCNT1=0 (above) to end of function
 
-		for (int i = 0; i < x_len; i++) {
+		for (uint16_t i = 0; i < x_len; i++) {
 			byte b =
 				((ptr[i] >> 2) & 0x30) |
 				((ptr[i + displ_len] >> 4) & 0x0C) |

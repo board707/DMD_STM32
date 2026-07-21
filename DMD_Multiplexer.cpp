@@ -14,7 +14,7 @@ mux_pins(_mux_pinlist), n_Rows(n_Rows) { }
 
 
 DMD_Multiplexer::~DMD_Multiplexer() {
-    free(mux_pins);
+    delete mux_pins;
 }
 
 void DMD_Multiplexer::init() {

@@ -313,8 +313,8 @@ protected:
 	volatile uint8_t backindex = 0;
 	volatile bool swapflag = false;
 	volatile uint8_t* front_buff;
-	uint16_t mem_Buffer_Size;
-	uint16_t x_len;
+	uint32_t mem_Buffer_Size;
+	uint32_t x_len;
 	uint32_t scan_cycle_len = 0;
 	
 
