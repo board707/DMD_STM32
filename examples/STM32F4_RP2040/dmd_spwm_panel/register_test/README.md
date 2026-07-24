@@ -54,5 +54,7 @@ scan headers do not contain the requested `REG N`.
 - Profile data uses flash, not another framebuffer; include only the scan
   catalogues you need.
 - `register_test_driver.h` is the single shared adapter. It delegates each
-  register protocol to the native driver and applies the profile's first/red
-  words to every RGB lane.
+  register protocol to the native driver.
+- By default, the profile's first/red words are applied to every RGB lane. Set
+  `DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA` to `1` in the sketch to apply
+  the separate R/G/B profile words during both testing and fixed overrides.

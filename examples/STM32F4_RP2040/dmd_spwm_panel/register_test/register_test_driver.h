@@ -116,7 +116,22 @@ protected:
 
     void send_to_allRGB(uint16_t data, uint16_t latches) override
     {
+#if DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA
+        uint8_t source_word = 0;
+        if (registerTestSourceWord(latches, source_word))
+        {
+            DriverType::send_to_RGB(
+                active_profile->channel_words[0][source_word],
+                active_profile->channel_words[1][source_word],
+                active_profile->channel_words[2][source_word], latches);
+        }
+        else
+        {
+            DriverType::send_to_allRGB(data, latches);
+        }
+#else
         DriverType::send_to_allRGB(data, latches);
+#endif
 
         // The Pi SM16380SH sequence places F003 immediately after the
         // selected register word. Native STM32/RP2040 loaders omit this one
@@ -130,6 +145,42 @@ protected:
     }
 
 private:
+#if DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA
+    uint8_t sourceWordForNativeSlot(uint8_t target_word) const
+    {
+        if (WordOrder == DMD_SPWM_REGISTER_TEST_LAST_WORD_FIRST)
+        {
+            return target_word == 0 ? active_profile->word_count - 1 :
+                                      target_word - 1;
+        }
+        return target_word;
+    }
+
+    bool registerTestSourceWord(uint16_t latches, uint8_t &source_word) const
+    {
+        if (active_profile == NULL) return false;
+
+        if (LoadMode == DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD)
+        {
+            if (native_frame_word != 2) return false;
+            source_word = active_word;
+            return source_word < active_profile->word_count;
+        }
+
+        uint8_t target_word = native_frame_word;
+        if (LoadMode == DMD_SPWM_REGISTER_TEST_LOAD_INDEXED)
+        {
+            if (latches < 2 || ((latches - 2) & 1)) return false;
+            target_word = (latches - 2) / 2;
+        }
+
+        if (target_word >= active_profile->word_count) return false;
+        source_word = sourceWordForNativeSlot(target_word);
+        return true;
+    }
+
+#endif
+
     enum {
         NATIVE_WORD_CAPACITY =
             LoadMode == DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD ?
