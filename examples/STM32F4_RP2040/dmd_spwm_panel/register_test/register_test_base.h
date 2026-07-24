@@ -20,6 +20,8 @@
 #error "Select the GRADIENT or ALIGN SPWM register-test pattern"
 #endif
 
+// Compact catalog entry containing the displayed REG number, payload length,
+// and channel-major Red, Green, and Blue register words.
 template <uint8_t MaxWords>
 struct DMD_SPWM_RegisterTestProfile {
     enum { MAX_WORDS = MaxWords };
@@ -28,6 +30,7 @@ struct DMD_SPWM_RegisterTestProfile {
     uint16_t channel_words[3][MaxWords];
 };
 
+// Return one row of the tiny 3x5 font used by the on-panel REG label.
 static uint8_t dmdSpwmRegisterTestGlyphRow(char character, uint8_t row)
 {
     static const uint8_t digits[10][5] = {
@@ -57,6 +60,7 @@ static uint8_t dmdSpwmRegisterTestGlyphRow(char character, uint8_t row)
     return 0;
 }
 
+// Draw a white REG number overlay without relying on an external font.
 template <typename DmdType>
 static void dmdSpwmDrawRegisterTestLabel(DmdType &dmd,
                                          uint16_t catalog_index)
@@ -96,12 +100,14 @@ static void dmdSpwmDrawRegisterTestLabel(DmdType &dmd,
     }
 }
 
+// Return the panel's normal logical width for test-pattern rendering.
 template <typename DmdType>
 static int16_t dmdSpwmRegisterTestVisibleWidth(const DmdType &dmd)
 {
     return dmd.width();
 }
 
+// Exclude each shadowpho panel's four shifted but unconnected padding columns.
 template <template <int...> class DmdType, int ColorDepth>
 static int16_t dmdSpwmRegisterTestVisibleWidth(
     const DmdType<RGB172x86_s43_shadowpho, ColorDepth> &dmd)
@@ -111,6 +117,7 @@ static int16_t dmdSpwmRegisterTestVisibleWidth(
     return (dmd.width() / 176) * 172;
 }
 
+// Draw hue and brightness ramps that expose color and register faults.
 template <typename DmdType>
 static void dmdSpwmDrawRegisterTestGradient(DmdType &dmd,
                                             uint16_t catalog_index)
@@ -157,6 +164,7 @@ static void dmdSpwmDrawRegisterTestGradient(DmdType &dmd,
     dmdSpwmDrawRegisterTestLabel(dmd, catalog_index);
 }
 
+// Draw the Pi Demo 3/15 borders and diagonals to expose scan alignment faults.
 template <typename DmdType>
 static void dmdSpwmDrawRegisterTestAlignment(DmdType &dmd,
                                              uint16_t catalog_index)
@@ -178,6 +186,7 @@ static void dmdSpwmDrawRegisterTestAlignment(DmdType &dmd,
     dmdSpwmDrawRegisterTestLabel(dmd, catalog_index);
 }
 
+// Dispatch to the display pattern selected at compile time.
 template <typename DmdType>
 static void dmdSpwmDrawRegisterTestScene(DmdType &dmd,
                                          uint16_t catalog_index)
@@ -189,6 +198,7 @@ static void dmdSpwmDrawRegisterTestScene(DmdType &dmd,
 #endif
 }
 
+// Draw the scene, stage one profile, and clock all required load cycles.
 template <typename DmdType, typename ProfileType>
 static void dmdSpwmShowRegisterTestProfile(
     DmdType &dmd, const ProfileType &profile, uint8_t word_delay_ms)
@@ -204,6 +214,8 @@ static void dmdSpwmShowRegisterTestProfile(
     }
 }
 
+// Advance on a short button press; return the held profile's REG number so the
+// STM32 sketch can continue into its normal demo using that active setting.
 template <typename DmdType, typename ProfileType>
 static uint16_t dmdSpwmRunRegisterTest(
     DmdType &dmd, const ProfileType *profiles, uint16_t profile_count,
@@ -252,6 +264,7 @@ static uint16_t dmdSpwmRunRegisterTest(
     }
 }
 
+// Cycle profiles forever at a fixed interval on boards without a test button.
 template <typename DmdType, typename ProfileType>
 static uint16_t dmdSpwmRunRegisterTestAuto(
     DmdType &dmd, const ProfileType *profiles, uint16_t profile_count,

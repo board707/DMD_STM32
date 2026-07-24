@@ -14,7 +14,7 @@
 // Set to 1 to run the SPWM register test before the normal demo.
 // Blackpill STM32 uses KEY on PA0; RP2040 advances every 3 seconds.
 // On STM32, use an alternative R0 pin such as PA7 under custom_rgbpins.
-#define DMD_SPWM_REGISTER_TEST_ENABLED 1
+#define DMD_SPWM_REGISTER_TEST_ENABLED 0
 // Set the test above to 0, then enter a displayed REG number to reuse that
 // profile on every boot. Zero uses the driver's normal register configuration.
 // Also uncomment its chip/scan profile in register_test_config.h so the REG
@@ -22,9 +22,9 @@
 #define DMD_SPWM_REGISTER_OVERRIDE 0
 // Set to 1 to apply each profile's separate R/G/B register words. Zero uses
 // the first/red word for every RGB lane through the native driver path.
-#define DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA 0
+#define DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA 1
 // Choose GRADIENT or ALIGN (Raspberry Pi Demo 3 / Demo 15 Align).
-#define DMD_SPWM_REGISTER_TEST_PATTERN DMD_SPWM_REGISTER_TEST_PATTERN_ALIGN
+#define DMD_SPWM_REGISTER_TEST_PATTERN DMD_SPWM_REGISTER_TEST_PATTERN_GRADIENT
 #include "register_test/register_test_config.h"
 
 // Fonts includes
@@ -66,7 +66,7 @@ uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E
 // If you need to change this - reorder the R0, G0, B0, R1, G1, B1 pins.
 // All this pins also must be selected from same port!
 // Note: If using Register Config Finder - The Key button uses PA0, so please use an alternative for R0 e.g PA7
-uint8_t custom_rgbpins[] = {PA6, PA7,PA1,PA2,PA3,PA4,PA5 }; // CLK, R0, G0, B0, R1, G1, B1
+uint8_t custom_rgbpins[] = {PA6, PA0,PA1,PA2,PA3,PA4,PA5 }; // CLK, R0, G0, B0, R1, G1, B1
 
 #elif (defined(ARDUINO_ARCH_RP2040))
 
@@ -153,7 +153,7 @@ void setup(void)
 
     // uncomment to set a multiplexer to SHIFTREG decode type
     // leave commented for 3to8 decoder (default)
-    dmd.configure_multiplexer(DMD_MUX_TYPE_SHIFTREG);
+    //dmd.configure_multiplexer(DMD_MUX_TYPE_SHIFTREG);
 
     // in case if your panels has a color orders other than RGB:
     //dmd.setColorOrder(DMD_Color_order :: BRG);

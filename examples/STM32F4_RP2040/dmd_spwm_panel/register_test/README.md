@@ -55,6 +55,9 @@ scan headers do not contain the requested `REG N`.
   catalogues you need.
 - `register_test_driver.h` is the single shared adapter. It delegates each
   register protocol to the native driver.
-- By default, the profile's first/red words are applied to every RGB lane. Set
-  `DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA` to `1` in the sketch to apply
-  the separate R/G/B profile words during both testing and fixed overrides.
+- `DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA=0` broadcasts the profile's Red
+  words to all three physical RGB lanes; it does not send only to the Red LEDs.
+- Setting it to `1` sends the profile's separate Red, Green and Blue words to
+  their matching lanes. This applies to both testing and fixed overrides.
+- Only register payloads are channel-specific. Native protocol framing and
+  command words remain broadcast, and equal R/G/B arrays behave identically.

@@ -11,6 +11,10 @@
 #define DMD_SPWM_REGISTER_OVERRIDE 0
 #endif
 
+// Applies identically to interactive tests and fixed overrides:
+//   0 = broadcast channel_words[0] (Red) to every physical RGB lane.
+//   1 = send channel_words[0], [1], and [2] to Red, Green, and Blue.
+// Native framing/command words are broadcast in both modes.
 #ifndef DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA
 #define DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA 0
 #endif
@@ -180,9 +184,12 @@ dmd_spwm_sm16380sh_register_test_profiles[] = {
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_ICND1065L
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_SM16380SH
 
+// Map each register-test driver type to its compiled-in profile array.
 template <typename DmdType>
 struct DMD_SPWM_RegisterTestCatalog;
 
+// Perform a constexpr REG lookup so an unavailable override fails at compile
+// time rather than silently falling back to the driver's built-in registers.
 template <typename ProfileType>
 static constexpr bool dmdSpwmRegisterTestCatalogContains(
     const ProfileType *profiles, uint16_t count, uint16_t catalog_index)
@@ -200,11 +207,14 @@ struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_FM6353_RegisterTest<Pars...> > {
         PROFILE_COUNT = sizeof(dmd_spwm_fm6353_register_test_profiles) /
                         sizeof(dmd_spwm_fm6353_register_test_profiles[0])
     };
+    // Return this driver's compiled-in profiles.
     static const ProfileType *profiles()
     {
         return dmd_spwm_fm6353_register_test_profiles;
     }
+    // Return the number of compiled-in profiles.
     static uint16_t profileCount() { return PROFILE_COUNT; }
+    // Report at compile time whether this REG was included.
     static constexpr bool contains(uint16_t catalog_index)
     {
         return dmdSpwmRegisterTestCatalogContains(
@@ -220,11 +230,14 @@ struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_FM6363_RegisterTest<Pars...> > {
         PROFILE_COUNT = sizeof(dmd_spwm_fm6363_register_test_profiles) /
                         sizeof(dmd_spwm_fm6363_register_test_profiles[0])
     };
+    // Return this driver's compiled-in profiles.
     static const ProfileType *profiles()
     {
         return dmd_spwm_fm6363_register_test_profiles;
     }
+    // Return the number of compiled-in profiles.
     static uint16_t profileCount() { return PROFILE_COUNT; }
+    // Report at compile time whether this REG was included.
     static constexpr bool contains(uint16_t catalog_index)
     {
         return dmdSpwmRegisterTestCatalogContains(
@@ -240,11 +253,14 @@ struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_FM6373_RegisterTest<Pars...> > {
         PROFILE_COUNT = sizeof(dmd_spwm_fm6373_register_test_profiles) /
                         sizeof(dmd_spwm_fm6373_register_test_profiles[0])
     };
+    // Return this driver's compiled-in profiles.
     static const ProfileType *profiles()
     {
         return dmd_spwm_fm6373_register_test_profiles;
     }
+    // Return the number of compiled-in profiles.
     static uint16_t profileCount() { return PROFILE_COUNT; }
+    // Report at compile time whether this REG was included.
     static constexpr bool contains(uint16_t catalog_index)
     {
         return dmdSpwmRegisterTestCatalogContains(
@@ -260,11 +276,14 @@ struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_ICN1065_RegisterTest<Pars...> > {
         PROFILE_COUNT = sizeof(dmd_spwm_icnd1065l_register_test_profiles) /
                         sizeof(dmd_spwm_icnd1065l_register_test_profiles[0])
     };
+    // Return this driver's compiled-in profiles.
     static const ProfileType *profiles()
     {
         return dmd_spwm_icnd1065l_register_test_profiles;
     }
+    // Return the number of compiled-in profiles.
     static uint16_t profileCount() { return PROFILE_COUNT; }
+    // Report at compile time whether this REG was included.
     static constexpr bool contains(uint16_t catalog_index)
     {
         return dmdSpwmRegisterTestCatalogContains(
@@ -281,11 +300,14 @@ struct DMD_SPWM_RegisterTestCatalog<
         PROFILE_COUNT = sizeof(dmd_spwm_sm16380sh_register_test_profiles) /
                         sizeof(dmd_spwm_sm16380sh_register_test_profiles[0])
     };
+    // Return this driver's compiled-in profiles.
     static const ProfileType *profiles()
     {
         return dmd_spwm_sm16380sh_register_test_profiles;
     }
+    // Return the number of compiled-in profiles.
     static uint16_t profileCount() { return PROFILE_COUNT; }
+    // Report at compile time whether this REG was included.
     static constexpr bool contains(uint16_t catalog_index)
     {
         return dmdSpwmRegisterTestCatalogContains(
@@ -325,6 +347,8 @@ struct DMD_SPWM_RegisterTestCatalog<
 #define DMD_SPWM_REGISTER_TEST_HOLD_MS 1200
 #endif
 
+// Run button-controlled STM32 selection or timed RP2040 auto-advance for the
+// catalog selected automatically from DmdType.
 template <typename DmdType>
 static uint16_t dmdSpwmRunSelectedRegisterTest(DmdType &dmd)
 {
@@ -348,6 +372,8 @@ static uint16_t dmdSpwmRunSelectedRegisterTest(DmdType &dmd)
 
 #else // DMD_SPWM_REGISTER_OVERRIDE > 0
 
+// Find the configured REG in this driver's catalog and apply it once at
+// startup through the same adapter used by the interactive test.
 template <typename DmdType>
 static bool dmdSpwmApplySelectedRegisterOverride(DmdType &dmd)
 {

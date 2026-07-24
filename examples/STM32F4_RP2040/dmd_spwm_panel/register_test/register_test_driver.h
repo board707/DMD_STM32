@@ -3,11 +3,14 @@
 
 #include "register_test_base.h"
 
+// Describes how catalog words map to the native driver's transmission slots.
 enum DMD_SPWM_RegisterTestWordOrder : uint8_t {
     DMD_SPWM_REGISTER_TEST_WORDS_IN_ORDER,
     DMD_SPWM_REGISTER_TEST_LAST_WORD_FIRST
 };
 
+// Describes whether the native loader sends all, indexed, or one word per
+// refresh cycle.
 enum DMD_SPWM_RegisterTestLoadMode : uint8_t {
     DMD_SPWM_REGISTER_TEST_LOAD_ALL,
     DMD_SPWM_REGISTER_TEST_LOAD_INDEXED,
@@ -26,6 +29,8 @@ template <typename DriverType, typename ProfileType,
 class DMD_SPWM_RegisterTestDriver : public DriverType
 {
 public:
+    // Forward the sketch's ordinary panel wiring and geometry unchanged to
+    // the native driver.
     DMD_SPWM_RegisterTestDriver(
         uint8_t *mux_list, byte pin_nOE, byte pin_SCLK, uint8_t *pinlist,
         byte panelsWide, byte panelsHigh, bool double_buffer = false) :
@@ -34,6 +39,8 @@ public:
     {
     }
 
+    // Validate and stage a profile in native wire order. Red is the baseline
+    // buffer; mode 1 substitutes Green and Blue at the physical send point.
     bool selectRegisterTestProfile(const ProfileType &profile)
     {
         if (profile.word_count == 0 ||
@@ -68,12 +75,15 @@ public:
         return true;
     }
 
+    // Return the number of native refresh/load calls required for the whole
+    // profile: one for all-word drivers, or one per staged word otherwise.
     uint8_t registerTestApplyCycles(const ProfileType &profile) const
     {
         return LoadMode == DMD_SPWM_REGISTER_TEST_LOAD_ALL ?
             1 : profile.word_count;
     }
 
+    // Apply one catalog profile at startup for fixed-override mode.
     bool applyRegisterConfig(const ProfileType &profile,
                              uint8_t word_delay_ms)
     {
@@ -89,6 +99,8 @@ public:
     }
 
 protected:
+    // Reuse the chip driver's protocol while replacing its built-in register
+    // buffer with the selected catalog profile.
     void load_config_regs(uint16_t *config_registers) override
     {
         if (active_profile == NULL)
@@ -114,6 +126,9 @@ protected:
         }
     }
 
+    // Intercept native register sends. Mode 0 broadcasts the staged Red word;
+    // mode 1 replaces only real payload words with separate R/G/B values.
+    // Preambles, suffixes, and other protocol commands remain broadcast.
     void send_to_allRGB(uint16_t data, uint16_t latches) override
     {
 #if DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA
@@ -146,6 +161,7 @@ protected:
 
 private:
 #if DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA
+    // Map a native transmission slot back to its logical catalog word.
     uint8_t sourceWordForNativeSlot(uint8_t target_word) const
     {
         if (WordOrder == DMD_SPWM_REGISTER_TEST_LAST_WORD_FIRST)
@@ -156,6 +172,8 @@ private:
         return target_word;
     }
 
+    // Identify calls carrying profile data and resolve their catalog index.
+    // False means the call is native framing and must stay broadcast.
     bool registerTestSourceWord(uint16_t latches, uint8_t &source_word) const
     {
         if (active_profile == NULL) return false;
@@ -186,6 +204,7 @@ private:
             LoadMode == DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD ?
                 1 : ProfileType::MAX_WORDS
     };
+    // State consumed by the native driver's repeated load/send callbacks.
     const ProfileType *active_profile = NULL;
     uint16_t native_words[NATIVE_WORD_CAPACITY] = {0};
     uint8_t active_word = 0;
@@ -203,6 +222,8 @@ typedef DMD_SPWM_RegisterTestProfile<22>
 typedef DMD_SPWM_RegisterTestProfile<32>
     DMD_SPWM_SM16380SH_RegisterTestProfile;
 
+// These aliases encode each chip's native word order, load cadence, and any
+// extra framing while preserving the sketch's familiar DMD_RGB_<chip> type.
 template <int... Pars>
 using DMD_RGB_FM6353_RegisterTest = DMD_SPWM_RegisterTestDriver<
     DMD_RGB_FM6353<Pars...>, DMD_SPWM_FM6353_RegisterTestProfile,
