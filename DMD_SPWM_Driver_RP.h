@@ -512,23 +512,26 @@ protected:
 	// send config register data to RGB lines
 	void send_to_allRGB(uint16_t data, uint16_t latches) override
 	{
+		this->send_to_RGB(data, data, data, latches);
+	}
+
+	// Send independent 16-bit register values to the physical R, G and B
+	// output lanes through the normal SPWM PIO/DMA path.
+	void send_to_RGB(uint16_t red, uint16_t green, uint16_t blue,
+					 uint16_t latches)
+	{
 
 		// to use DMA ring mode we need to align data to 16 bytes
 		static uint8_t reg[16] __attribute__((aligned(16))) = {0};
 
-		// Convert 16bit config value to byte array
-		// high bits to 0xff, low bits to 0
-		for (int i = 0; i < 16; i++)
+		// Convert the three register values to R0,G0,B0,R1,G1,B1 bits.
+		for (uint8_t bit = 0; bit < 16; bit++)
 		{
-			if (data & 0x8000)
-			{
-				reg[i] = 0xff;
-			}
-			else
-			{
-				reg[i] = 0x00;
-			}
-			data <<= 1;
+			const uint16_t mask = 0x8000 >> bit;
+			reg[bit] =
+				((red & mask) ? 0x09 : 0) |
+				((green & mask) ? 0x12 : 0) |
+				((blue & mask) ? 0x24 : 0);
 		}
 
 		// Restart DATA SM

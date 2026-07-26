@@ -174,6 +174,34 @@ protected:
 		memcpy(this->config_registers, cfg_regs, (this->conf_reg_cnt * sizeof(uint16_t)));
 	}
 
+	// Send independent 16-bit register values to the physical R, G and B
+	// output lanes while keeping the normal SPWM clock and latch timing.
+	void send_to_RGB(uint16_t red, uint16_t green, uint16_t blue,
+					 uint16_t latches)
+	{
+		for (uint32_t clock = 0; clock < this->x_len; clock++)
+		{
+			const uint16_t mask = 0x8000 >> (clock & 0x0f);
+			uint8_t lane_bits = 0;
+			if (red & mask) lane_bits |= 0x09;
+			if (green & mask) lane_bits |= 0x12;
+			if (blue & mask) lane_bits |= 0x24;
+
+			if (clock == this->x_len - latches)
+			{
+				*(this->latsetreg) = this->latmask;
+			}
+			*(this->datasetreg) = this->rgbmask_all << 16;
+			*(this->datasetreg) =
+				this->expand[lane_bits] & this->rgbmask_all;
+			*(this->datasetreg) = this->clkmask;
+			*(this->datasetreg) = this->clkmask << 16;
+		}
+
+		*(this->latsetreg) = this->latmask << 16;
+		*(this->datasetreg) = this->rgbmask_all << 16;
+	}
+
 	// Hold LAT line HIGH for given number of CLK pulses
 	void send_latches(uint16_t latches)
 	{

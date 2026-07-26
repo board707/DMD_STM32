@@ -1,0 +1,67 @@
+#ifndef DMD_SPWM_REGISTER_TEST_PROFILES_ICND1065L_SCAN_48_H
+#define DMD_SPWM_REGISTER_TEST_PROFILES_ICND1065L_SCAN_48_H
+
+#ifndef DMD_SPWM_REGISTER_TEST_BUILDING_PROFILE_ARRAY
+#error "Register-test profile fragments must be included inside the profile array"
+#endif
+
+#if DMD_SPWM_REGISTER_TEST_PROFILE_CHIP != DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_ICND1065L
+#error "Register-test profile fragment is in the wrong chip array"
+#endif
+
+// Generated from lib/spwm/registertest/data/icnd1065l.profiles at
+// Raspberry Pi revision f9dc4d0a8c25. Only Scan_48 profiles are present.
+
+#ifndef DMD_SPWM_ICND1065L_REGTYPE_241_INCLUDED
+#define DMD_SPWM_ICND1065L_REGTYPE_241_INCLUDED
+    // icnd1065l_regtype241: P? - ICND1065L - 1/48
+    // Source scan membership: Scan_48
+    {
+        241, 22,
+        {
+            {
+                0x0000, 0x026f, 0x031f, 0x0422, 0x0500, 0x0601, 0x072c, 0x0c0d,
+                0x0d00, 0x0e86, 0x0f01, 0x1040, 0x1127, 0x1800, 0x1907, 0x1c27,
+                0x1dee, 0x1e91, 0x2060, 0x2101, 0x2340, 0x74a0
+            },
+            {
+                0x0000, 0x026f, 0x031f, 0x0422, 0x0500, 0x0601, 0x072c, 0x0c2b,
+                0x0d00, 0x0e89, 0x0f01, 0x1040, 0x1127, 0x1800, 0x190a, 0x1c28,
+                0x1dee, 0x1e95, 0x2060, 0x2101, 0x2340, 0x74a0
+            },
+            {
+                0x0000, 0x026f, 0x031f, 0x0422, 0x0500, 0x0601, 0x072c, 0x0c26,
+                0x0d00, 0x0e87, 0x0f01, 0x1040, 0x1127, 0x1800, 0x190a, 0x1c2b,
+                0x1dee, 0x1e45, 0x2060, 0x2101, 0x2340, 0x74a0
+            }
+        }
+    },
+#endif  // DMD_SPWM_ICND1065L_REGTYPE_241_INCLUDED
+
+#ifndef DMD_SPWM_ICND1065L_REGTYPE_417_INCLUDED
+#define DMD_SPWM_ICND1065L_REGTYPE_417_INCLUDED
+    // icnd1065l_regtype417: P1.56 - ICND1065L - 1/48
+    // Source scan membership: Scan_48
+    {
+        417, 22,
+        {
+            {
+                0x0000, 0x026f, 0x031f, 0x0422, 0x0500, 0x0601, 0x072c, 0x0c0d,
+                0x0d00, 0x0e86, 0x0f01, 0x1040, 0x1127, 0x1800, 0x1907, 0x1c23,
+                0x1dee, 0x1e91, 0x2060, 0x2101, 0x2340, 0x74a0
+            },
+            {
+                0x0000, 0x026f, 0x031f, 0x0422, 0x0500, 0x0601, 0x072c, 0x0c2b,
+                0x0d00, 0x0e89, 0x0f01, 0x1040, 0x1127, 0x1800, 0x190a, 0x1c25,
+                0x1dee, 0x1e95, 0x2060, 0x2101, 0x2340, 0x74a0
+            },
+            {
+                0x0000, 0x026f, 0x031f, 0x0422, 0x0500, 0x0601, 0x072c, 0x0c26,
+                0x0d00, 0x0e87, 0x0f01, 0x1040, 0x1127, 0x1800, 0x190a, 0x1c2d,
+                0x1dee, 0x1e45, 0x2060, 0x2101, 0x2340, 0x74a0
+            }
+        }
+    },
+#endif  // DMD_SPWM_ICND1065L_REGTYPE_417_INCLUDED
+
+#endif  // DMD_SPWM_REGISTER_TEST_PROFILES_ICND1065L_SCAN_48_H

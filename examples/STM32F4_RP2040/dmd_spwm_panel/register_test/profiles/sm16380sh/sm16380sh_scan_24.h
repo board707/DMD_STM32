@@ -1,0 +1,44 @@
+#ifndef DMD_SPWM_REGISTER_TEST_PROFILES_SM16380SH_SCAN_24_H
+#define DMD_SPWM_REGISTER_TEST_PROFILES_SM16380SH_SCAN_24_H
+
+#ifndef DMD_SPWM_REGISTER_TEST_BUILDING_PROFILE_ARRAY
+#error "Register-test profile fragments must be included inside the profile array"
+#endif
+
+#if DMD_SPWM_REGISTER_TEST_PROFILE_CHIP != DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_SM16380SH
+#error "Register-test profile fragment is in the wrong chip array"
+#endif
+
+// Generated from lib/spwm/registertest/data/sm16380sh.profiles at
+// Raspberry Pi revision f9dc4d0a8c25. Only Scan_24 profiles are present.
+
+#ifndef DMD_SPWM_SM16380SH_REGTYPE_19_INCLUDED
+#define DMD_SPWM_SM16380SH_REGTYPE_19_INCLUDED
+    // sm16380sh_regtype19: P2.604 - SM16380SH - 5368 - 1/24
+    // Source scan membership: Scan_24
+    {
+        19, 32,
+        {
+            {
+                0x0217, 0x0300, 0x0400, 0x0500, 0x0600, 0x072c, 0x0800, 0x0900,
+                0x0a02, 0x0b0c, 0x0c08, 0x0d00, 0x0e05, 0x0f00, 0x1000, 0x1100,
+                0x1200, 0x1308, 0x1414, 0x1500, 0x1630, 0x1700, 0x1801, 0x1904,
+                0x1a03, 0x1b14, 0x1c12, 0x1d00, 0x1e00, 0x1f0c, 0x2000, 0x2200
+            },
+            {
+                0x0217, 0x0300, 0x0400, 0x0500, 0x0600, 0x072c, 0x0800, 0x0900,
+                0x0a02, 0x0b0c, 0x0c18, 0x0d00, 0x0e05, 0x0f00, 0x1000, 0x1100,
+                0x1200, 0x1308, 0x1422, 0x1500, 0x1630, 0x1700, 0x1801, 0x1903,
+                0x1a01, 0x1b14, 0x1c8f, 0x1d00, 0x1e00, 0x1f0c, 0x2000, 0x2200
+            },
+            {
+                0x0217, 0x0300, 0x0400, 0x0500, 0x0600, 0x072c, 0x0800, 0x0900,
+                0x0a02, 0x0b0c, 0x0c30, 0x0d00, 0x0e05, 0x0f00, 0x1000, 0x1100,
+                0x1200, 0x1308, 0x1432, 0x1500, 0x1630, 0x1700, 0x1801, 0x1903,
+                0x1a01, 0x1b14, 0x1c8f, 0x1d00, 0x1e00, 0x1f0c, 0x2000, 0x2200
+            }
+        }
+    },
+#endif  // DMD_SPWM_SM16380SH_REGTYPE_19_INCLUDED
+
+#endif  // DMD_SPWM_REGISTER_TEST_PROFILES_SM16380SH_SCAN_24_H
