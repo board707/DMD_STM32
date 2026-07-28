@@ -214,6 +214,22 @@ static void dmdSpwmShowRegisterTestProfile(
     }
 }
 
+// Redraw and present the selected pattern at the same cadence as the
+// calibration showcase. This keeps the register test representative of a
+// running demo instead of leaving the panel SRAM on one static frame.
+template <typename DmdType>
+static void dmdSpwmRefreshRegisterTestFrame(
+    DmdType &dmd, uint16_t catalog_index, uint32_t &last_frame_at)
+{
+    const uint32_t now = millis();
+    const uint32_t interval = 30;
+    if ((uint32_t)(now - last_frame_at) <= interval) return;
+
+    last_frame_at = now;
+    dmdSpwmDrawRegisterTestScene(dmd, catalog_index);
+    dmd.swapBuffers(true);
+}
+
 // Advance on a short button press; return the held profile's REG number so the
 // STM32 sketch can continue into its normal demo using that active setting.
 template <typename DmdType, typename ProfileType>
@@ -232,6 +248,7 @@ static uint16_t dmdSpwmRunRegisterTest(
     {
         const ProfileType &profile = profiles[profile_index];
         dmdSpwmShowRegisterTestProfile(dmd, profile, word_delay_ms);
+        uint32_t last_frame_at = millis();
 
         // Require a stable press. A contact bounce must not reload the whole
         // profile before the user has had a chance to compare it.
@@ -239,6 +256,8 @@ static uint16_t dmdSpwmRunRegisterTest(
         {
             while (digitalRead(button_pin) != button_active_level)
             {
+                dmdSpwmRefreshRegisterTestFrame(
+                    dmd, profile.catalog_index, last_frame_at);
                 delay(5);
             }
             delay(25);
@@ -248,10 +267,14 @@ static uint16_t dmdSpwmRunRegisterTest(
         const uint32_t pressed_at = millis();
         while (digitalRead(button_pin) == button_active_level)
         {
+            dmdSpwmRefreshRegisterTestFrame(
+                dmd, profile.catalog_index, last_frame_at);
             if ((uint32_t)(millis() - pressed_at) >= hold_time_ms)
             {
                 while (digitalRead(button_pin) == button_active_level)
                 {
+                    dmdSpwmRefreshRegisterTestFrame(
+                        dmd, profile.catalog_index, last_frame_at);
                     delay(5);
                 }
                 return profile.catalog_index;
@@ -279,8 +302,11 @@ static uint16_t dmdSpwmRunRegisterTestAuto(
         dmdSpwmShowRegisterTestProfile(dmd, profile, word_delay_ms);
 
         const uint32_t shown_at = millis();
+        uint32_t last_frame_at = shown_at;
         while ((uint32_t)(millis() - shown_at) < advance_time_ms)
         {
+            dmdSpwmRefreshRegisterTestFrame(
+                dmd, profile.catalog_index, last_frame_at);
             delay(5);
         }
 
