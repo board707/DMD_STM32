@@ -4,7 +4,7 @@
 
 1. Set `DMD_SPWM_REGISTER_TEST_ENABLED` to `1` in `dmd_spwm_panel.ino`.
 2. Select the matching `DMD_RGB_<chip>` and panel template.
-3. Choose the `GRADIENT` or `ALIGN` test pattern.
+3. Choose the `GRADIENT`, `ALIGN`, or `TEXTSCROLL` test pattern.
 4. In `register_test_config.h`, uncomment one or more matching scan headers.
 5. Compile and upload.
 
@@ -23,6 +23,19 @@ Multiple scan headers are tested in include order:
 
 `REG N` is the original source `regtypeN` number, not its position in the
 combined list.
+
+## Patterns
+
+DMD_SPWM_REGISTER_TEST_PATTERN
+
+- `GRADIENT`: check color transitions, brightness levels, dark-area flicker,
+  and visible banding.
+- `ALIGN`: check panel edges, row alignment, scan mapping, and diagonal
+  continuity.
+- `TEXTSCROLL`: check register stability during repeated animated frame
+  updates. The text moves through the top, middle, and bottom thirds in turn.
+  Adjust `DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS` in
+  `dmd_spwm_panel.ino` to change its speed.
 
 ## Controls
 

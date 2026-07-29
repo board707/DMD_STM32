@@ -8,14 +8,6 @@ The interactive test and `DMD_SPWM_REGISTER_OVERRIDE` use the same profiles.
 An override therefore requires the scan header containing that `regtypeN` to
 remain uncommented. Missing register numbers produce a compile-time error.
 
-## ICND2055
-
-The `icnd2055` catalogue accepts exact modern XML ChipCode 107 packages and
-older `Chip_ICND2055` packages when they use the ICND2055 RGB property type.
-Filename-only matches are ignored. Some packages add one trailing non-register
-storage slot; after removing it, both formats provide the same 47-register
-address layout. The runtime driver remains `DMD_RGB_ICN2055`.
-
 ## DP3264 family
 
 The `dp3264` catalogue covers exact XML ChipCode 219 packages and older

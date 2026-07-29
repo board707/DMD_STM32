@@ -213,6 +213,21 @@ private:
     uint8_t native_frame_word = 0;
 };
 
+// Unwrap the example adapter before resolving mapper-specific visible widths.
+// This lets the 172x86 shadowpho overload exclude its four padding columns.
+template <typename DriverType, typename ProfileType,
+          DMD_SPWM_RegisterTestWordOrder WordOrder,
+          DMD_SPWM_RegisterTestLoadMode LoadMode,
+          bool InsertSm16380shF003, uint8_t OneWordPayloadSlot>
+static int16_t dmdSpwmRegisterTestVisibleWidth(
+    const DMD_SPWM_RegisterTestDriver<
+        DriverType, ProfileType, WordOrder, LoadMode,
+        InsertSm16380shF003, OneWordPayloadSlot> &dmd)
+{
+    return dmdSpwmRegisterTestVisibleWidth(
+        static_cast<const DriverType &>(dmd));
+}
+
 typedef DMD_SPWM_RegisterTestProfile<5>
     DMD_SPWM_FM6353_RegisterTestProfile;
 typedef DMD_SPWM_RegisterTestProfile<5>

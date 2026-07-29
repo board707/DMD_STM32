@@ -23,8 +23,10 @@
 // Set to 1 to apply each profile's separate R/G/B register words. Zero uses
 // the first/red word for every RGB lane through the native driver path.
 #define DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA 1
-// Choose GRADIENT or ALIGN (Raspberry Pi Demo 3 / Demo 15 Align).
+// Choose GRADIENT, ALIGN (Raspberry Pi Demo 3 / Demo 15 Align), or TEXTSCROLL.
 #define DMD_SPWM_REGISTER_TEST_PATTERN DMD_SPWM_REGISTER_TEST_PATTERN_GRADIENT
+// TEXTSCROLL target milliseconds per pixel: smaller is faster, larger slower.
+#define DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS 10UL
 #include "register_test/register_test_config.h"
 
 // Fonts includes
