@@ -1,7 +1,7 @@
 # ChangeLog
 ## [1.2.16] - 2026-07-27
  - PR 219 from @kingdo9 - register config finder.
-   See examples/STM32F4_RP2040/dmd_spwm_panel/register_test/README.md
+   See register_test/README.md
 
 ## [1.2.15] - 2026-07-20
  - Both STM32duino & Clark's core:MonoSPI class optimization:

@@ -17,7 +17,7 @@ enum DMD_SPWM_RegisterTestLoadMode : uint8_t {
     DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD
 };
 
-// Example-local adapter shared by every supported SPWM chip. It only replaces
+// Register-test adapter shared by every supported SPWM chip. It only replaces
 // the register data; the native driver remains responsible for its own
 // LAT/VSYNC/PIO/DMA protocol. OneWordPayloadSlot identifies which native
 // send_to_allRGB call contains data for one-word-at-a-time loaders.

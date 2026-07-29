@@ -334,7 +334,7 @@ static int16_t dmdSpwmRegisterTestTextScrollSpacing(int16_t text_height)
 static int32_t dmdSpwmRegisterTestTextScrollWidth(int16_t text_height)
 {
     static const uint8_t character_count =
-        sizeof("Register Config Test") - 1;
+        sizeof("Register Test") - 1;
     const int16_t glyph_width =
         dmdSpwmRegisterTestTextScrollGlyphWidth(text_height);
     const int16_t spacing =
@@ -361,7 +361,7 @@ template <typename DmdType>
 static void dmdSpwmDrawRegisterTestTextScroll(DmdType &dmd,
                                               uint16_t catalog_index)
 {
-    static const char message[] = "Register Config Test";
+    static const char message[] = "Register Test";
     const int16_t visible_width = dmdSpwmRegisterTestVisibleWidth(dmd);
     const int16_t panel_height = dmd.height();
     const int16_t text_height =

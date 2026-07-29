@@ -11,8 +11,8 @@
 Multiple scan headers are tested in include order:
 
 ```cpp
-#include "profiles/fm6373/fm6373_scan_21.h"
-#include "profiles/fm6373/fm6373_scan_32.h"
+#include "register_test/profiles/fm6373/fm6373_scan_21.h"
+#include "register_test/profiles/fm6373/fm6373_scan_32.h"
 ```
 
 - STM32: briefly press KEY for the next profile. Hold KEY for 1.2 seconds to
