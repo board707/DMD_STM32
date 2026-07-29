@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/sm16380sh.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_43 profiles are present.
+// Only Scan_43 profiles are present.
 
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_6_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_6_INCLUDED
     // sm16380sh_regtype6: P1.86 - SM16380SH - 5368 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         6, 32,
         {
@@ -44,7 +43,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_9_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_9_INCLUDED
     // sm16380sh_regtype9: P1.86 - SM16380SH - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         9, 32,
         {
@@ -73,7 +72,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_37_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_37_INCLUDED
     // sm16380sh_regtype37: P1.86 - SM16380SH - 2018 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         37, 32,
         {
@@ -102,7 +101,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_54_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_54_INCLUDED
     // sm16380sh_regtype54: P1.86 - SM16380SH - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         54, 32,
         {
@@ -131,7 +130,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_55_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_55_INCLUDED
     // sm16380sh_regtype55: P1.8 - SM16380SH - HX6158H - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         55, 32,
         {
@@ -160,7 +159,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_56_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_56_INCLUDED
     // sm16380sh_regtype56: P1.8 - SM16380SH - RUL5158C - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         56, 32,
         {

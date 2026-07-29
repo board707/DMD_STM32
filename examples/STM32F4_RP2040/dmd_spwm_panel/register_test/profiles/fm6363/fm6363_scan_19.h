@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/fm6363.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_19 profiles are present.
+// FM6363 register profiles. Only Scan_19 profiles are present.
 
 #ifndef DMD_SPWM_FM6363_REGTYPE_55_INCLUDED
 #define DMD_SPWM_FM6363_REGTYPE_55_INCLUDED
     // fm6363_regtype55: P3.79 - FM6363 - 1/19
-    // Source scan membership: Scan_19
+    // Scan membership: Scan_19
     {
         55, 5,
         {

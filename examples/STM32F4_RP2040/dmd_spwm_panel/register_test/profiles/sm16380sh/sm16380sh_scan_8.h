@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/sm16380sh.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_8 profiles are present.
+// Only Scan_8 profiles are present.
 
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_40_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_40_INCLUDED
     // sm16380sh_regtype40: P5 - SM16380SH - 32019 - 1/8
-    // Source scan membership: Scan_8
+    // Scan membership: Scan_8
     {
         40, 32,
         {
@@ -44,7 +43,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_42_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_42_INCLUDED
     // sm16380sh_regtype42: P5 - SM16380SH - 32019 - 1/8
-    // Source scan membership: Scan_8
+    // Scan membership: Scan_8
     {
         42, 32,
         {
@@ -73,7 +72,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_48_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_48_INCLUDED
     // sm16380sh_regtype48: P6 - SM16380SH - 32019 - 1/8
-    // Source scan membership: Scan_8
+    // Scan membership: Scan_8
     {
         48, 32,
         {
@@ -102,7 +101,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_61_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_61_INCLUDED
     // sm16380sh_regtype61: P6 - SM16380SH - 32019 - 1/8
-    // Source scan membership: Scan_8
+    // Scan membership: Scan_8
     {
         61, 32,
         {
@@ -131,7 +130,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_62_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_62_INCLUDED
     // sm16380sh_regtype62: P6 - SM16380SH - 32019 - 1/8
-    // Source scan membership: Scan_8
+    // Scan membership: Scan_8
     {
         62, 32,
         {
@@ -160,7 +159,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_63_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_63_INCLUDED
     // sm16380sh_regtype63: P6 - SM16380SH - 32019 - 1/8
-    // Source scan membership: Scan_8
+    // Scan membership: Scan_8
     {
         63, 32,
         {
@@ -189,7 +188,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_66_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_66_INCLUDED
     // sm16380sh_regtype66: P5 - SM16380SH - SM5166PS - 1/8
-    // Source scan membership: Scan_8
+    // Scan membership: Scan_8
     {
         66, 32,
         {

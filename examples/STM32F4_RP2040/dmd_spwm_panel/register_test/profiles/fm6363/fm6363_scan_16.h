@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/fm6363.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_16 profiles are present.
+// FM6363 register profiles. Only Scan_16 profiles are present.
 
 #ifndef DMD_SPWM_FM6363_REGTYPE_12_INCLUDED
 #define DMD_SPWM_FM6363_REGTYPE_12_INCLUDED
     // fm6363_regtype12: P? - FM6363 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         12, 5,
         {
@@ -35,7 +34,7 @@
 #ifndef DMD_SPWM_FM6363_REGTYPE_44_INCLUDED
 #define DMD_SPWM_FM6363_REGTYPE_44_INCLUDED
     // fm6363_regtype44: P2.5 - FM6363 - 7258 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         44, 5,
         {
@@ -55,7 +54,7 @@
 #ifndef DMD_SPWM_FM6363_REGTYPE_45_INCLUDED
 #define DMD_SPWM_FM6363_REGTYPE_45_INCLUDED
     // fm6363_regtype45: P2.5 - FM6363 - 7258 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         45, 5,
         {
@@ -75,7 +74,7 @@
 #ifndef DMD_SPWM_FM6363_REGTYPE_50_INCLUDED
 #define DMD_SPWM_FM6363_REGTYPE_50_INCLUDED
     // fm6363_regtype50: P3 - FM6363 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         50, 5,
         {
@@ -95,7 +94,7 @@
 #ifndef DMD_SPWM_FM6363_REGTYPE_56_INCLUDED
 #define DMD_SPWM_FM6363_REGTYPE_56_INCLUDED
     // fm6363_regtype56: P3.91 - FM6363 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         56, 5,
         {
@@ -115,7 +114,7 @@
 #ifndef DMD_SPWM_FM6363_REGTYPE_71_INCLUDED
 #define DMD_SPWM_FM6363_REGTYPE_71_INCLUDED
     // fm6363_regtype71: P? - FM6363 - RUC7258D - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         71, 5,
         {
@@ -135,7 +134,7 @@
 #ifndef DMD_SPWM_FM6363_REGTYPE_75_INCLUDED
 #define DMD_SPWM_FM6363_REGTYPE_75_INCLUDED
     // fm6363_regtype75: P2.5 - FM6363 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         75, 5,
         {

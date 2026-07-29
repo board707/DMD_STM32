@@ -19,13 +19,15 @@ enum DMD_SPWM_RegisterTestLoadMode : uint8_t {
 
 // Example-local adapter shared by every supported SPWM chip. It only replaces
 // the register data; the native driver remains responsible for its own
-// LAT/VSYNC/PIO/DMA protocol.
+// LAT/VSYNC/PIO/DMA protocol. OneWordPayloadSlot identifies which native
+// send_to_allRGB call contains data for one-word-at-a-time loaders.
 template <typename DriverType, typename ProfileType,
           DMD_SPWM_RegisterTestWordOrder WordOrder =
               DMD_SPWM_REGISTER_TEST_WORDS_IN_ORDER,
           DMD_SPWM_RegisterTestLoadMode LoadMode =
               DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD,
-          bool InsertSm16380shF003 = false>
+          bool InsertSm16380shF003 = false,
+          uint8_t OneWordPayloadSlot = 2>
 class DMD_SPWM_RegisterTestDriver : public DriverType
 {
 public:
@@ -180,7 +182,7 @@ private:
 
         if (LoadMode == DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD)
         {
-            if (native_frame_word != 2) return false;
+            if (native_frame_word != OneWordPayloadSlot) return false;
             source_word = active_word;
             return source_word < active_profile->word_count;
         }
@@ -219,8 +221,14 @@ typedef DMD_SPWM_RegisterTestProfile<47>
     DMD_SPWM_FM6373_RegisterTestProfile;
 typedef DMD_SPWM_RegisterTestProfile<22>
     DMD_SPWM_ICND1065L_RegisterTestProfile;
+// ICND2055 RCFGX packages contain 47 physical words per RGB lane.
+typedef DMD_SPWM_RegisterTestProfile<47>
+    DMD_SPWM_ICND2055_RegisterTestProfile;
 typedef DMD_SPWM_RegisterTestProfile<32>
     DMD_SPWM_SM16380SH_RegisterTestProfile;
+// DP3264-family RCFGX packages contain 13 physical words per RGB lane.
+typedef DMD_SPWM_RegisterTestProfile<13>
+    DMD_SPWM_DP3264_RegisterTestProfile;
 
 // These aliases encode each chip's native word order, load cadence, and any
 // extra framing while preserving the sketch's familiar DMD_RGB_<chip> type.
@@ -253,9 +261,21 @@ using DMD_RGB_ICN1065_RegisterTest = DMD_SPWM_RegisterTestDriver<
     DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD>;
 
 template <int... Pars>
+using DMD_RGB_ICN2055_RegisterTest = DMD_SPWM_RegisterTestDriver<
+    DMD_RGB_ICN2055<Pars...>, DMD_SPWM_ICND2055_RegisterTestProfile,
+    DMD_SPWM_REGISTER_TEST_WORDS_IN_ORDER,
+    DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD>;
+
+template <int... Pars>
 using DMD_RGB_SM16380SH_RegisterTest = DMD_SPWM_RegisterTestDriver<
     DMD_RGB_SM16380SH<Pars...>, DMD_SPWM_SM16380SH_RegisterTestProfile,
     DMD_SPWM_REGISTER_TEST_WORDS_IN_ORDER,
     DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD, true>;
+
+template <int... Pars>
+using DMD_RGB_DP3264_RegisterTest = DMD_SPWM_RegisterTestDriver<
+    DMD_RGB_DP3264<Pars...>, DMD_SPWM_DP3264_RegisterTestProfile,
+    DMD_SPWM_REGISTER_TEST_WORDS_IN_ORDER,
+    DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD, false, 0>;
 
 #endif // DMD_SPWM_REGISTER_TEST_DRIVER_H

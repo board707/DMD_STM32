@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/fm6353.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_32 profiles are present.
+// FM6353 register profiles. Only Scan_32 profiles are present.
 
 #ifndef DMD_SPWM_FM6353_REGTYPE_1_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_1_INCLUDED
     // fm6353_regtype1: built-in main FM6353 register config
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         1, 5,
         {
@@ -35,7 +34,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_2_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_2_INCLUDED
     // fm6353_regtype2: P2.5 - FM6353 - 7559 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         2, 5,
         {
@@ -55,7 +54,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_3_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_3_INCLUDED
     // fm6353_regtype3: P3 - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         3, 5,
         {
@@ -75,7 +74,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_4_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_4_INCLUDED
     // fm6353_regtype4: P3.076 - FM6353 - 1/13
-    // Source scan membership: Scan_2,Scan_4,Scan_5,Scan_6,Scan_7,Scan_8,Scan_10,Scan_12,Scan_13,Scan_15,Scan_16,Scan_18,Scan_20,Scan_21,Scan_23,Scan_24,Scan_26,Scan_27,Scan_28,Scan_30,Scan_31,Scan_32
+    // Scan membership: Scan_2,Scan_4,Scan_5,Scan_6,Scan_7,Scan_8,Scan_10,Scan_12,Scan_13,Scan_15,Scan_16,Scan_18,Scan_20,Scan_21,Scan_23,Scan_24,Scan_25,Scan_26,Scan_27,Scan_28,Scan_30,Scan_31,Scan_32
     {
         4, 5,
         {
@@ -95,7 +94,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_5_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_5_INCLUDED
     // fm6353_regtype5: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         5, 5,
         {
@@ -115,7 +114,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_6_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_6_INCLUDED
     // fm6353_regtype6: P1.6 - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         6, 5,
         {
@@ -135,7 +134,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_7_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_7_INCLUDED
     // fm6353_regtype7: P2.5 - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         7, 5,
         {
@@ -155,7 +154,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_8_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_8_INCLUDED
     // fm6353_regtype8: P1.25 - FM6353 - 5958 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         8, 5,
         {
@@ -175,7 +174,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_9_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_9_INCLUDED
     // fm6353_regtype9: P2.5 - FM6353 - 5166 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         9, 5,
         {
@@ -195,7 +194,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_12_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_12_INCLUDED
     // fm6353_regtype12: P4 - FM6353 - RUC7258D - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         12, 5,
         {
@@ -215,7 +214,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_15_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_15_INCLUDED
     // fm6353_regtype15: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         15, 5,
         {
@@ -235,7 +234,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_16_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_16_INCLUDED
     // fm6353_regtype16: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         16, 5,
         {
@@ -255,7 +254,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_19_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_19_INCLUDED
     // fm6353_regtype19: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         19, 5,
         {
@@ -275,7 +274,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_21_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_21_INCLUDED
     // fm6353_regtype21: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         21, 5,
         {
@@ -295,7 +294,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_23_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_23_INCLUDED
     // fm6353_regtype23: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         23, 5,
         {
@@ -315,7 +314,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_24_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_24_INCLUDED
     // fm6353_regtype24: P? - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         24, 5,
         {
@@ -335,7 +334,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_26_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_26_INCLUDED
     // fm6353_regtype26: P? - FM6353 - 1/32
-    // Source scan membership: Scan_2,Scan_4,Scan_32
+    // Scan membership: Scan_2,Scan_4,Scan_8,Scan_10,Scan_13,Scan_16,Scan_20,Scan_32
     {
         26, 5,
         {
@@ -355,7 +354,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_27_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_27_INCLUDED
     // fm6353_regtype27: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         27, 5,
         {
@@ -375,7 +374,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_33_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_33_INCLUDED
     // fm6353_regtype33: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         33, 5,
         {
@@ -395,7 +394,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_34_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_34_INCLUDED
     // fm6353_regtype34: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         34, 5,
         {
@@ -415,7 +414,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_37_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_37_INCLUDED
     // fm6353_regtype37: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         37, 5,
         {
@@ -435,7 +434,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_45_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_45_INCLUDED
     // fm6353_regtype45: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         45, 5,
         {
@@ -455,7 +454,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_60_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_60_INCLUDED
     // fm6353_regtype60: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         60, 5,
         {
@@ -475,7 +474,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_61_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_61_INCLUDED
     // fm6353_regtype61: P? - FM6353 - ICN2012 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         61, 5,
         {
@@ -495,7 +494,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_71_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_71_INCLUDED
     // fm6353_regtype71: P? - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         71, 5,
         {
@@ -515,7 +514,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_72_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_72_INCLUDED
     // fm6353_regtype72: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         72, 5,
         {
@@ -535,7 +534,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_82_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_82_INCLUDED
     // fm6353_regtype82: P? - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         82, 5,
         {
@@ -555,7 +554,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_83_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_83_INCLUDED
     // fm6353_regtype83: P1.2 - FM6353 - 5958 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         83, 5,
         {
@@ -575,7 +574,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_91_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_91_INCLUDED
     // fm6353_regtype91: P2 - FM6353 - 5958 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         91, 5,
         {
@@ -595,7 +594,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_92_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_92_INCLUDED
     // fm6353_regtype92: P2 - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         92, 5,
         {
@@ -615,7 +614,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_93_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_93_INCLUDED
     // fm6353_regtype93: P2.5 - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         93, 5,
         {
@@ -635,7 +634,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_95_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_95_INCLUDED
     // fm6353_regtype95: P2.5 - FM6353 - 5166 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         95, 5,
         {
@@ -655,7 +654,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_96_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_96_INCLUDED
     // fm6353_regtype96: P2.5 - FM6353 - 5166 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         96, 5,
         {
@@ -675,7 +674,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_97_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_97_INCLUDED
     // fm6353_regtype97: P2.5 - FM6353 - 5166 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         97, 5,
         {
@@ -695,7 +694,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_98_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_98_INCLUDED
     // fm6353_regtype98: P2.5 - FM6353 - 5166 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         98, 5,
         {
@@ -715,7 +714,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_99_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_99_INCLUDED
     // fm6353_regtype99: P2.5 - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         99, 5,
         {
@@ -735,7 +734,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_102_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_102_INCLUDED
     // fm6353_regtype102: P3 - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         102, 5,
         {
@@ -755,7 +754,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_103_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_103_INCLUDED
     // fm6353_regtype103: P3 - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         103, 5,
         {
@@ -775,7 +774,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_120_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_120_INCLUDED
     // fm6353_regtype120: P3 - FM6353 - RUC7258D - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         120, 5,
         {
@@ -795,7 +794,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_130_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_130_INCLUDED
     // fm6353_regtype130: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         130, 5,
         {
@@ -815,7 +814,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_135_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_135_INCLUDED
     // fm6353_regtype135: P? - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         135, 5,
         {
@@ -835,7 +834,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_140_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_140_INCLUDED
     // fm6353_regtype140: P? - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         140, 5,
         {
@@ -855,7 +854,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_142_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_142_INCLUDED
     // fm6353_regtype142: P? - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         142, 5,
         {
@@ -875,7 +874,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_146_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_146_INCLUDED
     // fm6353_regtype146: P? - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         146, 5,
         {
@@ -895,7 +894,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_151_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_151_INCLUDED
     // fm6353_regtype151: P? - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         151, 5,
         {
@@ -915,7 +914,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_152_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_152_INCLUDED
     // fm6353_regtype152: P2 - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         152, 5,
         {
@@ -935,7 +934,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_155_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_155_INCLUDED
     // fm6353_regtype155: P2.5 - FM6353 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         155, 5,
         {
@@ -955,7 +954,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_158_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_158_INCLUDED
     // fm6353_regtype158: P? - FM6353 - 74HC138 - 1/32
-    // Source scan membership: Scan_32
+    // Scan membership: Scan_32
     {
         158, 5,
         {
@@ -971,5 +970,105 @@
         }
     },
 #endif  // DMD_SPWM_FM6353_REGTYPE_158_INCLUDED
+
+#ifndef DMD_SPWM_FM6353_REGTYPE_164_INCLUDED
+#define DMD_SPWM_FM6353_REGTYPE_164_INCLUDED
+    // fm6353_regtype164: FM6353 register profile
+    // Scan membership: Scan_32
+    {
+        164, 5,
+        {
+            {
+                0x0001, 0x1f70, 0x7ffe, 0x40f7, 0x0040
+            },
+            {
+                0x0001, 0x1f70, 0x67dc, 0x40f7, 0x0040
+            },
+            {
+                0x0001, 0x1f70, 0x5f18, 0x40f7, 0x0040
+            }
+        }
+    },
+#endif  // DMD_SPWM_FM6353_REGTYPE_164_INCLUDED
+
+#ifndef DMD_SPWM_FM6353_REGTYPE_166_INCLUDED
+#define DMD_SPWM_FM6353_REGTYPE_166_INCLUDED
+    // fm6353_regtype166: FM6353 register profile
+    // Scan membership: Scan_32
+    {
+        166, 5,
+        {
+            {
+                0x0001, 0x1ff8, 0x6ec0, 0x40f7, 0x4040
+            },
+            {
+                0x0001, 0x1ff8, 0x61fc, 0x40d7, 0x4040
+            },
+            {
+                0x0001, 0x1ff8, 0x3ea0, 0x40c7, 0x4050
+            }
+        }
+    },
+#endif  // DMD_SPWM_FM6353_REGTYPE_166_INCLUDED
+
+#ifndef DMD_SPWM_FM6353_REGTYPE_171_INCLUDED
+#define DMD_SPWM_FM6353_REGTYPE_171_INCLUDED
+    // fm6353_regtype171: FM6353 register profile
+    // Scan membership: Scan_32
+    {
+        171, 5,
+        {
+            {
+                0x0001, 0x1f70, 0x7f9c, 0x40f7, 0x0040
+            },
+            {
+                0x0001, 0x1f70, 0x679c, 0x40f7, 0x0070
+            },
+            {
+                0x0001, 0x1f70, 0x5f9c, 0x40f7, 0x0070
+            }
+        }
+    },
+#endif  // DMD_SPWM_FM6353_REGTYPE_171_INCLUDED
+
+#ifndef DMD_SPWM_FM6353_REGTYPE_176_INCLUDED
+#define DMD_SPWM_FM6353_REGTYPE_176_INCLUDED
+    // fm6353_regtype176: FM6353 register profile
+    // Scan membership: Scan_32
+    {
+        176, 5,
+        {
+            {
+                0x0000, 0x5f70, 0x7f00, 0x0007, 0x4000
+            },
+            {
+                0x0000, 0x5f70, 0x6700, 0x0007, 0x4000
+            },
+            {
+                0x0000, 0x5f70, 0x5f00, 0x0007, 0x4000
+            }
+        }
+    },
+#endif  // DMD_SPWM_FM6353_REGTYPE_176_INCLUDED
+
+#ifndef DMD_SPWM_FM6353_REGTYPE_187_INCLUDED
+#define DMD_SPWM_FM6353_REGTYPE_187_INCLUDED
+    // fm6353_regtype187: FM6353 register profile
+    // Scan membership: Scan_32
+    {
+        187, 5,
+        {
+            {
+                0x0000, 0x1f70, 0x7f98, 0x40f7, 0x0040
+            },
+            {
+                0x0000, 0x1f70, 0x7398, 0x40f7, 0x0040
+            },
+            {
+                0x0000, 0x1f70, 0x5f98, 0x40f7, 0x0040
+            }
+        }
+    },
+#endif  // DMD_SPWM_FM6353_REGTYPE_187_INCLUDED
 
 #endif  // DMD_SPWM_REGISTER_TEST_PROFILES_FM6353_SCAN_32_H

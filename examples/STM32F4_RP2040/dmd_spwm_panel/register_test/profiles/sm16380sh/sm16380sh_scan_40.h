@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/sm16380sh.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_40 profiles are present.
+// Only Scan_40 profiles are present.
 
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_11_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_11_INCLUDED
     // sm16380sh_regtype11: P2 - SM16380SH - 5368 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         11, 32,
         {
@@ -44,7 +43,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_12_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_12_INCLUDED
     // sm16380sh_regtype12: P2 - SM16380SH - 5368 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         12, 32,
         {
@@ -73,7 +72,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_13_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_13_INCLUDED
     // sm16380sh_regtype13: P2 - SM16380SH - 5368 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         13, 32,
         {
@@ -102,7 +101,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_14_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_14_INCLUDED
     // sm16380sh_regtype14: P2 - SM16380SH - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         14, 32,
         {
@@ -131,7 +130,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_15_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_15_INCLUDED
     // sm16380sh_regtype15: P2 - SM16380SH - 5368 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         15, 32,
         {
@@ -160,7 +159,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_16_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_16_INCLUDED
     // sm16380sh_regtype16: P2 - SM16380SH - 5368 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         16, 32,
         {
@@ -189,7 +188,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_17_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_17_INCLUDED
     // sm16380sh_regtype17: P2 - SM16380SH - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         17, 32,
         {
@@ -218,7 +217,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_35_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_35_INCLUDED
     // sm16380sh_regtype35: P2 - SM16380SH - RUL5158E - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         35, 32,
         {
@@ -247,7 +246,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_36_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_36_INCLUDED
     // sm16380sh_regtype36: P? - SM16380SH - HX6158H - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         36, 32,
         {
@@ -276,7 +275,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_39_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_39_INCLUDED
     // sm16380sh_regtype39: P2 - SM16380SH - 6158 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         39, 32,
         {
@@ -305,7 +304,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_57_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_57_INCLUDED
     // sm16380sh_regtype57: P2 - SM16380SH - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         57, 32,
         {

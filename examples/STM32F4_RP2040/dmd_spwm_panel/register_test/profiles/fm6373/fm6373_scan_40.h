@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/fm6373.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_40 profiles are present.
+// Only Scan_40 profiles are present.
 
 #ifndef DMD_SPWM_FM6373_REGTYPE_5_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_5_INCLUDED
     // fm6373_regtype5: P2.0 - FM6373 - TC7559KB - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         5, 47,
         {
@@ -50,7 +49,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_14_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_14_INCLUDED
     // fm6373_regtype14: P2 - FM6373 - DP32020 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         14, 47,
         {
@@ -85,7 +84,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_15_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_15_INCLUDED
     // fm6373_regtype15: P2 - FM6373 - RUL5158 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         15, 47,
         {
@@ -120,7 +119,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_16_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_16_INCLUDED
     // fm6373_regtype16: P2 - FM6373 - TC7559KB - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         16, 47,
         {
@@ -155,7 +154,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_17_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_17_INCLUDED
     // fm6373_regtype17: P2 - FM6373 - DP32020A - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         17, 41,
         {
@@ -190,7 +189,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_18_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_18_INCLUDED
     // fm6373_regtype18: P2 - FM6373 - HX6258SP - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         18, 47,
         {
@@ -225,7 +224,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_32_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_32_INCLUDED
     // fm6373_regtype32: P2 - FM6373 - 6158 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         32, 47,
         {
@@ -260,7 +259,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_37_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_37_INCLUDED
     // fm6373_regtype37: P? - FM6373 - HX6158 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         37, 41,
         {
@@ -295,7 +294,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_40_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_40_INCLUDED
     // fm6373_regtype40: P2 - FM6373 - RUL5158 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         40, 47,
         {
@@ -330,7 +329,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_41_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_41_INCLUDED
     // fm6373_regtype41: P2 - FM6373 - RUL5158 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         41, 47,
         {
@@ -365,7 +364,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_47_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_47_INCLUDED
     // fm6373_regtype47: P2 - FM6373 - RUL5158 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         47, 47,
         {
@@ -400,7 +399,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_52_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_52_INCLUDED
     // fm6373_regtype52: P2 - FM6373 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         52, 47,
         {
@@ -435,7 +434,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_61_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_61_INCLUDED
     // fm6373_regtype61: P2 - FM6373 - RUL5158 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         61, 47,
         {
@@ -470,7 +469,7 @@
 #ifndef DMD_SPWM_FM6373_REGTYPE_77_INCLUDED
 #define DMD_SPWM_FM6373_REGTYPE_77_INCLUDED
     // fm6373_regtype77: P2 - FM6373 - 7559 - 1/40
-    // Source scan membership: Scan_40
+    // Scan membership: Scan_40
     {
         77, 47,
         {

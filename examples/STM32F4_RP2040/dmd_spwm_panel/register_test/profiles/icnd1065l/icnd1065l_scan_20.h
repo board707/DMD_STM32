@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/icnd1065l.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_20 profiles are present.
+// Only Scan_20 profiles are present.
 
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_33_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_33_INCLUDED
     // icnd1065l_regtype33: P4 - ICND1065L - 7262 - 1/20
-    // Source scan membership: Scan_20
+    // Scan membership: Scan_20
     {
         33, 22,
         {
@@ -41,7 +40,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_34_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_34_INCLUDED
     // icnd1065l_regtype34: P4 - ICND1065L - 74HC138 - 1/20
-    // Source scan membership: Scan_20
+    // Scan membership: Scan_20
     {
         34, 22,
         {
@@ -67,7 +66,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_380_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_380_INCLUDED
     // icnd1065l_regtype380: P? - ICND1065L - 6158 - 1/20
-    // Source scan membership: Scan_20
+    // Scan membership: Scan_20
     {
         380, 22,
         {
@@ -93,7 +92,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_387_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_387_INCLUDED
     // icnd1065l_regtype387: P? - ICND1065L - 6158 - 1/20
-    // Source scan membership: Scan_20
+    // Scan membership: Scan_20
     {
         387, 22,
         {

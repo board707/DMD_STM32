@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/sm16380sh.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_21 profiles are present.
+// Only Scan_21 profiles are present.
 
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_20_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_20_INCLUDED
     // sm16380sh_regtype20: P2.976 - SM16380SH - 5368 - 1/21
-    // Source scan membership: Scan_21
+    // Scan membership: Scan_21
     {
         20, 32,
         {
@@ -44,7 +43,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_21_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_21_INCLUDED
     // sm16380sh_regtype21: P2.976 - SM16380SH - 1/21
-    // Source scan membership: Scan_21
+    // Scan membership: Scan_21
     {
         21, 32,
         {
@@ -73,7 +72,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_22_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_22_INCLUDED
     // sm16380sh_regtype22: P2.976 - SM16380SH - 1/21
-    // Source scan membership: Scan_21
+    // Scan membership: Scan_21
     {
         22, 32,
         {
@@ -102,7 +101,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_23_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_23_INCLUDED
     // sm16380sh_regtype23: P2.976 - SM16380SH - 1/21
-    // Source scan membership: Scan_21
+    // Scan membership: Scan_21
     {
         23, 32,
         {
@@ -131,7 +130,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_24_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_24_INCLUDED
     // sm16380sh_regtype24: P2.976 - SM16380SH - 1/21
-    // Source scan membership: Scan_21
+    // Scan membership: Scan_21
     {
         24, 32,
         {
@@ -160,7 +159,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_25_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_25_INCLUDED
     // sm16380sh_regtype25: P2.976 - SM16380SH - 1/21
-    // Source scan membership: Scan_21
+    // Scan membership: Scan_21
     {
         25, 32,
         {
@@ -189,7 +188,7 @@
 #ifndef DMD_SPWM_SM16380SH_REGTYPE_26_INCLUDED
 #define DMD_SPWM_SM16380SH_REGTYPE_26_INCLUDED
     // sm16380sh_regtype26: P2.976 - SM16380SH - 1/21
-    // Source scan membership: Scan_21
+    // Scan membership: Scan_21
     {
         26, 32,
         {

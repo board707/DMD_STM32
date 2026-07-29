@@ -45,6 +45,8 @@
 #define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_FM6373 3
 #define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_ICND1065L 4
 #define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_SM16380SH 5
+#define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_DP3264 6
+#define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_ICND2055 7
 #define DMD_SPWM_REGISTER_TEST_BUILDING_PROFILE_ARRAY 1
 
 #define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP \
@@ -66,6 +68,7 @@ dmd_spwm_fm6353_register_test_profiles[] = {
 // #include "profiles/fm6353/fm6353_scan_15.h"
 // #include "profiles/fm6353/fm6353_scan_16.h"
 // #include "profiles/fm6353/fm6353_scan_18.h"
+// #include "profiles/fm6353/fm6353_scan_19.h"
 // #include "profiles/fm6353/fm6353_scan_20.h"
 // #include "profiles/fm6353/fm6353_scan_21.h"
 // #include "profiles/fm6353/fm6353_scan_23.h"
@@ -156,6 +159,54 @@ dmd_spwm_icnd1065l_register_test_profiles[] = {
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP
 
 #define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP \
+    DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_ICND2055
+static constexpr DMD_SPWM_ICND2055_RegisterTestProfile
+dmd_spwm_icnd2055_register_test_profiles[] = {
+// #include "profiles/icnd2055/icnd2055_scan_2.h"
+// #include "profiles/icnd2055/icnd2055_scan_4.h"
+// #include "profiles/icnd2055/icnd2055_scan_5.h"
+// #include "profiles/icnd2055/icnd2055_scan_7.h"
+// #include "profiles/icnd2055/icnd2055_scan_8.h"
+// #include "profiles/icnd2055/icnd2055_scan_9.h"
+// #include "profiles/icnd2055/icnd2055_scan_10.h"
+// #include "profiles/icnd2055/icnd2055_scan_12.h"
+// #include "profiles/icnd2055/icnd2055_scan_13.h"
+// #include "profiles/icnd2055/icnd2055_scan_14.h"
+// #include "profiles/icnd2055/icnd2055_scan_16.h"
+// #include "profiles/icnd2055/icnd2055_scan_20.h"
+// #include "profiles/icnd2055/icnd2055_scan_21.h"
+// #include "profiles/icnd2055/icnd2055_scan_23.h"
+// #include "profiles/icnd2055/icnd2055_scan_24.h"
+// #include "profiles/icnd2055/icnd2055_scan_26.h"
+// #include "profiles/icnd2055/icnd2055_scan_27.h"
+// #include "profiles/icnd2055/icnd2055_scan_28.h"
+// #include "profiles/icnd2055/icnd2055_scan_29.h"
+// #include "profiles/icnd2055/icnd2055_scan_30.h"
+// #include "profiles/icnd2055/icnd2055_scan_32.h"
+// #include "profiles/icnd2055/icnd2055_scan_34.h"
+// #include "profiles/icnd2055/icnd2055_scan_36.h"
+// #include "profiles/icnd2055/icnd2055_scan_38.h"
+// #include "profiles/icnd2055/icnd2055_scan_39.h"
+// #include "profiles/icnd2055/icnd2055_scan_40.h"
+// #include "profiles/icnd2055/icnd2055_scan_41.h"
+// #include "profiles/icnd2055/icnd2055_scan_42.h"
+// #include "profiles/icnd2055/icnd2055_scan_43.h"
+// #include "profiles/icnd2055/icnd2055_scan_44.h"
+// #include "profiles/icnd2055/icnd2055_scan_45.h"
+// #include "profiles/icnd2055/icnd2055_scan_46.h"
+// #include "profiles/icnd2055/icnd2055_scan_47.h"
+// #include "profiles/icnd2055/icnd2055_scan_48.h"
+// #include "profiles/icnd2055/icnd2055_scan_51.h"
+// #include "profiles/icnd2055/icnd2055_scan_52.h"
+// #include "profiles/icnd2055/icnd2055_scan_54.h"
+// #include "profiles/icnd2055/icnd2055_scan_57.h"
+// #include "profiles/icnd2055/icnd2055_scan_58.h"
+// #include "profiles/icnd2055/icnd2055_scan_60.h"
+// #include "profiles/icnd2055/icnd2055_scan_64.h"
+};
+#undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP
+
+#define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP \
     DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_SM16380SH
 static constexpr DMD_SPWM_SM16380SH_RegisterTestProfile
 dmd_spwm_sm16380sh_register_test_profiles[] = {
@@ -177,12 +228,46 @@ dmd_spwm_sm16380sh_register_test_profiles[] = {
 };
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP
 
+// Some exact ChipCode 219/Chip_DP3264 packages use filenames containing 3265,
+// 3269, 3256, 3356, or 3364. A filename alone never qualifies a profile.
+#define DMD_SPWM_REGISTER_TEST_PROFILE_CHIP \
+    DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_DP3264
+static constexpr DMD_SPWM_DP3264_RegisterTestProfile
+dmd_spwm_dp3264_register_test_profiles[] = {
+// #include "profiles/dp3264/dp3264_scan_2.h"
+// #include "profiles/dp3264/dp3264_scan_4.h"
+// #include "profiles/dp3264/dp3264_scan_5.h"
+// #include "profiles/dp3264/dp3264_scan_6.h"
+// #include "profiles/dp3264/dp3264_scan_8.h"
+// #include "profiles/dp3264/dp3264_scan_10.h"
+// #include "profiles/dp3264/dp3264_scan_13.h"
+// #include "profiles/dp3264/dp3264_scan_16.h"
+// #include "profiles/dp3264/dp3264_scan_20.h"
+// #include "profiles/dp3264/dp3264_scan_24.h"
+// #include "profiles/dp3264/dp3264_scan_26.h"
+// #include "profiles/dp3264/dp3264_scan_30.h"
+// #include "profiles/dp3264/dp3264_scan_32.h"
+// #include "profiles/dp3264/dp3264_scan_36.h"
+// #include "profiles/dp3264/dp3264_scan_38.h"
+// #include "profiles/dp3264/dp3264_scan_40.h"
+// #include "profiles/dp3264/dp3264_scan_43.h"
+// #include "profiles/dp3264/dp3264_scan_45.h"
+// #include "profiles/dp3264/dp3264_scan_48.h"
+// #include "profiles/dp3264/dp3264_scan_52.h"
+// #include "profiles/dp3264/dp3264_scan_58.h"
+// #include "profiles/dp3264/dp3264_scan_59.h"
+// #include "profiles/dp3264/dp3264_scan_64.h"
+};
+#undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP
+
 #undef DMD_SPWM_REGISTER_TEST_BUILDING_PROFILE_ARRAY
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_FM6353
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_FM6363
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_FM6373
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_ICND1065L
+#undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_ICND2055
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_SM16380SH
+#undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_DP3264
 
 // Map each register-test driver type to its compiled-in profile array.
 template <typename DmdType>
@@ -292,6 +377,30 @@ struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_ICN1065_RegisterTest<Pars...> > {
     }
 };
 
+// Map the ICN2055 adapter to its scan-selected ICND2055 catalogue data.
+template <int... Pars>
+struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_ICN2055_RegisterTest<Pars...> > {
+    typedef DMD_SPWM_ICND2055_RegisterTestProfile ProfileType;
+    enum {
+        PROFILE_COUNT = sizeof(dmd_spwm_icnd2055_register_test_profiles) /
+                        sizeof(dmd_spwm_icnd2055_register_test_profiles[0])
+    };
+    // Return this driver's compiled-in profiles.
+    static const ProfileType *profiles()
+    {
+        return dmd_spwm_icnd2055_register_test_profiles;
+    }
+    // Return the number of compiled-in profiles.
+    static uint16_t profileCount() { return PROFILE_COUNT; }
+    // Report at compile time whether this REG was included.
+    static constexpr bool contains(uint16_t catalog_index)
+    {
+        return dmdSpwmRegisterTestCatalogContains(
+            dmd_spwm_icnd2055_register_test_profiles,
+            PROFILE_COUNT, catalog_index);
+    }
+};
+
 template <int... Pars>
 struct DMD_SPWM_RegisterTestCatalog<
     DMD_RGB_SM16380SH_RegisterTest<Pars...> > {
@@ -312,6 +421,31 @@ struct DMD_SPWM_RegisterTestCatalog<
     {
         return dmdSpwmRegisterTestCatalogContains(
             dmd_spwm_sm16380sh_register_test_profiles,
+            PROFILE_COUNT, catalog_index);
+    }
+};
+
+// Map the DP3264-compatible adapter to its scan-selected ChipCode 219 data.
+template <int... Pars>
+struct DMD_SPWM_RegisterTestCatalog<
+    DMD_RGB_DP3264_RegisterTest<Pars...> > {
+    typedef DMD_SPWM_DP3264_RegisterTestProfile ProfileType;
+    enum {
+        PROFILE_COUNT = sizeof(dmd_spwm_dp3264_register_test_profiles) /
+                        sizeof(dmd_spwm_dp3264_register_test_profiles[0])
+    };
+    // Return this driver's compiled-in profiles.
+    static const ProfileType *profiles()
+    {
+        return dmd_spwm_dp3264_register_test_profiles;
+    }
+    // Return the number of compiled-in profiles.
+    static uint16_t profileCount() { return PROFILE_COUNT; }
+    // Report at compile time whether this REG was included.
+    static constexpr bool contains(uint16_t catalog_index)
+    {
+        return dmdSpwmRegisterTestCatalogContains(
+            dmd_spwm_dp3264_register_test_profiles,
             PROFILE_COUNT, catalog_index);
     }
 };
@@ -403,7 +537,9 @@ static bool dmdSpwmApplySelectedRegisterOverride(DmdType &dmd)
 #define DMD_RGB_FM6363 DMD_RGB_FM6363_RegisterTest
 #define DMD_RGB_FM6373 DMD_RGB_FM6373_RegisterTest
 #define DMD_RGB_ICN1065 DMD_RGB_ICN1065_RegisterTest
+#define DMD_RGB_ICN2055 DMD_RGB_ICN2055_RegisterTest
 #define DMD_RGB_SM16380SH DMD_RGB_SM16380SH_RegisterTest
+#define DMD_RGB_DP3264 DMD_RGB_DP3264_RegisterTest
 
 #endif
 #endif // DMD_SPWM_REGISTER_TEST_CONFIG_H

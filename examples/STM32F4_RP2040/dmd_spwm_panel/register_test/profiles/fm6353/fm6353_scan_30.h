@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/fm6353.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_30 profiles are present.
+// FM6353 register profiles. Only Scan_30 profiles are present.
 
 #ifndef DMD_SPWM_FM6353_REGTYPE_4_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_4_INCLUDED
     // fm6353_regtype4: P3.076 - FM6353 - 1/13
-    // Source scan membership: Scan_2,Scan_4,Scan_5,Scan_6,Scan_7,Scan_8,Scan_10,Scan_12,Scan_13,Scan_15,Scan_16,Scan_18,Scan_20,Scan_21,Scan_23,Scan_24,Scan_26,Scan_27,Scan_28,Scan_30,Scan_31,Scan_32
+    // Scan membership: Scan_2,Scan_4,Scan_5,Scan_6,Scan_7,Scan_8,Scan_10,Scan_12,Scan_13,Scan_15,Scan_16,Scan_18,Scan_20,Scan_21,Scan_23,Scan_24,Scan_25,Scan_26,Scan_27,Scan_28,Scan_30,Scan_31,Scan_32
     {
         4, 5,
         {
@@ -35,7 +34,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_29_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_29_INCLUDED
     // fm6353_regtype29: P? - FM6353 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         29, 5,
         {
@@ -55,7 +54,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_84_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_84_INCLUDED
     // fm6353_regtype84: P1.25 - FM6353 - 5958 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         84, 5,
         {
@@ -75,7 +74,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_85_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_85_INCLUDED
     // fm6353_regtype85: P1.25 - FM6353 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         85, 5,
         {
@@ -95,7 +94,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_133_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_133_INCLUDED
     // fm6353_regtype133: P? - FM6353 - 74HC138 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         133, 5,
         {
@@ -115,7 +114,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_134_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_134_INCLUDED
     // fm6353_regtype134: P? - FM6353 - 74HC138 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         134, 5,
         {
@@ -135,7 +134,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_148_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_148_INCLUDED
     // fm6353_regtype148: P? - FM6353 - 74HC138 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         148, 5,
         {
@@ -155,7 +154,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_149_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_149_INCLUDED
     // fm6353_regtype149: P? - FM6353 - 74HC138 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         149, 5,
         {
@@ -175,7 +174,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_150_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_150_INCLUDED
     // fm6353_regtype150: P? - FM6353 - 74HC138 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         150, 5,
         {
@@ -195,7 +194,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_156_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_156_INCLUDED
     // fm6353_regtype156: P1.667 - FM6353 - 5958 - 1/30
-    // Source scan membership: Scan_30
+    // Scan membership: Scan_30
     {
         156, 5,
         {
@@ -211,5 +210,25 @@
         }
     },
 #endif  // DMD_SPWM_FM6353_REGTYPE_156_INCLUDED
+
+#ifndef DMD_SPWM_FM6353_REGTYPE_189_INCLUDED
+#define DMD_SPWM_FM6353_REGTYPE_189_INCLUDED
+    // fm6353_regtype189: FM6353 register profile
+    // Scan membership: Scan_30
+    {
+        189, 5,
+        {
+            {
+                0x0001, 0x1d78, 0x5af6, 0x40f7, 0x0040
+            },
+            {
+                0x0001, 0x1d78, 0x62f6, 0x40f7, 0x0040
+            },
+            {
+                0x0001, 0x1d78, 0x6af6, 0x40f7, 0x0040
+            }
+        }
+    },
+#endif  // DMD_SPWM_FM6353_REGTYPE_189_INCLUDED
 
 #endif  // DMD_SPWM_REGISTER_TEST_PROFILES_FM6353_SCAN_30_H

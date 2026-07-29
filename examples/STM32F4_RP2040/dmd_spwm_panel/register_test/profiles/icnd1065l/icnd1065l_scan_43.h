@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/icnd1065l.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_43 profiles are present.
+// Only Scan_43 profiles are present.
 
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_1_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_1_INCLUDED
     // icnd1065l_regtype1: built-in main ICND1065L register config
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         1, 22,
         {
@@ -41,7 +40,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_6_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_6_INCLUDED
     // icnd1065l_regtype6: P1.86 - ICND1065L - DP32020 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         6, 22,
         {
@@ -67,7 +66,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_14_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_14_INCLUDED
     // icnd1065l_regtype14: P1.86 - ICND1065L - ICND2018 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         14, 22,
         {
@@ -93,7 +92,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_15_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_15_INCLUDED
     // icnd1065l_regtype15: P1.86 - ICND1065L - DP32020A - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         15, 22,
         {
@@ -119,7 +118,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_16_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_16_INCLUDED
     // icnd1065l_regtype16: P1.86 - ICND1065L - HX6158SP - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         16, 22,
         {
@@ -145,7 +144,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_43_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_43_INCLUDED
     // icnd1065l_regtype43: P1.86 - ICND1065L - 5958 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         43, 22,
         {
@@ -171,7 +170,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_50_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_50_INCLUDED
     // icnd1065l_regtype50: P? - ICND1065L - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         50, 22,
         {
@@ -197,7 +196,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_56_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_56_INCLUDED
     // icnd1065l_regtype56: P1.86 - ICND1065L - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         56, 22,
         {
@@ -223,7 +222,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_60_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_60_INCLUDED
     // icnd1065l_regtype60: P? - ICND1065L - 5958 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         60, 22,
         {
@@ -249,7 +248,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_67_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_67_INCLUDED
     // icnd1065l_regtype67: P? - ICND1065L - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         67, 22,
         {
@@ -275,7 +274,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_68_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_68_INCLUDED
     // icnd1065l_regtype68: P? - ICND1065L - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         68, 22,
         {
@@ -301,7 +300,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_88_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_88_INCLUDED
     // icnd1065l_regtype88: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         88, 22,
         {
@@ -327,7 +326,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_97_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_97_INCLUDED
     // icnd1065l_regtype97: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         97, 22,
         {
@@ -353,7 +352,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_98_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_98_INCLUDED
     // icnd1065l_regtype98: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         98, 22,
         {
@@ -379,7 +378,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_102_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_102_INCLUDED
     // icnd1065l_regtype102: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         102, 22,
         {
@@ -405,7 +404,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_103_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_103_INCLUDED
     // icnd1065l_regtype103: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         103, 22,
         {
@@ -431,7 +430,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_104_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_104_INCLUDED
     // icnd1065l_regtype104: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         104, 22,
         {
@@ -457,7 +456,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_105_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_105_INCLUDED
     // icnd1065l_regtype105: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         105, 22,
         {
@@ -483,7 +482,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_121_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_121_INCLUDED
     // icnd1065l_regtype121: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         121, 22,
         {
@@ -509,7 +508,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_127_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_127_INCLUDED
     // icnd1065l_regtype127: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         127, 22,
         {
@@ -535,7 +534,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_154_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_154_INCLUDED
     // icnd1065l_regtype154: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         154, 22,
         {
@@ -561,7 +560,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_157_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_157_INCLUDED
     // icnd1065l_regtype157: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         157, 22,
         {
@@ -587,7 +586,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_162_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_162_INCLUDED
     // icnd1065l_regtype162: P? - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         162, 22,
         {
@@ -613,7 +612,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_165_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_165_INCLUDED
     // icnd1065l_regtype165: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         165, 22,
         {
@@ -639,7 +638,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_186_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_186_INCLUDED
     // icnd1065l_regtype186: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         186, 22,
         {
@@ -665,7 +664,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_188_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_188_INCLUDED
     // icnd1065l_regtype188: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         188, 22,
         {
@@ -691,7 +690,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_192_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_192_INCLUDED
     // icnd1065l_regtype192: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         192, 22,
         {
@@ -717,7 +716,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_199_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_199_INCLUDED
     // icnd1065l_regtype199: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         199, 22,
         {
@@ -743,7 +742,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_203_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_203_INCLUDED
     // icnd1065l_regtype203: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         203, 22,
         {
@@ -769,7 +768,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_218_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_218_INCLUDED
     // icnd1065l_regtype218: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         218, 22,
         {
@@ -795,7 +794,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_219_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_219_INCLUDED
     // icnd1065l_regtype219: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         219, 22,
         {
@@ -821,7 +820,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_220_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_220_INCLUDED
     // icnd1065l_regtype220: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         220, 22,
         {
@@ -847,7 +846,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_224_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_224_INCLUDED
     // icnd1065l_regtype224: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         224, 22,
         {
@@ -873,7 +872,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_225_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_225_INCLUDED
     // icnd1065l_regtype225: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         225, 22,
         {
@@ -899,7 +898,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_226_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_226_INCLUDED
     // icnd1065l_regtype226: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         226, 22,
         {
@@ -925,7 +924,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_236_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_236_INCLUDED
     // icnd1065l_regtype236: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         236, 22,
         {
@@ -951,7 +950,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_255_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_255_INCLUDED
     // icnd1065l_regtype255: P1.8 - ICND1065L - RUL5158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         255, 22,
         {
@@ -977,7 +976,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_256_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_256_INCLUDED
     // icnd1065l_regtype256: P1.86 - ICND1065L - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         256, 22,
         {
@@ -1003,7 +1002,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_270_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_270_INCLUDED
     // icnd1065l_regtype270: P? - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         270, 22,
         {
@@ -1029,7 +1028,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_304_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_304_INCLUDED
     // icnd1065l_regtype304: P1.83 - ICND1065L - DP32020 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         304, 22,
         {
@@ -1055,7 +1054,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_305_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_305_INCLUDED
     // icnd1065l_regtype305: P1.86 - ICND1065L - 5958 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         305, 22,
         {
@@ -1081,7 +1080,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_306_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_306_INCLUDED
     // icnd1065l_regtype306: P1.86 - ICND1065L - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         306, 22,
         {
@@ -1107,7 +1106,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_307_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_307_INCLUDED
     // icnd1065l_regtype307: P1.86 - ICND1065L - DP32020B - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         307, 22,
         {
@@ -1133,7 +1132,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_308_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_308_INCLUDED
     // icnd1065l_regtype308: P1.8 - ICND1065L - HX6158H - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         308, 22,
         {
@@ -1159,7 +1158,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_309_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_309_INCLUDED
     // icnd1065l_regtype309: P1.8 - ICND1065L - RUL5158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         309, 22,
         {
@@ -1185,7 +1184,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_310_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_310_INCLUDED
     // icnd1065l_regtype310: P1.8 - ICND1065L - TC7559KB - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         310, 22,
         {
@@ -1211,7 +1210,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_342_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_342_INCLUDED
     // icnd1065l_regtype342: P? - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         342, 22,
         {
@@ -1237,7 +1236,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_343_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_343_INCLUDED
     // icnd1065l_regtype343: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         343, 22,
         {
@@ -1263,7 +1262,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_353_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_353_INCLUDED
     // icnd1065l_regtype353: P251262 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         353, 22,
         {
@@ -1289,7 +1288,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_355_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_355_INCLUDED
     // icnd1065l_regtype355: P1.86 - ICND1065L - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         355, 22,
         {
@@ -1315,7 +1314,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_369_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_369_INCLUDED
     // icnd1065l_regtype369: P? - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         369, 22,
         {
@@ -1341,7 +1340,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_384_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_384_INCLUDED
     // icnd1065l_regtype384: P? - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         384, 22,
         {
@@ -1367,7 +1366,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_390_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_390_INCLUDED
     // icnd1065l_regtype390: P1.86 - ICND1065L - 6158 - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         390, 22,
         {
@@ -1393,7 +1392,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_401_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_401_INCLUDED
     // icnd1065l_regtype401: P? - ICND1065L - 1/43
-    // Source scan membership: Scan_43
+    // Scan membership: Scan_43
     {
         401, 22,
         {

@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/fm6353.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_26 profiles are present.
+// FM6353 register profiles. Only Scan_26 profiles are present.
 
 #ifndef DMD_SPWM_FM6353_REGTYPE_4_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_4_INCLUDED
     // fm6353_regtype4: P3.076 - FM6353 - 1/13
-    // Source scan membership: Scan_2,Scan_4,Scan_5,Scan_6,Scan_7,Scan_8,Scan_10,Scan_12,Scan_13,Scan_15,Scan_16,Scan_18,Scan_20,Scan_21,Scan_23,Scan_24,Scan_26,Scan_27,Scan_28,Scan_30,Scan_31,Scan_32
+    // Scan membership: Scan_2,Scan_4,Scan_5,Scan_6,Scan_7,Scan_8,Scan_10,Scan_12,Scan_13,Scan_15,Scan_16,Scan_18,Scan_20,Scan_21,Scan_23,Scan_24,Scan_25,Scan_26,Scan_27,Scan_28,Scan_30,Scan_31,Scan_32
     {
         4, 5,
         {
@@ -35,7 +34,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_20_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_20_INCLUDED
     // fm6353_regtype20: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         20, 5,
         {
@@ -55,7 +54,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_28_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_28_INCLUDED
     // fm6353_regtype28: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         28, 5,
         {
@@ -75,7 +74,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_36_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_36_INCLUDED
     // fm6353_regtype36: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         36, 5,
         {
@@ -95,7 +94,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_38_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_38_INCLUDED
     // fm6353_regtype38: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         38, 5,
         {
@@ -115,7 +114,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_39_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_39_INCLUDED
     // fm6353_regtype39: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         39, 5,
         {
@@ -135,7 +134,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_41_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_41_INCLUDED
     // fm6353_regtype41: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         41, 5,
         {
@@ -155,7 +154,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_42_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_42_INCLUDED
     // fm6353_regtype42: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         42, 5,
         {
@@ -175,7 +174,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_44_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_44_INCLUDED
     // fm6353_regtype44: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         44, 5,
         {
@@ -195,7 +194,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_48_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_48_INCLUDED
     // fm6353_regtype48: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         48, 5,
         {
@@ -215,7 +214,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_49_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_49_INCLUDED
     // fm6353_regtype49: P? - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         49, 5,
         {
@@ -235,7 +234,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_86_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_86_INCLUDED
     // fm6353_regtype86: P1.53 - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         86, 5,
         {
@@ -255,7 +254,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_87_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_87_INCLUDED
     // fm6353_regtype87: P1.538 - FM6353 - 5958 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         87, 5,
         {
@@ -275,7 +274,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_104_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_104_INCLUDED
     // fm6353_regtype104: P3.076 - FM6353 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         104, 5,
         {
@@ -295,7 +294,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_136_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_136_INCLUDED
     // fm6353_regtype136: P? - FM6353 - 5958 - 1/26
-    // Source scan membership: Scan_26
+    // Scan membership: Scan_26
     {
         136, 5,
         {

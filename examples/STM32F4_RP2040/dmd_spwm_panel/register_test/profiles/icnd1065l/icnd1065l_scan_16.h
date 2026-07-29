@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/icnd1065l.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_16 profiles are present.
+// Only Scan_16 profiles are present.
 
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_21_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_21_INCLUDED
     // icnd1065l_regtype21: P2.5 - ICND1065L - RUC7258D - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         21, 22,
         {
@@ -41,7 +40,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_39_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_39_INCLUDED
     // icnd1065l_regtype39: P3.91 - ICND1065L - ICN2012 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         39, 22,
         {
@@ -67,7 +66,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_95_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_95_INCLUDED
     // icnd1065l_regtype95: P2.5 - ICND1065L - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         95, 22,
         {
@@ -93,7 +92,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_126_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_126_INCLUDED
     // icnd1065l_regtype126: P? - ICND1065L - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         126, 22,
         {
@@ -119,7 +118,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_151_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_151_INCLUDED
     // icnd1065l_regtype151: P2.5 - ICND1065L - 6158 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         151, 22,
         {
@@ -145,7 +144,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_185_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_185_INCLUDED
     // icnd1065l_regtype185: P2.5 - ICND1065L - 6158 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         185, 22,
         {
@@ -171,7 +170,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_227_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_227_INCLUDED
     // icnd1065l_regtype227: P2.5 - ICND1065L - 6158 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         227, 22,
         {
@@ -197,7 +196,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_228_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_228_INCLUDED
     // icnd1065l_regtype228: P2.5 - ICND1065L - 6158 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         228, 22,
         {
@@ -223,7 +222,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_263_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_263_INCLUDED
     // icnd1065l_regtype263: P? - ICND1065L - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         263, 22,
         {
@@ -249,7 +248,7 @@
 #ifndef DMD_SPWM_ICND1065L_REGTYPE_351_INCLUDED
 #define DMD_SPWM_ICND1065L_REGTYPE_351_INCLUDED
     // icnd1065l_regtype351: P? - ICND1065L - 6158 - 1/16
-    // Source scan membership: Scan_16
+    // Scan membership: Scan_16
     {
         351, 22,
         {

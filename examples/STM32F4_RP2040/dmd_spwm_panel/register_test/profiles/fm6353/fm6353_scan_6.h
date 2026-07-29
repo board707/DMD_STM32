@@ -9,13 +9,12 @@
 #error "Register-test profile fragment is in the wrong chip array"
 #endif
 
-// Generated from lib/spwm/registertest/data/fm6353.profiles at
-// Raspberry Pi revision f9dc4d0a8c25. Only Scan_6 profiles are present.
+// FM6353 register profiles. Only Scan_6 profiles are present.
 
 #ifndef DMD_SPWM_FM6353_REGTYPE_4_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_4_INCLUDED
     // fm6353_regtype4: P3.076 - FM6353 - 1/13
-    // Source scan membership: Scan_2,Scan_4,Scan_5,Scan_6,Scan_7,Scan_8,Scan_10,Scan_12,Scan_13,Scan_15,Scan_16,Scan_18,Scan_20,Scan_21,Scan_23,Scan_24,Scan_26,Scan_27,Scan_28,Scan_30,Scan_31,Scan_32
+    // Scan membership: Scan_2,Scan_4,Scan_5,Scan_6,Scan_7,Scan_8,Scan_10,Scan_12,Scan_13,Scan_15,Scan_16,Scan_18,Scan_20,Scan_21,Scan_23,Scan_24,Scan_25,Scan_26,Scan_27,Scan_28,Scan_30,Scan_31,Scan_32
     {
         4, 5,
         {
@@ -35,7 +34,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_67_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_67_INCLUDED
     // fm6353_regtype67: P? - FM6353 - 1/6
-    // Source scan membership: Scan_6
+    // Scan membership: Scan_6
     {
         67, 5,
         {
@@ -55,7 +54,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_116_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_116_INCLUDED
     // fm6353_regtype116: P6.67 - FM6353 - 1/6
-    // Source scan membership: Scan_6
+    // Scan membership: Scan_6
     {
         116, 5,
         {
@@ -75,7 +74,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_126_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_126_INCLUDED
     // fm6353_regtype126: P6.67 - FM6353 - RUC7258D - 1/6
-    // Source scan membership: Scan_6
+    // Scan membership: Scan_6
     {
         126, 5,
         {
@@ -95,7 +94,7 @@
 #ifndef DMD_SPWM_FM6353_REGTYPE_127_INCLUDED
 #define DMD_SPWM_FM6353_REGTYPE_127_INCLUDED
     // fm6353_regtype127: P? - FM6353 - RUC7258D - 1/6
-    // Source scan membership: Scan_6
+    // Scan membership: Scan_6
     {
         127, 5,
         {
@@ -111,5 +110,25 @@
         }
     },
 #endif  // DMD_SPWM_FM6353_REGTYPE_127_INCLUDED
+
+#ifndef DMD_SPWM_FM6353_REGTYPE_184_INCLUDED
+#define DMD_SPWM_FM6353_REGTYPE_184_INCLUDED
+    // fm6353_regtype184: FM6353 register profile
+    // Scan membership: Scan_6
+    {
+        184, 5,
+        {
+            {
+                0x0001, 0x0578, 0x7f9c, 0x40f7, 0x0060
+            },
+            {
+                0x0001, 0x0578, 0x679c, 0x40f7, 0x4060
+            },
+            {
+                0x0001, 0x0578, 0x5f9c, 0x40f7, 0x4060
+            }
+        }
+    },
+#endif  // DMD_SPWM_FM6353_REGTYPE_184_INCLUDED
 
 #endif  // DMD_SPWM_REGISTER_TEST_PROFILES_FM6353_SCAN_6_H
