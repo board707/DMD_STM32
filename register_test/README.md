@@ -17,9 +17,11 @@ Multiple scan headers are tested in include order:
 
 - STM32: briefly press KEY for the next profile. Hold KEY for 1.2 seconds to
   keep it and enter the normal demo; the choice lasts until reset or power-off.
-- RP2040: each profile remains visible for 3 seconds after it is applied, then
-  the test advances and wraps indefinitely. Note the preferred `REG N`, then
-  compile it as an override; RP2040 test mode does not enter the normal demo.
+- RP2040: `GRADIENT` and `ALIGN` remain visible for 3 seconds after each
+  profile is applied. `TEXTSCROLL` remains visible for at least 3 seconds and
+  changes REG at the end of the bottom-band pass as the marquee wraps back to
+  the top. Later changes occur one complete top/middle/bottom cycle apart at
+  that same position. The test wraps indefinitely. Note the preferred `REG N`, then compile it as an override; RP2040 test mode does not enter the normal demo.
 
 `REG N` is the original source `regtypeN` number, not its position in the
 combined list.
@@ -35,7 +37,9 @@ DMD_SPWM_REGISTER_TEST_PATTERN
 - `TEXTSCROLL`: check register stability during repeated animated frame
   updates. The text moves through the top, middle, and bottom thirds in turn.
   Adjust `DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS` in
-  `dmd_spwm_panel.ino` to change its speed.
+  `dmd_spwm_panel.ino` to change the frame interval, and
+  `DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS` to select how many pixels
+  the text moves per frame. One pixel is smoothest; larger values move faster.
 
 ## Controls
 
@@ -43,7 +47,8 @@ DMD_SPWM_REGISTER_TEST_PATTERN
 - Blackpill F401/F411: active-low KEY on PA0.
 - RP2040: no button is required. Change
   `DMD_SPWM_REGISTER_TEST_AUTO_ADVANCE_MS` in `register_test_config.h` if a
-  different automatic interval is needed.
+  different minimum automatic interval is needed. For `TEXTSCROLL`, a full
+  three-band cycle can make the actual interval longer.
 
 The example uses PA7 for panel R0 so PA0 remains available. For another board,
 change the button pin or polarity in `register_test_config.h`. Never share a

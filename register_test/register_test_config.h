@@ -457,8 +457,8 @@ struct DMD_SPWM_RegisterTestCatalog<
 #define DMD_SPWM_REGISTER_TEST_HOLD_MS 1200
 #endif
 
-// Run button-controlled STM32 selection or timed RP2040 auto-advance for the
-// catalog selected automatically from DmdType.
+// Run button-controlled STM32 selection or cycle-aware RP2040 auto-advance
+// for the catalog selected automatically from DmdType.
 template <typename DmdType>
 static uint16_t dmdSpwmRunSelectedRegisterTest(DmdType &dmd)
 {

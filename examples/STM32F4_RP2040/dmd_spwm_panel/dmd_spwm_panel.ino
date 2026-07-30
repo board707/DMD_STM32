@@ -12,7 +12,8 @@
 // Register Config Finder
 //
 // Set to 1 to run the SPWM register test before the normal demo.
-// Blackpill STM32 uses KEY on PA0; RP2040 advances every 3 seconds.
+// Blackpill STM32 uses KEY on PA0; RP2040 advances after at least 3 seconds.
+// TEXTSCROLL changes REG at the end of the bottom pass, one cycle apart.
 // On STM32, use an alternative R0 pin such as PA7 under custom_rgbpins.
 #define DMD_SPWM_REGISTER_TEST_ENABLED 0
 // Set the test above to 0, then enter a displayed REG number to reuse that
@@ -24,9 +25,11 @@
 // the first/red word for every RGB lane through the native driver path.
 #define DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA 1
 // Choose GRADIENT, ALIGN (Raspberry Pi Demo 3 / Demo 15 Align), or TEXTSCROLL.
-#define DMD_SPWM_REGISTER_TEST_PATTERN DMD_SPWM_REGISTER_TEST_PATTERN_GRADIENT
-// TEXTSCROLL target milliseconds per pixel: smaller is faster, larger slower.
-#define DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS 10UL
+#define DMD_SPWM_REGISTER_TEST_PATTERN DMD_SPWM_REGISTER_TEST_PATTERN_TEXTSCROLL
+// TEXTSCROLL frame interval: smaller is faster, larger is slower.
+#define DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS 30UL
+// Pixels moved per frame: 1 is smoothest; larger values scroll faster.
+#define DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS 3UL
 #include "register_test/register_test_config.h"
 
 // Fonts includes

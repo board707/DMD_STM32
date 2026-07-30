@@ -23,8 +23,8 @@
 #error "Select the GRADIENT, ALIGN, or TEXTSCROLL SPWM register-test pattern"
 #endif
 
-// Let TEXTSCROLL tune its one-pixel frame interval without affecting the two
-// existing patterns or compiling the option into their firmware.
+// Let TEXTSCROLL tune its frame interval and pixel distance without affecting
+// the two existing patterns or compiling the options into their firmware.
 #if DMD_SPWM_REGISTER_TEST_PATTERN == \
     DMD_SPWM_REGISTER_TEST_PATTERN_TEXTSCROLL
 #ifndef DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS
@@ -32,6 +32,12 @@
 #endif
 #if DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS < 1
 #error "DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS must be at least 1"
+#endif
+#ifndef DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS
+#define DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS 1UL
+#endif
+#if DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS < 1
+#error "DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS must be at least 1"
 #endif
 #endif
 
@@ -293,16 +299,17 @@ static uint16_t dmdSpwmRegisterTestTextColor(DmdType &dmd,
 }
 
 // Track one continuous marquee across REG changes and the three vertical
-// display bands. Preserving this state lets RP2040 reach every band even when
-// its automatic profile interval is shorter than one complete text pass.
+// display bands. The cumulative distance lets automatic tests give every REG
+// one complete top, middle, and bottom cycle before advancing.
 struct DMD_SPWM_RegisterTestTextScrollState {
     int32_t x;
+    uint32_t total_steps;
     uint8_t band;
     bool initialized;
 };
 
 static DMD_SPWM_RegisterTestTextScrollState
-dmd_spwm_register_test_text_scroll_state = {0, 0, false};
+dmd_spwm_register_test_text_scroll_state = {0, 0, 0, false};
 
 // Size the marquee bitmap to approximately one third of the panel height.
 static int16_t dmdSpwmRegisterTestTextScrollHeight(int16_t panel_height)
@@ -343,6 +350,20 @@ static int32_t dmdSpwmRegisterTestTextScrollWidth(int16_t text_height)
         (int32_t)(character_count - 1) * spacing;
 }
 
+// Return the pixel distance for one complete pass through all three bands.
+template <typename DmdType>
+static uint32_t dmdSpwmRegisterTestTextScrollCycleSteps(const DmdType &dmd)
+{
+    const int32_t visible_width = dmdSpwmRegisterTestVisibleWidth(dmd);
+    const int16_t text_height =
+        dmdSpwmRegisterTestTextScrollHeight(dmd.height());
+    const int32_t text_width =
+        dmdSpwmRegisterTestTextScrollWidth(text_height);
+    if (visible_width <= 0 || text_height <= 0 || text_width <= 0) return 0;
+
+    return (uint32_t)(visible_width + text_width) * 3UL;
+}
+
 // Initialize the marquee once so profile changes do not restart its band
 // sequence before a complete pass has finished.
 template <typename DmdType>
@@ -353,6 +374,30 @@ static void dmdSpwmInitializeRegisterTestTextScroll(const DmdType &dmd)
         dmdSpwmRegisterTestVisibleWidth(dmd);
     dmd_spwm_register_test_text_scroll_state.band = 0;
     dmd_spwm_register_test_text_scroll_state.initialized = true;
+}
+
+// Return the distance from the current marquee phase to the end of the bottom
+// pass so the next REG upload starts as the marquee wraps to the top band.
+template <typename DmdType>
+static uint32_t dmdSpwmRegisterTestTextScrollStepsToBottomEnd(
+    const DmdType &dmd)
+{
+    dmdSpwmInitializeRegisterTestTextScroll(dmd);
+    const int32_t visible_width = dmdSpwmRegisterTestVisibleWidth(dmd);
+    const int16_t text_height =
+        dmdSpwmRegisterTestTextScrollHeight(dmd.height());
+    const int32_t text_width =
+        dmdSpwmRegisterTestTextScrollWidth(text_height);
+    if (visible_width <= 0 || text_height <= 0 || text_width <= 0) return 0;
+
+    const uint32_t pass_steps = (uint32_t)(visible_width + text_width);
+    const uint32_t cycle_steps = pass_steps * 3UL;
+    const uint32_t band_progress = (uint32_t)(
+        visible_width - dmd_spwm_register_test_text_scroll_state.x);
+    const uint32_t current_phase =
+        dmd_spwm_register_test_text_scroll_state.band * pass_steps +
+        band_progress;
+    return cycle_steps - current_phase;
 }
 
 // Draw the fixed message at its current horizontal position in the active
@@ -429,8 +474,8 @@ static void dmdSpwmDrawRegisterTestTextScroll(DmdType &dmd,
     dmdSpwmDrawRegisterTestLabel(dmd, catalog_index);
 }
 
-// Advance by the elapsed number of marquee pixels. Carry excess movement into
-// later bands so slow SPWM uploads do not cap the configured scroll speed.
+// Advance by the requested marquee distance, carrying excess movement across
+// later bands when a configured frame step reaches a wrap boundary.
 template <typename DmdType>
 static void dmdSpwmAdvanceRegisterTestTextScroll(const DmdType &dmd,
                                                  uint32_t steps = 1)
@@ -443,7 +488,10 @@ static void dmdSpwmAdvanceRegisterTestTextScroll(const DmdType &dmd,
         dmdSpwmRegisterTestTextScrollHeight(dmd.height());
     const int32_t text_width =
         dmdSpwmRegisterTestTextScrollWidth(text_height);
-    if (visible_width <= 0 || text_width <= 0) return;
+    if (visible_width <= 0 || text_height <= 0 || text_width <= 0) return;
+
+    // Count the requested movement before the wrap calculation consumes it.
+    dmd_spwm_register_test_text_scroll_state.total_steps += steps;
 
     const uint32_t distance_to_wrap =
         (uint32_t)(dmd_spwm_register_test_text_scroll_state.x + text_width);
@@ -482,9 +530,9 @@ static void dmdSpwmDrawRegisterTestScene(DmdType &dmd,
 #endif
 }
 
-// Update the selected pattern when its frame interval has elapsed. Keeping the
-// presentation separate lets mandatory register-load swaps carry a fresh frame
-// without adding any extra protocol cycles.
+// Update the selected pattern with the same millis() timing gate used by the
+// dmd_spwm_panel demo loop. Keeping presentation separate lets mandatory
+// register-load swaps carry a fresh frame without extra protocol cycles.
 template <typename DmdType>
 static bool dmdSpwmPrepareRegisterTestFrame(
     DmdType &dmd, uint16_t catalog_index, uint32_t &last_frame_at)
@@ -498,15 +546,18 @@ static bool dmdSpwmPrepareRegisterTestFrame(
 #else
     const uint32_t interval = 30;
 #endif
-    if (elapsed < interval) return false;
+    if (elapsed <= interval) return false;
+
+    // Reset at the start of the frame, matching the demo loop so missed
+    // intervals are not replayed as a multi-step animation jump.
+    last_frame_at = now;
 
 #if DMD_SPWM_REGISTER_TEST_PATTERN == \
     DMD_SPWM_REGISTER_TEST_PATTERN_TEXTSCROLL
-    const uint32_t steps = elapsed / interval;
-    last_frame_at += steps * interval;
-    dmdSpwmAdvanceRegisterTestTextScroll(dmd, steps);
-#else
-    last_frame_at = now;
+    // Advance once per presented frame; the sketch define controls how often
+    // this configured pixel step is applied.
+    dmdSpwmAdvanceRegisterTestTextScroll(
+        dmd, (uint32_t)DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS);
 #endif
     dmdSpwmDrawRegisterTestScene(dmd, catalog_index);
     return true;
@@ -523,15 +574,9 @@ static void dmdSpwmRefreshRegisterTestFrame(
     dmd.swapBuffers(true);
 }
 
-// Poll at a practical maximum of 100 Hz. TEXTSCROLL carries elapsed pixel steps
-// forward, so this limits upload traffic without reducing its target speed.
-static uint8_t dmdSpwmRegisterTestPollDelayMs()
-{
-    return 10;
-}
-
-// Draw the scene, stage one profile, and clock all required load cycles. Return
-// the last presented frame time so animation cadence survives the transition.
+// Draw the scene, stage one profile, and clock all required load cycles. Hold
+// TEXTSCROLL stationary during the upload, then return a fresh frame timestamp
+// so its configured cadence resumes cleanly after the transition.
 template <typename DmdType, typename ProfileType>
 static uint32_t dmdSpwmShowRegisterTestProfile(
     DmdType &dmd, const ProfileType &profile, uint8_t word_delay_ms)
@@ -543,13 +588,25 @@ static uint32_t dmdSpwmShowRegisterTestProfile(
     const uint8_t cycles = dmd.registerTestApplyCycles(profile);
     for (uint8_t cycle = 0; cycle < cycles; cycle++)
     {
+#if DMD_SPWM_REGISTER_TEST_PATTERN == \
+    DMD_SPWM_REGISTER_TEST_PATTERN_TEXTSCROLL
+        // TEXTSCROLL intentionally reuses its already drawn framebuffer so
+        // register upload timing cannot advance the marquee unevenly.
+#else
         // Reuse each required register-load swap as the presentation step for
         // any frame that became due; this never changes the protocol count.
         dmdSpwmPrepareRegisterTestFrame(
             dmd, profile.catalog_index, last_frame_at);
+#endif
         dmd.swapBuffers(true);
         delay(word_delay_ms);
     }
+#if DMD_SPWM_REGISTER_TEST_PATTERN == \
+    DMD_SPWM_REGISTER_TEST_PATTERN_TEXTSCROLL
+    // Start the next frame interval only after every required upload cycle and
+    // delay has completed, turning the transition into a deliberate hold.
+    last_frame_at = millis();
+#endif
     return last_frame_at;
 }
 
@@ -581,7 +638,6 @@ static uint16_t dmdSpwmRunRegisterTest(
             {
                 dmdSpwmRefreshRegisterTestFrame(
                     dmd, profile.catalog_index, last_frame_at);
-                delay(dmdSpwmRegisterTestPollDelayMs());
             }
             delay(25);
             if (digitalRead(button_pin) == button_active_level) break;
@@ -598,11 +654,9 @@ static uint16_t dmdSpwmRunRegisterTest(
                 {
                     dmdSpwmRefreshRegisterTestFrame(
                         dmd, profile.catalog_index, last_frame_at);
-                    delay(dmdSpwmRegisterTestPollDelayMs());
                 }
                 return profile.catalog_index;
             }
-            delay(dmdSpwmRegisterTestPollDelayMs());
         }
 
         profile_index++;
@@ -610,7 +664,8 @@ static uint16_t dmdSpwmRunRegisterTest(
     }
 }
 
-// Cycle profiles forever at a fixed interval on boards without a test button.
+// Cycle profiles forever after their minimum interval on buttonless boards.
+// TEXTSCROLL additionally waits for one full top/middle/bottom cycle.
 template <typename DmdType, typename ProfileType>
 static uint16_t dmdSpwmRunRegisterTestAuto(
     DmdType &dmd, const ProfileType *profiles, uint16_t profile_count,
@@ -622,15 +677,48 @@ static uint16_t dmdSpwmRunRegisterTestAuto(
     while (true)
     {
         const ProfileType &profile = profiles[profile_index];
+#if DMD_SPWM_REGISTER_TEST_PATTERN == \
+    DMD_SPWM_REGISTER_TEST_PATTERN_TEXTSCROLL
+        // Anchor the REG period before its upload so successive changes remain
+        // locked to the end of the bottom-band scroll.
+        const uint32_t scroll_advance_after_steps =
+            dmdSpwmRegisterTestTextScrollStepsToBottomEnd(dmd);
+        const uint32_t scroll_started_at =
+            dmd_spwm_register_test_text_scroll_state.total_steps;
+        const uint32_t scroll_cycle_steps =
+            dmdSpwmRegisterTestTextScrollCycleSteps(dmd);
+#endif
         uint32_t last_frame_at = dmdSpwmShowRegisterTestProfile(
             dmd, profile, word_delay_ms);
 
         const uint32_t shown_at = millis();
-        while ((uint32_t)(millis() - shown_at) < advance_time_ms)
+#if DMD_SPWM_REGISTER_TEST_PATTERN == \
+    DMD_SPWM_REGISTER_TEST_PATTERN_TEXTSCROLL
+        // The upload loop held the marquee stationary; begin its first moving
+        // frame only after the normal configured interval has elapsed.
+        last_frame_at = shown_at;
+#endif
+
+        while (true)
         {
+            bool ready_to_advance =
+                (uint32_t)(millis() - shown_at) >= advance_time_ms;
+#if DMD_SPWM_REGISTER_TEST_PATTERN == \
+    DMD_SPWM_REGISTER_TEST_PATTERN_TEXTSCROLL
+            // Invalid display geometry falls back to the minimum time instead
+            // of trapping the automatic register test on one profile.
+            if (scroll_cycle_steps > 0)
+            {
+                ready_to_advance = ready_to_advance &&
+                    (uint32_t)(
+                        dmd_spwm_register_test_text_scroll_state.total_steps -
+                        scroll_started_at) >= scroll_advance_after_steps;
+            }
+#endif
+            if (ready_to_advance) break;
+
             dmdSpwmRefreshRegisterTestFrame(
                 dmd, profile.catalog_index, last_frame_at);
-            delay(dmdSpwmRegisterTestPollDelayMs());
         }
 
         profile_index++;
