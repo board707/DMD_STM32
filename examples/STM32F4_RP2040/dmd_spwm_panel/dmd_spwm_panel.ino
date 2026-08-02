@@ -29,8 +29,12 @@
 // TEXTSCROLL frame interval: smaller is faster, larger is slower.
 #define DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_INTERVAL_MS 30UL
 // Pixels moved per frame: 1 is smoothest; larger values scroll faster.
-#define DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS 3UL
-#include "register_test/register_test_config.h"
+//#define DMD_SPWM_REGISTER_TEST_TEXT_SCROLL_STEP_PIXELS 3UL
+
+// STM32: Choose a button pin used to select a profile in Config Finder mode.
+// See also comment to RGB pins selection.
+#define DMD_SPWM_REGISTER_TEST_BUTTON_PIN PB10
+#include "register_test_config.h"
 
 // Fonts includes
 #include "st_fonts/UkrRusArial14.h"
@@ -70,7 +74,10 @@ uint8_t mux_list[] = { DMD_PIN_A , DMD_PIN_B , DMD_PIN_C , DMD_PIN_D , DMD_PIN_E
 // By default the library uses RGB color order.
 // If you need to change this - reorder the R0, G0, B0, R1, G1, B1 pins.
 // All this pins also must be selected from same port!
-// Note: If using Register Config Finder - The Key button uses PA0, so please use an alternative for R0 e.g PA7
+
+// Note: If using Register Config Finder on STM32F4 - be aware not to use one of RGB pins as a profile switching key.
+// BlackPill built-in button uses PA0 - so please use an alternative for R0 e.g PA7 if you want to use the key.
+// The default Finder button key pin is PB10.
 uint8_t custom_rgbpins[] = {PA6, PA0,PA1,PA2,PA3,PA4,PA5 }; // CLK, R0, G0, B0, R1, G1, B1
 
 #elif (defined(ARDUINO_ARCH_RP2040))

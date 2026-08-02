@@ -21,7 +21,8 @@ Multiple scan headers are tested in include order:
   profile is applied. `TEXTSCROLL` remains visible for at least 3 seconds and
   changes REG at the end of the bottom-band pass as the marquee wraps back to
   the top. Later changes occur one complete top/middle/bottom cycle apart at
-  that same position. The test wraps indefinitely. Note the preferred `REG N`, then compile it as an override; RP2040 test mode does not enter the normal demo.
+  that same position. The test wraps indefinitely. Note the preferred `REG N`, 
+  then compile it as an override; RP2040 test mode does not enter the normal demo.
 
 `REG N` is the original source `regtypeN` number, not its position in the
 combined list.

@@ -447,7 +447,7 @@ struct DMD_SPWM_RegisterTestCatalog<
 #elif defined(BTN_K0)
 #define DMD_SPWM_REGISTER_TEST_BUTTON_PIN BTN_K0
 #elif defined(MCU_STM32F401CC) || defined(MCU_STM32F411CE)
-#define DMD_SPWM_REGISTER_TEST_BUTTON_PIN PA0
+#define DMD_SPWM_REGISTER_TEST_BUTTON_PIN PB10
 #else
 #error "Set DMD_SPWM_REGISTER_TEST_BUTTON_PIN to an unused active-low button pin"
 #endif
