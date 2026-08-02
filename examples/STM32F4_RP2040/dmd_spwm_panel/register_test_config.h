@@ -245,10 +245,6 @@ dmd_spwm_dp3264_register_test_profiles[] = {
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_SM16380SH
 #undef DMD_SPWM_REGISTER_TEST_PROFILE_CHIP_DP3264
 
-// Map each register-test driver type to its compiled-in profile array.
-template <typename DmdType>
-struct DMD_SPWM_RegisterTestCatalog;
-
 // Perform a constexpr REG lookup so an unavailable override fails at compile
 // time rather than silently falling back to the driver's built-in registers.
 template <typename ProfileType>
@@ -261,168 +257,87 @@ static constexpr bool dmdSpwmRegisterTestCatalogContains(
             profiles + 1, count - 1, catalog_index);
 }
 
+// Per-driver binding of profile element type and compiled-in table.
+// Use sizeof on the array alias to get the number of elements.
+template <typename DmdType>
+struct DMD_SPWM_RegisterTestCatalogData;
+
 template <int... Pars>
-struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_FM6353_RegisterTest<Pars...> > {
+struct DMD_SPWM_RegisterTestCatalogData<
+    DMD_RGB_FM6353_RegisterTest<Pars...> > {
     typedef DMD_SPWM_FM6353_RegisterTestProfile ProfileType;
-    enum {
-        PROFILE_COUNT = sizeof(dmd_spwm_fm6353_register_test_profiles) /
-                        sizeof(dmd_spwm_fm6353_register_test_profiles[0])
-    };
-    // Return this driver's compiled-in profiles.
-    static const ProfileType *profiles()
-    {
-        return dmd_spwm_fm6353_register_test_profiles;
-    }
-    // Return the number of compiled-in profiles.
-    static uint16_t profileCount() { return PROFILE_COUNT; }
-    // Report at compile time whether this REG was included.
-    static constexpr bool contains(uint16_t catalog_index)
-    {
-        return dmdSpwmRegisterTestCatalogContains(
-            dmd_spwm_fm6353_register_test_profiles,
-            PROFILE_COUNT, catalog_index);
-    }
+    static constexpr auto &profiles =
+        dmd_spwm_fm6353_register_test_profiles;
+    enum { PROFILE_COUNT = sizeof(profiles) / sizeof(profiles[0]) };
 };
 
 template <int... Pars>
-struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_FM6363_RegisterTest<Pars...> > {
+struct DMD_SPWM_RegisterTestCatalogData<
+    DMD_RGB_FM6363_RegisterTest<Pars...> > {
     typedef DMD_SPWM_FM6363_RegisterTestProfile ProfileType;
-    enum {
-        PROFILE_COUNT = sizeof(dmd_spwm_fm6363_register_test_profiles) /
-                        sizeof(dmd_spwm_fm6363_register_test_profiles[0])
-    };
-    // Return this driver's compiled-in profiles.
-    static const ProfileType *profiles()
-    {
-        return dmd_spwm_fm6363_register_test_profiles;
-    }
-    // Return the number of compiled-in profiles.
-    static uint16_t profileCount() { return PROFILE_COUNT; }
-    // Report at compile time whether this REG was included.
-    static constexpr bool contains(uint16_t catalog_index)
-    {
-        return dmdSpwmRegisterTestCatalogContains(
-            dmd_spwm_fm6363_register_test_profiles,
-            PROFILE_COUNT, catalog_index);
-    }
+    static constexpr auto &profiles =
+        dmd_spwm_fm6363_register_test_profiles;
+    enum { PROFILE_COUNT = sizeof(profiles) / sizeof(profiles[0]) };
 };
 
 template <int... Pars>
-struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_FM6373_RegisterTest<Pars...> > {
+struct DMD_SPWM_RegisterTestCatalogData<
+    DMD_RGB_FM6373_RegisterTest<Pars...> > {
     typedef DMD_SPWM_FM6373_RegisterTestProfile ProfileType;
-    enum {
-        PROFILE_COUNT = sizeof(dmd_spwm_fm6373_register_test_profiles) /
-                        sizeof(dmd_spwm_fm6373_register_test_profiles[0])
-    };
-    // Return this driver's compiled-in profiles.
-    static const ProfileType *profiles()
-    {
-        return dmd_spwm_fm6373_register_test_profiles;
-    }
-    // Return the number of compiled-in profiles.
-    static uint16_t profileCount() { return PROFILE_COUNT; }
-    // Report at compile time whether this REG was included.
-    static constexpr bool contains(uint16_t catalog_index)
-    {
-        return dmdSpwmRegisterTestCatalogContains(
-            dmd_spwm_fm6373_register_test_profiles,
-            PROFILE_COUNT, catalog_index);
-    }
+    static constexpr auto &profiles =
+        dmd_spwm_fm6373_register_test_profiles;
+    enum { PROFILE_COUNT = sizeof(profiles) / sizeof(profiles[0]) };
 };
 
 template <int... Pars>
-struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_ICN1065_RegisterTest<Pars...> > {
+struct DMD_SPWM_RegisterTestCatalogData<
+    DMD_RGB_ICN1065_RegisterTest<Pars...> > {
     typedef DMD_SPWM_ICND1065L_RegisterTestProfile ProfileType;
-    enum {
-        PROFILE_COUNT = sizeof(dmd_spwm_icnd1065l_register_test_profiles) /
-                        sizeof(dmd_spwm_icnd1065l_register_test_profiles[0])
-    };
-    // Return this driver's compiled-in profiles.
-    static const ProfileType *profiles()
-    {
-        return dmd_spwm_icnd1065l_register_test_profiles;
-    }
-    // Return the number of compiled-in profiles.
-    static uint16_t profileCount() { return PROFILE_COUNT; }
-    // Report at compile time whether this REG was included.
-    static constexpr bool contains(uint16_t catalog_index)
-    {
-        return dmdSpwmRegisterTestCatalogContains(
-            dmd_spwm_icnd1065l_register_test_profiles,
-            PROFILE_COUNT, catalog_index);
-    }
+    static constexpr auto &profiles =
+        dmd_spwm_icnd1065l_register_test_profiles;
+    enum { PROFILE_COUNT = sizeof(profiles) / sizeof(profiles[0]) };
 };
 
-// Map the ICN2055 adapter to its scan-selected ICND2055 catalogue data.
 template <int... Pars>
-struct DMD_SPWM_RegisterTestCatalog<DMD_RGB_ICN2055_RegisterTest<Pars...> > {
+struct DMD_SPWM_RegisterTestCatalogData<
+    DMD_RGB_ICN2055_RegisterTest<Pars...> > {
     typedef DMD_SPWM_ICND2055_RegisterTestProfile ProfileType;
-    enum {
-        PROFILE_COUNT = sizeof(dmd_spwm_icnd2055_register_test_profiles) /
-                        sizeof(dmd_spwm_icnd2055_register_test_profiles[0])
-    };
-    // Return this driver's compiled-in profiles.
-    static const ProfileType *profiles()
-    {
-        return dmd_spwm_icnd2055_register_test_profiles;
-    }
-    // Return the number of compiled-in profiles.
-    static uint16_t profileCount() { return PROFILE_COUNT; }
-    // Report at compile time whether this REG was included.
-    static constexpr bool contains(uint16_t catalog_index)
-    {
-        return dmdSpwmRegisterTestCatalogContains(
-            dmd_spwm_icnd2055_register_test_profiles,
-            PROFILE_COUNT, catalog_index);
-    }
+    static constexpr auto &profiles =
+        dmd_spwm_icnd2055_register_test_profiles;
+    enum { PROFILE_COUNT = sizeof(profiles) / sizeof(profiles[0]) };
 };
 
 template <int... Pars>
-struct DMD_SPWM_RegisterTestCatalog<
+struct DMD_SPWM_RegisterTestCatalogData<
     DMD_RGB_SM16380SH_RegisterTest<Pars...> > {
     typedef DMD_SPWM_SM16380SH_RegisterTestProfile ProfileType;
-    enum {
-        PROFILE_COUNT = sizeof(dmd_spwm_sm16380sh_register_test_profiles) /
-                        sizeof(dmd_spwm_sm16380sh_register_test_profiles[0])
-    };
-    // Return this driver's compiled-in profiles.
-    static const ProfileType *profiles()
-    {
-        return dmd_spwm_sm16380sh_register_test_profiles;
-    }
-    // Return the number of compiled-in profiles.
-    static uint16_t profileCount() { return PROFILE_COUNT; }
-    // Report at compile time whether this REG was included.
-    static constexpr bool contains(uint16_t catalog_index)
-    {
-        return dmdSpwmRegisterTestCatalogContains(
-            dmd_spwm_sm16380sh_register_test_profiles,
-            PROFILE_COUNT, catalog_index);
-    }
+    static constexpr auto &profiles =
+        dmd_spwm_sm16380sh_register_test_profiles;
+    enum { PROFILE_COUNT = sizeof(profiles) / sizeof(profiles[0]) };
 };
 
-// Map the DP3264-compatible adapter to its scan-selected ChipCode 219 data.
 template <int... Pars>
-struct DMD_SPWM_RegisterTestCatalog<
+struct DMD_SPWM_RegisterTestCatalogData<
     DMD_RGB_DP3264_RegisterTest<Pars...> > {
     typedef DMD_SPWM_DP3264_RegisterTestProfile ProfileType;
-    enum {
-        PROFILE_COUNT = sizeof(dmd_spwm_dp3264_register_test_profiles) /
-                        sizeof(dmd_spwm_dp3264_register_test_profiles[0])
-    };
-    // Return this driver's compiled-in profiles.
-    static const ProfileType *profiles()
-    {
-        return dmd_spwm_dp3264_register_test_profiles;
-    }
-    // Return the number of compiled-in profiles.
+    static constexpr auto &profiles =
+        dmd_spwm_dp3264_register_test_profiles;
+    enum { PROFILE_COUNT = sizeof(profiles) / sizeof(profiles[0]) };
+};
+
+// Shared catalog API; driver-specific tables come from CatalogData.
+template <typename DmdType>
+struct DMD_SPWM_RegisterTestCatalog {
+    typedef DMD_SPWM_RegisterTestCatalogData<DmdType> Data;
+    typedef typename Data::ProfileType ProfileType;
+    enum { PROFILE_COUNT = Data::PROFILE_COUNT };
+
+    static const ProfileType *profiles() { return Data::profiles; }
     static uint16_t profileCount() { return PROFILE_COUNT; }
-    // Report at compile time whether this REG was included.
     static constexpr bool contains(uint16_t catalog_index)
     {
         return dmdSpwmRegisterTestCatalogContains(
-            dmd_spwm_dp3264_register_test_profiles,
-            PROFILE_COUNT, catalog_index);
+            Data::profiles, PROFILE_COUNT, catalog_index);
     }
 };
 

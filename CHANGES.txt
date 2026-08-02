@@ -1,6 +1,6 @@
 # ChangeLog
 ## [1.2.16] - 2026-07-27
- - PR 219 from @kingdo9 - register config finder.
+ - PR 219 from @kingdo9 - sPWM register config finder.
    See register_test/README.md
 
 ## [1.2.15] - 2026-07-20
