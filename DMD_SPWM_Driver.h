@@ -1108,9 +1108,9 @@ public:
 		this->OE_TIMER_cc = 4 * this->TIM3_PERIOD;
 		DMD_RGB_DP3264_BASE<Pars...>::init(scan_interval);
 
-		uint16_t conf_3264[] = {0x1100, 0x020f, 0x033f, 0x043f, 0x0504, 0x0642, 0x0700, 0x08BF, 0x0960, 0x0ABE, 0x0B8B, 0x0C88, 0x0D12};
+		uint16_t conf_3264[] = {0x020f, 0x033f, 0x043f, 0x0504, 0x0642, 0x0700, 0x08BF, 0x0960, 0x0ABE, 0x0B8B, 0x0C88, 0x0D12, 0x1100};
 
-		conf_3264[1] = 0x0200 | (this->nRows - 1); /// panel scan
+		conf_3264[0] = 0x0200 | (this->nRows - 1); /// panel scan
 		ADD_CONFIG_REGS(conf_3264);
 		this->spwm_chip_init();
 	}
