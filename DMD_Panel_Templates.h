@@ -97,7 +97,8 @@
 #define RGB80x40_S10_ShiPC123 		3,80,40,10,102,4,PATTERN_UPS	// 80x40 s10 4 pixbase, SHIFT_REG, from ShiPC123, issue #104
 #define RGB80x40s10SR_digi55 		3,80,40,10,122,16,1             // 80x40 s10, pixbase 16, SHIFT_REG from @digi55, issue #121
 #define RGB104x52_S13_funnymind   	4,104,52,13,64                 // 104x52 s13 pixbase 4, SHIFT_REG, from funnymind, issue #145
-#define RGB172x86_s43_shadowpho     33,176,86,43,65               // 172x86 s43, SHIFT_REG, from shadowpho, issue #192
+#define RGB172x86_s43_shadowpho     33,176,86,43,65                // 172x86 s43, SHIFT_REG, from shadowpho, issue #192
+#define RGB64x32s8_6373  			33,64,32,8,3				   // My 64x32 s8, FM6373/TC7559 panel
 
 /*--------------------------------------------------------------------------------------*/
 template <int MUX_CNT, int P_Width, int P_Height, int SCAN, int SCAN_TYPE, int... Pars>

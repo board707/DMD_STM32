@@ -40,8 +40,24 @@ The chips supported:
 /*--------------------------------------------------------------------------------------*/
 #if (defined(__STM32F1__) || defined(__STM32F4__))
 
+/* Clock settings:
+
+CLK_WITH_DATA
+DATA __/==\__
+CLK  __/==\__   CLK in the same tick as data
+
+CLK_AFTER_DATA
+DATA __/==\__
+CLK  ___/==\__   CLK in the next tick after data
+
+*/
 #define CLOCK_SETTINGS  CLK_AFTER_DATA   // options: CLK_WITH_DATA / CLK_AFTER_DATA
 
+/* Dual clock pulses
+  Single-width (1 processor tick) data and clock pulses  
+  may be too short for some drivers. In this case, 
+  we hold the data and clock signals for two ticks.
+*/
 #if defined(__STM32F1__)
 #define DUAL_CLK_PULSE  false           // options: true / false
 #elif defined(__STM32F4__)

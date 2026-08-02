@@ -1,4 +1,12 @@
 # ChangeLog
+
+## [1.2.17] - 2026-08-02
+ - Register Config Finder 
+    * Advanced TEXTSCROLL mode
+    * Animation improvements
+    * RP register time fix
+   See examples/STM32F4_RP2040/dmd_spwm_panel/README.md
+
 ## [1.2.16] - 2026-07-27
  - PR 219 from @kingdo9 - sPWM register config finder.
    See register_test/README.md
