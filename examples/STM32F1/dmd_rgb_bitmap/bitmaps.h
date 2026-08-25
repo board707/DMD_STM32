@@ -4,7 +4,13 @@
 // based on Russian folk embroidery
 // see also https://www.pinme.ru/u/yavazhure/slavyanskaya-vyishivka-shemyi-uzoryi/
 
+#ifdef __AVR__
 #include <avr/pgmspace.h>
+#elif defined (ESP8266)
+#include <pgmspace.h>
+#else
+#define PROGMEM
+#endif
 
 const uint16_t vyshivka_64_32[2048] PROGMEM={
 0x0000, 0x0000, 0x0000, 0x0000, 0xC880, 0xC880, 0xC880, 0x0000, 0x0000, 0x0000, 0xC880, 0x0000, 0x0000, 0x0000, 0xC880, 0xC880,   // 0x0010 (16) pixels

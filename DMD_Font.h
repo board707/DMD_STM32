@@ -20,6 +20,7 @@
 
 --------------------------------------------------------------------------------------*/
 #pragma once
+#include "DMD_STM32duino_defs.h"
 #include <Arduino.h>
 #include "gfxfont.h"
 
@@ -35,14 +36,25 @@
 #define pgm_read_dword(addr) (*(const unsigned long *)(addr))
 #endif
 #endif
+
+
 // Pointers are a peculiar case...typically 16-bit on AVR boards,
 // 32 bits elsewhere.  Try to accommodate both...
-
+#if (defined(DMD_STM32DUINO))
+#ifndef pgm_read_pointer
+#define pgm_read_pointer(addr) pgm_read_ptr(addr)
+#endif
+#else
 #if !defined(__INT_MAX__) || (__INT_MAX__ > 0xFFFF)
 #define pgm_read_pointer(addr) ((void *)pgm_read_dword(addr))
 #else
 #define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
 #endif 
+#endif
+
+
+
+
 
 // Font Indices
 #define FONT_LENGTH             0

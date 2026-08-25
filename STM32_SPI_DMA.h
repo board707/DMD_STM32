@@ -21,7 +21,7 @@ public:
 	SPIDMAClass(const SPIClass& _spi)
 		: SPIClass(_spi) {}
 
-	void begin(SPIDeviceMode device = SPI_MASTER);
+	void begin();
 	void end();
 
 	void onTransmit(SPI_DMA_Callback callback) { _txCallback = callback; }

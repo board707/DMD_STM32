@@ -123,7 +123,7 @@ There are two ways to install the library:
 
   > Roger Clark: core versions before [d05a128](https://github.com/rogerclarkmelbourne/Arduino_STM32/commit/d05a1289f1e2eaa5127a4bfed9602e2cd48c6ffe) (28 Apr 2024) are incompatible with recent Adafruit GFX. Use core ≥ d05a128 or Adafruit GFX ≤ 1.7.0 ([v1.7.0](https://github.com/adafruit/Adafruit-GFX-Library/releases/tag/1.7.0)).
 
-  > STM32duino: using DMA in RGB and Monochrome modes are disabled; RGB uses bit-bang, Monochrome SPI uses polling. OE PWM via `DMD_STM32duino` shim.
+  > STM32duino: both 2.x.x & recent 3.0.0 releases supported; using DMA in RGB modes are disabled, RGB uses bit-bang instead. Note that STM32duino core is not compatible with sPWM drivers support.
 
   **STM32duino port verified on:** STM32F103 (CBT), STM32F401, STM32F411 — RGB panels (`DMD_RGB`), dual buffer, GFX/Cyrillic fonts. Example: `examples/STM32duino/dmd_rgb_effects`.
 

@@ -166,9 +166,9 @@ void SPIDMAClass::setupDma()
 #endif
 }
 
-void SPIDMAClass::begin(SPIDeviceMode device)
+void SPIDMAClass::begin()
 {
-	SPIClass::begin(device);
+	SPIClass::begin();
 	setupDma();
 }
 

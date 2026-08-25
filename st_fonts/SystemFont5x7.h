@@ -30,7 +30,13 @@
  */
 
 #include <inttypes.h>
+#ifdef __AVR__
 #include <avr/pgmspace.h>
+#elif defined (ESP8266)
+#include <pgmspace.h>
+#else
+#define PROGMEM
+#endif
 
 #ifndef SYSTEM5x7_H
 #define SYSTEM5x7_H

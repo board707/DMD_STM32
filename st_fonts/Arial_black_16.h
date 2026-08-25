@@ -37,7 +37,13 @@
  */
 
 #include <inttypes.h>
+#ifdef __AVR__
 #include <avr/pgmspace.h>
+#elif defined (ESP8266)
+#include <pgmspace.h>
+#else
+#define PROGMEM
+#endif
 
 #ifndef ARIAL_BLACK_16_H
 #define ARIAL_BLACK_16_H

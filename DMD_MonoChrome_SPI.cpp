@@ -155,12 +155,8 @@ void DMD_MonoChrome_SPI::init(uint16_t scan_interval) {
 #endif
 #endif	
   
-    SPI_DMD.setBitOrder(MSBFIRST); // Set the SPI bit order
-	SPI_DMD.setDataMode(SPI_MODE0); //Set the  SPI data mode 0
-	
-	//SPI_DMD.setClockDivider(SPI_CLOCK_DIV16);  // Use a different speed to SPI 1 */
+   
 	SPI_DMD.beginTransaction(SPISettings(DMD_SPI_CLOCK, MSBFIRST, SPI_MODE0));
-	
 	register_running_dmd(this, scan_interval);
 
 #elif  (defined(ARDUINO_ARCH_RP2040))
