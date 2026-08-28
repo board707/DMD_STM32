@@ -1,7 +1,9 @@
 #ifndef DMD_SPWM_REGISTER_TEST_DRIVER_H
 #define DMD_SPWM_REGISTER_TEST_DRIVER_H
 
+#if DMD_SPWM_REGISTER_TEST_ENABLED
 #include "register_test_base.h"
+#endif
 
 // Describes how catalog words map to the native driver's transmission slots.
 enum DMD_SPWM_RegisterTestWordOrder : uint8_t {
@@ -131,7 +133,7 @@ protected:
     // Intercept native register sends. Mode 0 broadcasts the staged Red word;
     // mode 1 replaces only real payload words with separate R/G/B values.
     // Preambles, suffixes, and other protocol commands remain broadcast.
-    void send_to_allRGB(uint16_t data, uint16_t latches) override
+    void send_to_RGB(uint16_t data, uint16_t latches) override
     {
 #if DMD_SPWM_REGISTER_TEST_USE_RGB_CHANNEL_DATA
         uint8_t source_word = 0;
@@ -182,7 +184,7 @@ private:
 
         if (LoadMode == DMD_SPWM_REGISTER_TEST_LOAD_ONE_WORD)
         {
-            if (native_frame_word != OneWordPayloadSlot) return false;
+            //if (native_frame_word != OneWordPayloadSlot) return false;
             source_word = active_word;
             return source_word < active_profile->word_count;
         }

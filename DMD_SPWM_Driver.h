@@ -192,6 +192,13 @@ protected:
 
 	// Send independent 16-bit register values to the physical R, G and B
 	// output lanes while keeping the normal SPWM clock and latch timing.
+    virtual void send_to_RGB(uint16_t data, uint16_t latches)
+	{
+		this->send_to_allRGB(data, latches);
+	}
+
+
+
 	void send_to_RGB(uint16_t red, uint16_t green, uint16_t blue,
 					 uint16_t latches)
 	{
@@ -304,7 +311,7 @@ protected:
 		{
 			delayMicroseconds(1);
 			this->send_latches(14);						  // pre-active command
-			this->send_to_allRGB(conf_reg[r], r * 2 + 2); // send config registers
+			this->send_to_RGB(conf_reg[r], r * 2 + 2); // send config registers
 		}
 	}
 
@@ -881,6 +888,34 @@ protected:
 		timer_resume(this->CLK_TIMER);
 	}
 
+    void load_config_regs(uint16_t *conf_reg) override
+	{
+		static uint8_t r = this->conf_reg_cnt;
+		r++;
+		if (r >= this->conf_reg_cnt)
+		{
+
+			r = 0;
+		}
+
+		this->send_vsync(); // vsync
+		this->send_clocks(8);
+		this->send_latches(11); // pre-active command
+		//*(this->oesetreg) = this->oemask << 16;
+		this->send_clocks(8);
+		//*(this->oesetreg) = this->oemask;
+		this->send_latches(14); // pre-active command
+		//*(this->oesetreg) = this->oemask << 16;
+		this->send_clocks(8);
+		// this->start_GCLK();
+		this->send_to_allRGB(0x00aa, 5);
+		this->send_to_allRGB(0x01aa, 5);
+		this->send_to_RGB(conf_reg[r], 5); // send config registers
+		this->send_to_allRGB(0x0055, 5);
+		this->send_to_allRGB(0x0155, 5);
+		this->send_clocks(8);
+	}
+
 	// Load new greyscale data
 	// Driver expext 16 bits per pixel = 12-14 bits grayscale + 2-4 dummy bits
 	// Since the library used only 4 bits per color, we load them to 4 MSB driver bits
@@ -1150,7 +1185,7 @@ protected:
 		//*(this->oesetreg) = this->oemask << 16;
 		this->send_clocks(8);
 		// this->start_GCLK();
-		this->send_to_allRGB(conf_reg[r], 5); // send config registers
+		this->send_to_RGB(conf_reg[r], 5); // send config registers
 		this->send_clocks(8);
 	}
 };
@@ -1204,33 +1239,7 @@ public:
 	}
 
 protected:
-	void load_config_regs(uint16_t *conf_reg) override
-	{
-		static uint8_t r = this->conf_reg_cnt;
-		r++;
-		if (r >= this->conf_reg_cnt)
-		{
-
-			r = 0;
-		}
-
-		this->send_vsync(); // vsync
-		this->send_clocks(8);
-		this->send_latches(11); // pre-active command
-		//*(this->oesetreg) = this->oemask << 16;
-		this->send_clocks(8);
-		//*(this->oesetreg) = this->oemask;
-		this->send_latches(14); // pre-active command
-		//*(this->oesetreg) = this->oemask << 16;
-		this->send_clocks(8);
-		// this->start_GCLK();
-		this->send_to_allRGB(0x00aa, 5);
-		this->send_to_allRGB(0x01aa, 5);
-		this->send_to_allRGB(conf_reg[r], 5); // send config registers
-		this->send_to_allRGB(0x0055, 5);
-		this->send_to_allRGB(0x0155, 5);
-		this->send_clocks(8);
-	}
+	
 };
 
 /*--------------------------------------------------------------------------------------*/
@@ -1280,33 +1289,7 @@ public:
 	}
 
 protected:
-	void load_config_regs(uint16_t *conf_reg) override
-	{
-		static uint8_t r = this->conf_reg_cnt;
-		r++;
-		if (r >= this->conf_reg_cnt)
-		{
-
-			r = 0;
-		}
-
-		this->send_vsync(); // vsync
-		this->send_clocks(8);
-		this->send_latches(11); // pre-active command
-		//*(this->oesetreg) = this->oemask << 16;
-		this->send_clocks(8);
-		//*(this->oesetreg) = this->oemask;
-		this->send_latches(14); // pre-active command
-		//*(this->oesetreg) = this->oemask << 16;
-		this->send_clocks(8);
-		// this->start_GCLK();
-		this->send_to_allRGB(0x00aa, 5);
-		this->send_to_allRGB(0x01aa, 5);
-		this->send_to_allRGB(conf_reg[r], 5); // send config registers
-		this->send_to_allRGB(0x0055, 5);
-		this->send_to_allRGB(0x0155, 5);
-		this->send_clocks(8);
-	}
+	
 };
 /*--------------------------------------------------------------------------------------*/
 // SM16380sh driver class
@@ -1363,35 +1346,7 @@ public:
 	}
 
 protected:
-	void load_config_regs(uint16_t *conf_reg) override
-	{
-		static uint8_t r = this->conf_reg_cnt;
-		r++;
-		if (r >= this->conf_reg_cnt)
-		{
-
-			r = 0;
-		}
-
-		this->send_vsync(); // vsync
-		//this->send_clocks(8);
-		//this->send_latches(11); // pre-active command
-		//*(this->oesetreg) = this->oemask << 16;
-		this->send_clocks(8);
-		//*(this->oesetreg) = this->oemask;
-		this->send_latches(14); // pre-active command
-		//*(this->oesetreg) = this->oemask << 16;
-		this->send_clocks(8);
-		
-		this->send_to_allRGB(0x00aa, 5);
-		this->send_to_allRGB(0x01aa, 5);
-		this->send_to_allRGB(conf_reg[r], 5); // send config registers
-		//this->send_to_allRGB(0xF003, 5);
-		this->send_to_allRGB(0x0055, 5);
-		this->send_to_allRGB(0x0155, 5);
-		//this->send_clocks(8);
-		
-	}
+	
 };
 
 /*--------------------------------------------------------------------------------------*/
@@ -1443,33 +1398,7 @@ public:
 	}
 
 protected:
-	void load_config_regs(uint16_t *conf_reg) override
-	{
-		static uint8_t r = this->conf_reg_cnt;
-		r++;
-		if (r >= this->conf_reg_cnt)
-		{
-
-			r = 0;
-		}
-
-		this->send_vsync(); // vsync
-		this->send_clocks(8);
-		this->send_latches(11); // pre-active command
-		//*(this->oesetreg) = this->oemask << 16;
-		this->send_clocks(8);
-		//*(this->oesetreg) = this->oemask;
-		this->send_latches(14); // pre-active command
-		//*(this->oesetreg) = this->oemask << 16;
-		this->send_clocks(8);
-		// this->start_GCLK();
-		this->send_to_allRGB(0x00aa, 5);
-		this->send_to_allRGB(0x01aa, 5);
-		this->send_to_allRGB(conf_reg[r], 5); // send config registers
-		this->send_to_allRGB(0x0055, 5);
-		this->send_to_allRGB(0x0155, 5);
-		this->send_clocks(8);
-	}
+	
 };
 #endif // STM32F1 & F4
 #endif // DMD_RGB_SPWM_DRIVER_H

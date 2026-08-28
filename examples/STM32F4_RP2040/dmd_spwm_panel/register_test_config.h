@@ -11,6 +11,15 @@
 #define DMD_SPWM_REGISTER_OVERRIDE 0
 #endif
 
+// Compact catalog entry containing the displayed REG number, payload length,
+// and channel-major Red, Green, and Blue register words.
+template <uint8_t MaxWords>
+struct DMD_SPWM_RegisterTestProfile {
+    enum { MAX_WORDS = MaxWords };
+    uint16_t catalog_index;
+    uint8_t word_count;
+    uint16_t channel_words[3][MaxWords];
+};
 // Applies identically to interactive tests and fixed overrides:
 //   0 = broadcast channel_words[0] (Red) to every physical RGB lane.
 //   1 = send channel_words[0], [1], and [2] to Red, Green, and Blue.
@@ -158,7 +167,7 @@ dmd_spwm_icnd2055_register_test_profiles[] = {
 // #include "register_test/profiles/icnd2055/icnd2055_scan_28.h"
 // #include "register_test/profiles/icnd2055/icnd2055_scan_29.h"
 // #include "register_test/profiles/icnd2055/icnd2055_scan_30.h"
-// #include "register_test/profiles/icnd2055/icnd2055_scan_32.h"
+ #include "register_test/profiles/icnd2055/icnd2055_scan_32.h"
 // #include "register_test/profiles/icnd2055/icnd2055_scan_34.h"
 // #include "register_test/profiles/icnd2055/icnd2055_scan_36.h"
 // #include "register_test/profiles/icnd2055/icnd2055_scan_38.h"

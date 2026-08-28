@@ -514,7 +514,12 @@ protected:
 	{
 		this->send_to_RGB(data, data, data, latches);
 	}
-
+    
+	virtual void send_to_RGB(uint16_t data, uint16_t latches)
+	{
+		this->send_to_RGB(data, data, data, latches);
+	}
+	
 	// Send independent 16-bit register values to the physical R, G and B
 	// output lanes through the normal SPWM PIO/DMA path.
 	void send_to_RGB(uint16_t red, uint16_t green, uint16_t blue,
@@ -643,7 +648,7 @@ protected:
 		this->start_DCLK();
 
 		// send one config register 
-		this->send_to_allRGB(conf_reg[r], 5); 
+		this->send_to_RGB(conf_reg[r], 5); 
 		
 	}
 
@@ -713,7 +718,7 @@ protected:
 		// and 0x0055,0x0155 after config value
 		this->send_to_allRGB(0x00aa, 5);
 		this->send_to_allRGB(0x01aa, 5);
-		this->send_to_allRGB(conf_reg[r], 5); // send config register
+		this->send_to_RGB(conf_reg[r], 5); // send config register
 		this->send_to_allRGB(0x0055, 5);
 		this->send_to_allRGB(0x0155, 5);
 		
@@ -777,7 +782,7 @@ protected:
 		// and 0x0055,0x0155 after config value
 		this->send_to_allRGB(0x00aa, 5);
 		this->send_to_allRGB(0x01aa, 5);
-		this->send_to_allRGB(conf_reg[r], 5); // send config register
+		this->send_to_RGB(conf_reg[r], 5); // send config register
 		this->send_to_allRGB(0x0055, 5);
 		this->send_to_allRGB(0x0155, 5);
 	}
@@ -842,7 +847,7 @@ protected:
 		// and 0x0055,0x0155 after config value
 		this->send_to_allRGB(0x00aa, 5);
 		this->send_to_allRGB(0x01aa, 5);
-		this->send_to_allRGB(conf_reg[r], 5); // send config register
+		this->send_to_RGB(conf_reg[r], 5); // send config register
 		this->send_to_allRGB(0x0055, 5);
 		this->send_to_allRGB(0x0155, 5);
 	}
@@ -901,7 +906,7 @@ protected:
 		pio_sm_set_enabled(this->pio, this->sm_clk_lat, false);			 
 		
 		// send one config register 
-		this->send_to_allRGB(conf_reg[r], r * 2 + 2); 
+		this->send_to_RGB(conf_reg[r], r * 2 + 2); 
 }
 
 
@@ -983,7 +988,7 @@ protected:
 			pio_sm_set_enabled(this->pio, this->sm_clk_lat, true);	
 			this->send_latches(14);						  // pre-active command
 			pio_sm_set_enabled(this->pio, this->sm_clk_lat, false);	
-			this->send_to_allRGB(conf_reg[r], r * 2 + 2); // send config registers
+			this->send_to_RGB(conf_reg[r], r * 2 + 2); // send config registers
 			pio_sm_set_enabled(this->pio, this->sm_data, false);
 		}
 		this->start_DCLK();
@@ -1087,7 +1092,7 @@ protected:
 		// and 0x0055,0x0155 after config value
 		this->send_to_allRGB(0x00aa, 5);
 		this->send_to_allRGB(0x01aa, 5);
-		this->send_to_allRGB(conf_reg[r], 5); // send config register
+		this->send_to_RGB(conf_reg[r], 5); // send config register
 		this->send_to_allRGB(0x0055, 5);
 		this->send_to_allRGB(0x0155, 5);
 		

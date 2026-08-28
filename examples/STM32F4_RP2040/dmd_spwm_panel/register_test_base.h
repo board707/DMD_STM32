@@ -41,15 +41,7 @@
 #endif
 #endif
 
-// Compact catalog entry containing the displayed REG number, payload length,
-// and channel-major Red, Green, and Blue register words.
-template <uint8_t MaxWords>
-struct DMD_SPWM_RegisterTestProfile {
-    enum { MAX_WORDS = MaxWords };
-    uint16_t catalog_index;
-    uint8_t word_count;
-    uint16_t channel_words[3][MaxWords];
-};
+
 
 // Return one row of the shared 3x5 font used by the REG label and marquee.
 static uint8_t dmdSpwmRegisterTestGlyphRow(char character, uint8_t row)
