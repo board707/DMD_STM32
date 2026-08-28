@@ -84,6 +84,7 @@ public:
 		dma_buffer = (uint8_t*)malloc(this->x_len * 2);
 		dma_buffs[0] = dma_buffer;
 		dma_buffs[1] = dma_buffer + this->x_len;
+		this->spwm_chip_init();
 	}
 
  	
@@ -135,7 +136,7 @@ protected:
     virtual void load_config_regs(uint16_t *conf_reg) {}
 
 	// Copy chip config registers values to the class data
-    void add_config_regs(uint16_t *cfg_regs, uint16_t regs_cnt)
+    void add_config_regs(const uint16_t *cfg_regs, const uint16_t regs_cnt)
 	{
 
 		if (this->config_registers != NULL)
@@ -153,7 +154,7 @@ protected:
          for (uint8_t i = 0; i < this->conf_reg_cnt; i++) 
 		 { 
 			this->refresh_greyscale_data();
-			delay(30);
+			delay(3);
 		}
 	}
 	
@@ -601,94 +602,18 @@ protected:
 // DP3264 driver class
 /*--------------------------------------------------------------------------------------*/
 template <int... Pars>
-class DMD_RGB_DP3264 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
+class DMD_RGB_ICN2055_BASE : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
 {
 
 public:
-	DMD_RGB_DP3264(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
-				   byte panelsWide, byte panelsHigh, bool d_buf = false)
-		: DMD_RGB_SPWM_DRIVER_BASE<Pars...>
-		(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
+	DMD_RGB_ICN2055_BASE(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
+						byte panelsWide, byte panelsHigh, bool d_buf = false) 
+			: DMD_RGB_SPWM_DRIVER_BASE<Pars...>
+		    (mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
 	{
 	}
-
-	void init(uint16_t scan_interval = 200) override
-	{
-		// MSB greyscale position for color bits
-		this->gclk_bits = 13;
-		
-		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
-
-		uint16_t conf_3264[] = {0x020f, 0x033f, 0x043f, 0x0504, 0x0642, 0x0700, 0x08BF, 0x0960, 0x0ABE, 0x0B8B, 0x0C88, 0x0D12, 0x1100};
-
-		conf_3264[0] = 0x0200 | (this->nRows - 1); /// panel scan
-		ADD_CONFIG_REGS(conf_3264);
-		this->spwm_chip_init();
-	}
-
-protected:
-	void load_config_regs(uint16_t *conf_reg) override
-	{
-		// send next config register in each call
-		static uint8_t r = this->conf_reg_cnt;
-		r++;
-		if (r >= this->conf_reg_cnt)
-		{
-
-			r = 0;
-		}
-      
-		this->send_vsync(); 
-		this->send_clocks(16);
-		this->send_latches(14); // pre-active command
-		this->init_mux();
-		pio_sm_set_enabled(this->pio, this->sm_clk_lat, false);
-		
-		// config and start clk_cnt SM
-		this->start_DCLK();
-
-		// send one config register 
-		this->send_to_RGB(conf_reg[r], 5); 
-		
-	}
-
-
-};
-
-/*--------------------------------------------------------------------------------------*/
-// ICN2055 driver class
-/*--------------------------------------------------------------------------------------*/
-template <int... Pars>
-class DMD_RGB_ICN2055 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
-{
-
-public:
-	DMD_RGB_ICN2055(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
-					byte panelsWide, byte panelsHigh, bool d_buf = false) : 
-					DMD_RGB_SPWM_DRIVER_BASE<Pars...>
-					(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
-	{
-	}
-
-	void init(uint16_t scan_interval = 200) override
-	{
 
 	
-		DMD_RGB_SPWM_DRIVER_BASE<Pars...>::init(scan_interval);
-		
-		// MSB greyscale position for color bits
-		this->gclk_bits = 13;
-		
-		uint16_t icn2055_conf[] = {
-			0x021f, 0x033f, 0x0400, 0x0507, 0x0603, 0x0720, 0x0820, 0x0908, 0x0a08, 0x0b00,
-			0x0c08, 0x0d01, 0x0e04, 0x0f01, 0x1082, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1950,
-			0x1a1f, 0x1b10, 0x1ccf, 0x1d0a, 0x1e4c, 0x1f20, 0x2008, 0x2101, 0x221c};
-
-		icn2055_conf[0] = 0x200 | (this->nRows - 1); /// panel scan
-
-		ADD_CONFIG_REGS(icn2055_conf);
-		this->spwm_chip_init();
-	}
 
 protected:
 	void load_config_regs(uint16_t *conf_reg) override
@@ -723,6 +648,85 @@ protected:
 		this->send_to_allRGB(0x0155, 5);
 		
 	}
+};
+
+template <int... Pars>
+class DMD_RGB_DP3264 : public DMD_RGB_SPWM_DRIVER_BASE<Pars...>
+{
+
+public:
+	DMD_RGB_DP3264(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
+				   byte panelsWide, byte panelsHigh, bool d_buf = false)
+		: DMD_RGB_SPWM_DRIVER_BASE<Pars...>
+		(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
+	{
+		// MSB greyscale position for color bits
+		this->gclk_bits = 13;
+		const uint16_t conf_3264[] = {0x020f, 0x033f, 0x043f, 0x0504, 0x0642, 0x0700, 0x08BF, 0x0960, 0x0ABE, 0x0B8B, 0x0C88, 0x0D12, 0x1100};
+
+		ADD_CONFIG_REGS(conf_3264);
+		this->config_registers[0] = 0x200 | (this->nRows - 1); /// panel scan
+	}
+
+
+protected:
+	void load_config_regs(uint16_t *conf_reg) override
+	{
+		// send next config register in each call
+		static uint8_t r = this->conf_reg_cnt;
+		r++;
+		if (r >= this->conf_reg_cnt)
+		{
+
+			r = 0;
+		}
+      
+		this->send_vsync(); 
+		this->send_clocks(16);
+		this->send_latches(14); // pre-active command
+		this->init_mux();
+		pio_sm_set_enabled(this->pio, this->sm_clk_lat, false);
+		
+		// config and start clk_cnt SM
+		this->start_DCLK();
+
+		// send one config register 
+		this->send_to_RGB(conf_reg[r], 5); 
+		
+	}
+
+
+};
+
+/*--------------------------------------------------------------------------------------*/
+// ICN2055 driver class
+/*--------------------------------------------------------------------------------------*/
+template <int... Pars>
+class DMD_RGB_ICN2055 : public DMD_RGB_ICN2055_BASE<Pars...>
+{
+
+public:
+	DMD_RGB_ICN2055(uint8_t *mux_list, byte _pin_nOE, byte _pin_SCLK, uint8_t *pinlist,
+					byte panelsWide, byte panelsHigh, bool d_buf = false) : 
+					DMD_RGB_ICN2055_BASE<Pars...>
+					(mux_list, _pin_nOE, _pin_SCLK, pinlist, panelsWide, panelsHigh, d_buf)
+	{
+        // MSB greyscale position for color bits
+		this->gclk_bits = 13;
+		
+		const uint16_t icn2055_conf[] = {
+			0x021f, 0x033f, 0x0400, 0x0507, 0x0603, 0x0720, 0x0820, 0x0908, 0x0a08, 0x0b00,
+			0x0c08, 0x0d01, 0x0e04, 0x0f01, 0x1082, 0x1121, 0x1201, 0x17f0, 0x181f, 0x1950,
+			0x1a1f, 0x1b10, 0x1ccf, 0x1d0a, 0x1e4c, 0x1f20, 0x2008, 0x2101, 0x221c};
+
+		ADD_CONFIG_REGS(icn2055_conf);
+		this->config_registers[0] = 0x200 | (this->nRows - 1); /// panel scan
+	}
+
+
+
+protected:
+	
 };
 /*--------------------------------------------------------------------------------------*/
 // FM6373 driver class
