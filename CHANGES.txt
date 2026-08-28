@@ -1,7 +1,9 @@
 # ChangeLog
 
-## [1.2.18] - 2026-08-26
+## [1.2.18] - 2026-08-29
  - Fix STM32duino (Arduino Core STM32) v3.0.0 compatibility issues
+ - Optimize register_finder code. 
+   Clear inheritance of the SPWM classes (STM32 & RP2040)
 
 ## [1.2.17] - 2026-08-02
  - Register Config Finder 
