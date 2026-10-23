@@ -1,5 +1,12 @@
 <img src="https://github.com/board707/DMD_STM32/blob/old-V1/.github/fok0.jpg" width="600" />
 
+# The project is closing down.
+
+I am going to finish development of DMD_STM32 project and archive the GitHub repository. The project will remain publicly accessible. 
+
+Thank you to everyone who supported the project and shared their ideas and code.
+You can share your impressions and suggestions in the discussion #229.
+
 # DMD_STM32a - LED Matrix library with SPWM driver support
 
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/board707/DMD_STM32/dev-V2) ![GitHub commits since tagged version (branch)](https://img.shields.io/github/commits-since/board707/DMD_STM32/v0.6.3) ![GitHub](https://img.shields.io/github/license/board707/DMD_STM32?color=g)
