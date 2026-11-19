@@ -2,10 +2,9 @@
 
 # The project is closing down.
 
-I am going to finish development of DMD_STM32 project and archive the GitHub repository. The project will remain publicly accessible. 
+I decided to finish development of DMD_STM32 project and archive the GitHub repository. The project will remain publicly accessible. 
 
 Thank you to everyone who supported the project and shared their ideas and code.
-You can share your impressions and suggestions in the discussion #229.
 
 # DMD_STM32a - LED Matrix library with SPWM driver support
 
